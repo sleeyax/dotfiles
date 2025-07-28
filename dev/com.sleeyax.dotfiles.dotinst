@@ -1,0 +1,14 @@
+{
+	"name": "Sleeyax Dotfiles DEV",
+	"id": "com.sleeyax.dotfiles.dev",
+	"description": "",
+	"version":"0.1",
+	"author": "Sleeyax",
+	"homepage": "",
+	"dependencies": "",
+	"source": ".mycustomdotfiles",
+	"subfolder": "dotfiles",
+	"setupscript":"setup.sh",
+	"restore":[],
+	"settings":[]
+}
