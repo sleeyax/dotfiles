@@ -56,9 +56,7 @@ Add your quicklinks in your desired order to the status bar
         "orientation": "horizontal",
         "modules": [
 
-            "custom/quicklink_browser",
             "custom/quicklink_email",
-            "custom/quicklink_filemanager",
 
 /*
 Don't remove the quicklinkempty

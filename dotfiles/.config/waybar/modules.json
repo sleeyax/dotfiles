@@ -20,7 +20,7 @@
       "default": ""
     },
     "persistent-workspaces": {
-      "*": 5
+      "*": 10
     }
   },
 
@@ -286,7 +286,6 @@
   "group/links": {
     "orientation": "horizontal",
     "modules": [
-      "custom/chatgpt",
       "custom/empty"
     ]
   },

@@ -1,1 +1,1 @@
-gnome-calculator
+kcalc
