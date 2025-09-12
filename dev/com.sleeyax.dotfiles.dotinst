@@ -6,7 +6,7 @@
 	"author": "Sleeyax",
 	"homepage": "",
 	"dependencies": "",
-	"source": ".mycustomdotfiles",
+	"source": "Programming/misc/dotfiles",
 	"subfolder": "dotfiles",
 	"setupscript":"setup.sh",
 	"restore":[],
