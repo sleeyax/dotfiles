@@ -5,8 +5,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
-UPSTREAM="$DOTFILES_DIR/upstream/share/dotfiles"
+UPSTREAM="$DOTFILES_DIR/upstream"
 COMMON="$DOTFILES_DIR/custom/common"
+ML4W_DIR="$HOME/.ml4w/dotfiles"
 
 # Determine device (manual override or auto-detect)
 if [ -f "$DOTFILES_DIR/device" ]; then
@@ -20,6 +21,61 @@ DEVICE_DIR="$DOTFILES_DIR/custom/devices/$DEVICE"
 if [ ! -d "$DEVICE_DIR" ]; then
   echo "Error: Device directory not found: $DEVICE_DIR"
   exit 1
+fi
+
+# --- Install ML4W base if needed ---
+install_base() {
+  echo "Installing ML4W base from pinned upstream..."
+
+  # Create ml4w directory
+  mkdir -p "$HOME/.ml4w"
+
+  # Copy upstream to ml4w directory (remove old if exists)
+  if [ -d "$ML4W_DIR" ]; then
+    rm -rf "$ML4W_DIR"
+  fi
+  cp -r "$UPSTREAM" "$ML4W_DIR"
+
+  # Detect distro and run setup
+  if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    case "$ID" in
+      arch|endeavouros|manjaro)
+        echo "Detected Arch-based distro"
+        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p arch
+        ;;
+      fedora)
+        echo "Detected Fedora"
+        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p fedora
+        ;;
+      opensuse*)
+        echo "Detected openSUSE"
+        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p opensuse
+        ;;
+      *)
+        echo "Error: Unsupported distro: $ID"
+        exit 1
+        ;;
+    esac
+  else
+    echo "Error: Cannot detect distro"
+    exit 1
+  fi
+
+  cd "$SCRIPT_DIR"
+}
+
+# Check if base install needed (check for hyprland.conf as marker)
+if [ ! -f "$HOME/.config/hypr/hyprland.conf" ]; then
+  install_base
+else
+  echo "ML4W base already installed, skipping..."
+  echo "(Run with --force to reinstall base)"
+fi
+
+# Force reinstall if requested
+if [ "$1" == "--force" ]; then
+  install_base
 fi
 
 echo "Applying dotfiles for device: $DEVICE"

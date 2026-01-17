@@ -17,16 +17,16 @@ Personal Hyprland dotfiles based on [ML4W](https://github.com/mylinuxforwork/dot
 ## Install
 
 ```bash
-# Clone repo with submodule
 git clone --recurse-submodules https://github.com/sleeyax/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-
-# Install ML4W base (pinned version)
-./upstream/setup.sh
-
-# Apply custom configs
 ./scripts/apply.sh
 ```
+
+This will:
+1. Install ML4W base from pinned upstream (if not already installed)
+2. Apply device-specific custom configs
+
+Use `./scripts/apply.sh --force` to reinstall base.
 
 ## Usage
 
