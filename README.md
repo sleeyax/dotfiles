@@ -26,6 +26,8 @@ This will:
 1. Install ML4W base from pinned upstream (if not already installed)
 2. Apply device-specific custom configs
 
+Use `./scripts/apply.sh --force` to reinstall base.
+
 ## Usage
 
 **Auto-detect device** (by hostname):

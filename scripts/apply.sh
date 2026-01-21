@@ -23,6 +23,7 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
+# --- Install ML4W base if needed ---
 install_base() {
   echo "Installing ML4W base from pinned upstream..."
 
@@ -64,7 +65,18 @@ install_base() {
   cd "$SCRIPT_DIR"
 }
 
-install_base
+# Check if base install needed (check for hyprland.conf as marker)
+if [ ! -f "$HOME/.config/hypr/hyprland.conf" ]; then
+  install_base
+else
+  echo "ML4W base already installed, skipping..."
+  echo "(Run with --force to reinstall base)"
+fi
+
+# Force reinstall if requested
+if [ "$1" == "--force" ]; then
+  install_base
+fi
 
 echo "Applying dotfiles for device: $DEVICE"
 
