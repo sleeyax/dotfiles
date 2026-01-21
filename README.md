@@ -48,7 +48,7 @@ git fetch --tags
 git checkout <new-tag>
 cd ..
 git add upstream
-git commit -m "chore: update upstream to <tag>"
+git commit -m "update upstream to <tag>"
 ```
 
 ## Devices
