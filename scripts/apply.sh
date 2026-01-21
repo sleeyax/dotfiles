@@ -7,7 +7,6 @@ DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
 UPSTREAM="$DOTFILES_DIR/upstream"
 COMMON="$DOTFILES_DIR/custom/common"
-ML4W_DIR="$HOME/.ml4w/dotfiles"
 
 # Determine device (manual override or auto-detect)
 if [ -f "$DOTFILES_DIR/device" ]; then
@@ -27,40 +26,42 @@ fi
 install_base() {
   echo "Installing ML4W base from pinned upstream..."
 
-  # Create ml4w directory
-  mkdir -p "$HOME/.ml4w"
+  SETUP_DIR="$UPSTREAM/setup"
 
-  # Copy upstream to ml4w directory (remove old if exists)
-  if [ -d "$ML4W_DIR" ]; then
-    rm -rf "$ML4W_DIR"
+  # Install stow if needed
+  if ! command -v stow &>/dev/null; then
+    echo "Installing stow..."
+    if command -v pacman &>/dev/null; then
+      sudo pacman -S --noconfirm stow
+    elif command -v dnf &>/dev/null; then
+      sudo dnf install -y stow
+    elif command -v zypper &>/dev/null; then
+      sudo zypper install -y stow
+    fi
   fi
-  cp -r "$UPSTREAM" "$ML4W_DIR"
 
-  # Detect distro and run setup
-  if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    case "$ID" in
-      arch|endeavouros|manjaro)
-        echo "Detected Arch-based distro"
-        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p arch
-        ;;
-      fedora)
-        echo "Detected Fedora"
-        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p fedora
-        ;;
-      opensuse*)
-        echo "Detected openSUSE"
-        cd "$ML4W_DIR/bin" && ./ml4w-hyprland-setup -m install && ./ml4w-hyprland-setup -p opensuse
-        ;;
-      *)
-        echo "Error: Unsupported distro: $ID"
-        exit 1
-        ;;
-    esac
+  # Run package setup
+  if command -v pacman &>/dev/null; then
+    echo "Detected Arch-based distro"
+    "$SETUP_DIR/setup-arch.sh"
+  elif command -v dnf &>/dev/null; then
+    echo "Detected Fedora"
+    "$SETUP_DIR/setup-fedora.sh"
+  elif command -v zypper &>/dev/null; then
+    echo "Detected openSUSE"
+    "$SETUP_DIR/setup-opensuse.sh"
   else
-    echo "Error: Cannot detect distro"
+    echo "Error: No supported package manager found"
     exit 1
   fi
+
+  # Install dotfiles via stow
+  echo "Installing dotfiles..."
+  cd "$UPSTREAM" && stow -t "$HOME" dotfiles
+
+  # Mark as installed
+  mkdir -p "$HOME/.ml4w"
+  touch "$HOME/.ml4w/.installed"
 
   cd "$SCRIPT_DIR"
 }
@@ -69,7 +70,7 @@ install_base() {
 if [ "$1" == "--force" ]; then
   install_base
 # Check if base install needed
-elif [ ! -d "$ML4W_DIR" ]; then
+elif [ ! -f "$HOME/.ml4w/.installed" ]; then
   install_base
 else
   echo "ML4W base already installed, skipping..."
