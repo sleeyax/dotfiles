@@ -30,6 +30,17 @@ Use `./scripts/apply.sh --force` to reinstall base.
 
 ## Usage
 
+Pull new changes and update the submodule to the latest pinned commit:
+
+```bash
+$ git pull
+$ git submodule update
+```
+
+Then run the apply script again.
+
+### Other scripts
+
 **Auto-detect device** (by hostname):
 ```bash
 ./scripts/apply.sh
