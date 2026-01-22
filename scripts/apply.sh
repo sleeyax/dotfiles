@@ -81,11 +81,11 @@ echo "Applying dotfiles for device: $DEVICE"
 
 # --- Stow common configs (override upstream) ---
 echo "Stowing common configs..."
-stow -d "$DOTFILES_DIR/custom" -t "$HOME" --adopt --override='.*' --restow common
+stow -d "$DOTFILES_DIR/custom" -t "$HOME" --adopt common
 
 # --- Stow device-specific configs (override upstream + common) ---
 echo "Stowing device-specific configs ($DEVICE)..."
-stow -d "$DOTFILES_DIR/custom/devices" -t "$HOME" --adopt --override='.*' --restow "$DEVICE"
+stow -d "$DOTFILES_DIR/custom/devices" -t "$HOME" --adopt "$DEVICE"
 
 echo "Done! Configs applied for device: $DEVICE"
 
