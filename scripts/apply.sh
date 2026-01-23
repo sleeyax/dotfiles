@@ -79,13 +79,20 @@ fi
 
 echo "Applying dotfiles for device: $DEVICE"
 
-# --- Stow common configs (override upstream) ---
-echo "Stowing common configs..."
-stow -d "$DOTFILES_DIR/custom" -t "$HOME" --adopt common
+# Restore upstream before copying (clean slate)
+git -C "$UPSTREAM" checkout -- dotfiles/
 
-# --- Stow device-specific configs (override upstream + common) ---
-echo "Stowing device-specific configs ($DEVICE)..."
-stow -d "$DOTFILES_DIR/custom/devices" -t "$HOME" --adopt "$DEVICE"
+# Copy common overrides into upstream
+cp -r "$COMMON/." "$UPSTREAM/dotfiles/"
+
+# Copy device-specific overrides into upstream
+cp -r "$DEVICE_DIR/." "$UPSTREAM/dotfiles/"
+
+# Mark modified files as assume-unchanged
+git -C "$UPSTREAM" diff --name-only | xargs -I {} git -C "$UPSTREAM" update-index --assume-unchanged {}
+
+# Stow the combined dotfiles
+cd "$UPSTREAM" && stow -t "$HOME" --restow dotfiles
 
 echo "Done! Configs applied for device: $DEVICE"
 
