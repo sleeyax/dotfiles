@@ -7,6 +7,7 @@ DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
 UPSTREAM="$DOTFILES_DIR/upstream"
 COMMON="$DOTFILES_DIR/custom/common"
+STOW_DIR="$DOTFILES_DIR/.stow"
 
 # Check for pacman (we only support Arch-based distro for now)
 if ! command -v pacman &>/dev/null; then
@@ -43,15 +44,9 @@ install_base() {
   # Run package setup
   "$SETUP_DIR/setup-arch.sh"
 
-  # Install dotfiles via stow
-  echo "Installing dotfiles..."
-  cd "$UPSTREAM" && stow -t "$HOME" dotfiles
-
   # Mark as installed
   mkdir -p "$HOME/.ml4w"
   touch "$HOME/.ml4w/.installed"
-
-  cd "$SCRIPT_DIR"
 }
 
 # Force reinstall if requested
@@ -67,23 +62,15 @@ fi
 
 echo "Applying dotfiles for device: $DEVICE"
 
-# Restore upstream before copying (clean slate)
-git -C "$UPSTREAM" checkout -- dotfiles/
-
-# Copy common overrides into upstream
-cp -r "$COMMON/." "$UPSTREAM/dotfiles/"
-
-# Copy device-specific overrides into upstream
-cp -r "$DEVICE_DIR/." "$UPSTREAM/dotfiles/"
-
-# Hide modifications from git
-git -C "$UPSTREAM" diff --name-only | xargs -I {} git -C "$UPSTREAM" update-index --assume-unchanged {}
-# Exclude untracked custom files from submodule
-EXCLUDE="$(git -C "$UPSTREAM" rev-parse --git-dir)/info/exclude"
-git -C "$UPSTREAM" status --porcelain | awk '/^\?\?/ {print $2}' > "$EXCLUDE"
+# Build merged dotfiles in separate dir (keeps upstream clean)
+rm -rf "$STOW_DIR"
+mkdir -p "$STOW_DIR"
+cp -r "$UPSTREAM/dotfiles" "$STOW_DIR/dotfiles"
+cp -r "$COMMON/." "$STOW_DIR/dotfiles/"
+cp -r "$DEVICE_DIR/." "$STOW_DIR/dotfiles/"
 
 # Stow the combined dotfiles
-cd "$UPSTREAM" && stow -t "$HOME" --restow dotfiles
+cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
 
 echo "Done! Configs applied for device: $DEVICE"
 

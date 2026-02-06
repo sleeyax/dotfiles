@@ -1,2 +1,5 @@
 # Device-specific (not tracked - set per machine)
 device
+
+# Merged stow package (built by apply.sh)
+.stow
