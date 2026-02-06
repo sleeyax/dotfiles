@@ -23,6 +23,7 @@ cd ~/dotfiles
 ```
 
 This will:
+
 1. Install ML4W base from pinned upstream (if not already installed)
 2. Apply device-specific custom configs
 
@@ -55,18 +56,20 @@ git commit -m "update upstream to <tag>"
 ### Other scripts
 
 **Auto-detect device** (by hostname):
+
 ```bash
 ./scripts/apply.sh
 ```
 
 **Manual device switch**:
+
 ```bash
 ./scripts/set-device.sh desktop  # or laptop
 ```
 
 ## Devices
 
-| Device | Hostname | Keyboard | Monitor |
-|--------|----------|----------|---------|
-| Desktop | falcon | QWERTY (us) | DP-5 3840x2160@144 |
-| Laptop | panda | AZERTY (be) | eDP-1 |
+| Device  | Hostname | Keyboard    | Monitor            |
+| ------- | -------- | ----------- | ------------------ |
+| Desktop | falcon   | QWERTY (us) | DP-5 3840x2160@144 |
+| Laptop  | panda    | AZERTY (be) | eDP-1              |
