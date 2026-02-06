@@ -29,7 +29,7 @@ This will:
 
 Use `./scripts/apply.sh --force` to reinstall base.
 
-## update (consumer)
+## Update (consumer)
 
 If you are using the dotfiles from this repository, pull new changes and update the submodule to the latest pinned commit:
 
@@ -42,16 +42,13 @@ Then run the apply script again.
 
 ## Update (contributor)
 
-If you want to update the upstream ML4W dotfiles, follow the instructions:
+If you want to update the upstream ML4W dotfiles, use the update script:
 
 ```bash
-cd upstream
-git fetch --tags
-git checkout <new-tag>
-cd ..
-git add upstream
-git commit -m "update upstream to <tag>"
+./scripts/update.sh <tag>
 ```
+
+Example: `./scripts/update.sh 2.10.0`
 
 ### Other scripts
 
