@@ -1,5 +1,21 @@
-source ~/.nvm/nvm.sh
+# -----------------------------------------------------
+# INIT
+# -----------------------------------------------------
 
+# -----------------------------------------------------
+# Exports
+# -----------------------------------------------------
+export EDITOR=code
+export ZSH="$HOME/.oh-my-zsh"
+export PATH="$PATH:~/.cargo/bin"
+export PATH="$PATH:~/.local/bin"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
+
+# -----------------------------------------------------
+# NVM
+# -----------------------------------------------------
+source ~/.nvm/nvm.sh
 load-nvmrc() {
   local node_version="$(nvm version)"
   local nvmrc_path="$(nvm_find_nvmrc)"
@@ -25,5 +41,3 @@ load-nvmrc() {
 }
 load-nvmrc
 
-export PATH="$HOME/.local/bin:$PATH"
-export PATH="$HOME/go/bin:$PATH"

@@ -1,3 +1,0 @@
-alias cls='clear'
-alias ask='gh copilot suggest -t shell'
-alias nx='npx nx'
