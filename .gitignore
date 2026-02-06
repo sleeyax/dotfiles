@@ -1,2 +1,5 @@
-dotfiles/.config/gtk-3.0/bookmarks
-dotfiles/.config/ml4w/cache
+# Device-specific (not tracked - set per machine)
+device
+
+# Merged stow package (built by apply.sh)
+.stow

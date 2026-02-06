@@ -1,0 +1,51 @@
+{
+  "name": "Sleeyax Dotfiles",
+  "id": "com.sleeyax.dotfiles",
+  "author": "Sleeyax",
+  "homepage": "",
+  "version": "1.0.0",
+  "source": "",
+  "subfolder": "upstream/share/dotfiles",
+  "setupscript": "scripts/apply.sh",
+  "restore": [
+    {
+      "name": "General Settings",
+      "folder": ".config/ml4w/settings",
+      "files": "*"
+    },
+    {
+      "name": "Keyboard Configuration",
+      "folder": ".config/hypr/conf",
+      "files": "keyboard.conf"
+    },
+    {
+      "name": "Monitor Configuration",
+      "folder": ".config/hypr/conf",
+      "files": "monitor.conf"
+    },
+    {
+      "name": "Waypaper Configuration",
+      "folder": ".config/waypaper",
+      "files": "config.ini"
+    },
+    {
+      "name": "Custom Hyprland Configuration",
+      "folder": ".config/hypr/conf",
+      "files": "custom.conf"
+    }
+  ],
+  "settings": [
+    {
+      "name": "Keyboard Layout",
+      "file": ".config/hypr/conf/keyboard.conf",
+      "value": "us",
+      "search": "kb_layout = VALUE"
+    },
+    {
+      "name": "Keyboard Variant",
+      "file": ".config/hypr/conf/keyboard.conf",
+      "value": "",
+      "search": "kb_variant = VALUE"
+    }
+  ]
+}
