@@ -29,9 +29,8 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
-# --- Install ML4W base if needed ---
-install_base() {
-  echo "Installing ML4W base from pinned upstream..."
+install_dependencies() {
+  echo "Installing ML4W dependencies from pinned upstream..."
 
   SETUP_DIR="$UPSTREAM/setup"
 
@@ -51,12 +50,12 @@ install_base() {
 
 # Force reinstall if requested
 if [ "$1" == "--force" ]; then
-  install_base
+  install_dependencies
 # Check if base install needed
 elif [ ! -f "$HOME/.ml4w/.installed" ]; then
-  install_base
+  install_dependencies
 else
-  echo "ML4W base already installed, skipping..."
+  echo "Dependencies should already be installed, skipping..."
   echo "(Run with --force to reinstall)"
 fi
 
