@@ -18,4 +18,3 @@ fi
 
 echo "$1" > "$DOTFILES_DIR/device"
 echo "Device set to: $1"
-"$SCRIPT_DIR/apply.sh"
