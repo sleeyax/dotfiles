@@ -8,6 +8,12 @@ DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 UPSTREAM="$DOTFILES_DIR/upstream"
 COMMON="$DOTFILES_DIR/custom/common"
 
+# Check for pacman (we only support Arch-based distro for now)
+if ! command -v pacman &>/dev/null; then
+  echo "Error: pacman not found"
+  exit 1
+fi
+
 # Determine device (manual override or auto-detect)
 if [ -f "$DOTFILES_DIR/device" ]; then
   DEVICE=$(cat "$DOTFILES_DIR/device")
@@ -31,29 +37,11 @@ install_base() {
   # Install stow if needed
   if ! command -v stow &>/dev/null; then
     echo "Installing stow..."
-    if command -v pacman &>/dev/null; then
-      sudo pacman -S --noconfirm stow
-    elif command -v dnf &>/dev/null; then
-      sudo dnf install -y stow
-    elif command -v zypper &>/dev/null; then
-      sudo zypper install -y stow
-    fi
+    sudo pacman -S --noconfirm stow
   fi
 
   # Run package setup
-  if command -v pacman &>/dev/null; then
-    echo "Detected Arch-based distro"
-    "$SETUP_DIR/setup-arch.sh"
-  elif command -v dnf &>/dev/null; then
-    echo "Detected Fedora"
-    "$SETUP_DIR/setup-fedora.sh"
-  elif command -v zypper &>/dev/null; then
-    echo "Detected openSUSE"
-    "$SETUP_DIR/setup-opensuse.sh"
-  else
-    echo "Error: No supported package manager found"
-    exit 1
-  fi
+  "$SETUP_DIR/setup-arch.sh"
 
   # Install dotfiles via stow
   echo "Installing dotfiles..."
