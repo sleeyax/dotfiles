@@ -1,0 +1,13 @@
+/* Import Matugen Colors */
+@import '../../../../../.config/waybar/colors.css';
+
+/* Dark muted theme overrides */
+@define-color icon_color @on_surface_variant;
+@define-color border_color @outline_variant;
+@define-color background @surface;
+@define-color primary @inverse_primary;
+@define-color primary_container @surface_container;
+@define-color on_primary @on_surface;
+
+/* Import base style */
+@import '../style.css';
