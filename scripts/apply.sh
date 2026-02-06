@@ -76,8 +76,11 @@ cp -r "$COMMON/." "$UPSTREAM/dotfiles/"
 # Copy device-specific overrides into upstream
 cp -r "$DEVICE_DIR/." "$UPSTREAM/dotfiles/"
 
-# Mark modified files as assume-unchanged
+# Hide modifications from git
 git -C "$UPSTREAM" diff --name-only | xargs -I {} git -C "$UPSTREAM" update-index --assume-unchanged {}
+# Exclude untracked custom files from submodule
+EXCLUDE="$(git -C "$UPSTREAM" rev-parse --git-dir)/info/exclude"
+git -C "$UPSTREAM" status --porcelain | awk '/^\?\?/ {print $2}' > "$EXCLUDE"
 
 # Stow the combined dotfiles
 cd "$UPSTREAM" && stow -t "$HOME" --restow dotfiles
