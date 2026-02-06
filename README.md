@@ -28,9 +28,9 @@ This will:
 
 Use `./scripts/apply.sh --force` to reinstall base.
 
-## Usage
+## update (consumer)
 
-Pull new changes and update the submodule to the latest pinned commit:
+If you are using the dotfiles from this repository, pull new changes and update the submodule to the latest pinned commit:
 
 ```bash
 $ git pull
@@ -38,6 +38,19 @@ $ git submodule update
 ```
 
 Then run the apply script again.
+
+## Update (contributor)
+
+If you want to update the upstream ML4W dotfiles, follow the instructions:
+
+```bash
+cd upstream
+git fetch --tags
+git checkout <new-tag>
+cd ..
+git add upstream
+git commit -m "update upstream to <tag>"
+```
 
 ### Other scripts
 
@@ -49,17 +62,6 @@ Then run the apply script again.
 **Manual device switch**:
 ```bash
 ./scripts/set-device.sh desktop  # or laptop
-```
-
-## Update upstream
-
-```bash
-cd upstream
-git fetch --tags
-git checkout <new-tag>
-cd ..
-git add upstream
-git commit -m "update upstream to <tag>"
 ```
 
 ## Devices
