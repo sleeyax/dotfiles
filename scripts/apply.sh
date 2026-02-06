@@ -62,12 +62,17 @@ fi
 
 echo "Applying dotfiles for device: $DEVICE"
 
-# Build merged dotfiles in separate dir (keeps upstream clean)
-rm -rf "$STOW_DIR"
+# Build merged dotfiles in temp dir, then sync into .stow in-place
+# (avoids breaking symlinks in $HOME which causes screen flicker)
+STOW_NEW=$(mktemp -d)
+trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits early for whatever reason
+cp -r "$UPSTREAM/dotfiles" "$STOW_NEW/dotfiles"
+cp -r "$COMMON/." "$STOW_NEW/dotfiles/"
+cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
+
 mkdir -p "$STOW_DIR"
-cp -r "$UPSTREAM/dotfiles" "$STOW_DIR/dotfiles"
-cp -r "$COMMON/." "$STOW_DIR/dotfiles/"
-cp -r "$DEVICE_DIR/." "$STOW_DIR/dotfiles/"
+rsync -a --delete "$STOW_NEW/" "$STOW_DIR/"
+rm -rf "$STOW_NEW"
 
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
