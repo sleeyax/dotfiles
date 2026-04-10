@@ -100,6 +100,20 @@ cp -r "$UPSTREAM/dotfiles" "$STOW_NEW/dotfiles"
 cp -r "$COMMON/." "$STOW_NEW/dotfiles/"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
+# Drop matugen-generated files from the stow tree when $HOME already has a
+# diverged (non-symlink) copy. On fresh install we leave the seed defaults so
+# apps have colors before matugen first runs; on re-apply we strip to avoid
+# stow conflicts with files matugen rewrote in place.
+MATUGEN_CFG="$STOW_NEW/dotfiles/.config/matugen/config.toml"
+if [ -f "$MATUGEN_CFG" ]; then
+  while IFS= read -r rel; do
+    target="$HOME/$rel"
+    if [ -e "$target" ] && [ ! -L "$target" ]; then
+      rm -f "$STOW_NEW/dotfiles/$rel"
+    fi
+  done < <(grep -oE "output_path = ['\"]~/[^'\"]+['\"]" "$MATUGEN_CFG" | sed -E "s/.*~\/([^'\"]+).*/\1/")
+fi
+
 mkdir -p "$STOW_DIR"
 rsync -a --delete "$STOW_NEW/" "$STOW_DIR/"
 rm -rf "$STOW_NEW"
