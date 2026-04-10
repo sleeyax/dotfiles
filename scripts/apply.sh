@@ -42,14 +42,19 @@ install_dependencies() {
     sudo pacman -S --noconfirm stow
   fi
 
-  # Preflight: AUR helper install, swww removal
-  bash "$SETUP_DIR/preflight-arch.sh"
+  # Preflight: AUR helper install + swww removal. 
+  # Skippable via '--skip-preflight' because it unconditionally removes swww and breaks if swww is already gone.
+  if [ "$SKIP_PREFLIGHT" != "1" ]; then
+    bash "$SETUP_DIR/preflight-arch.sh"
+  fi
 
-  # Pick AUR helper (preflight guarantees one exists)
   if command -v yay &>/dev/null; then
     AUR_HELPER=yay
-  else
+  elif command -v paru &>/dev/null; then
     AUR_HELPER=paru
+  else
+    echo "Error: no AUR helper (yay/paru) found. Install one, then rerun."
+    exit 1
   fi
 
   # Install package dependencies
@@ -64,10 +69,20 @@ install_dependencies() {
   touch "$HOME/.ml4w/.installed"
 }
 
-# Force reinstall if requested
-if [ "$1" == "--force" ]; then
+# Parse flags
+FORCE=0
+SKIP_PREFLIGHT=0
+for arg in "$@"; do
+  case "$arg" in
+    --force) FORCE=1 ;;
+    --skip-preflight) SKIP_PREFLIGHT=1 ;;
+    *) echo "Unknown flag: $arg"; exit 1 ;;
+  esac
+done
+export SKIP_PREFLIGHT
+
+if [ "$FORCE" == "1" ]; then
   install_dependencies
-# Check if base install needed
 elif [ ! -f "$HOME/.ml4w/.installed" ]; then
   install_dependencies
 else
