@@ -33,6 +33,8 @@ install_dependencies() {
   echo "Installing ML4W dependencies from pinned upstream..."
 
   SETUP_DIR="$UPSTREAM/setup"
+  # post-arch.sh sources helper scripts via $repo_path
+  export repo_path="$UPSTREAM"
 
   # Install stow if needed
   if ! command -v stow &>/dev/null; then
@@ -40,8 +42,22 @@ install_dependencies() {
     sudo pacman -S --noconfirm stow
   fi
 
-  # Run package setup
-  "$SETUP_DIR/setup-arch.sh"
+  # Preflight: AUR helper install, swww removal
+  bash "$SETUP_DIR/preflight-arch.sh"
+
+  # Pick AUR helper (preflight guarantees one exists)
+  if command -v yay &>/dev/null; then
+    AUR_HELPER=yay
+  else
+    AUR_HELPER=paru
+  fi
+
+  # Install package dependencies
+  mapfile -t PKGS < <(grep -vE '^\s*(#|$)' "$SETUP_DIR/dependencies/packages" "$SETUP_DIR/dependencies/packages-arch" | awk -F: '{print $NF}')
+  "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
+
+  # Post: oh-my-posh, ML4W settings app, cursors/fonts/icons, xdg dirs
+  bash "$SETUP_DIR/post-arch.sh"
 
   # Mark as installed
   mkdir -p "$HOME/.ml4w"
