@@ -100,17 +100,24 @@ cp -r "$UPSTREAM/dotfiles" "$STOW_NEW/dotfiles"
 cp -r "$COMMON/." "$STOW_NEW/dotfiles/"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
-# Drop matugen-generated files from the stow tree when $HOME already has a
-# diverged (non-symlink) copy. On fresh install we leave the seed defaults so
-# apps have colors before matugen first runs; on re-apply we strip to avoid
-# stow conflicts with files matugen rewrote in place.
+# Handle matugen-generated files so re-apply doesn't clobber live colors.
+# Upstream ships seed copies in the stow tree; two cases to untangle:
+#   1. $HOME path resolves into the stow tree (stow symlink, possibly
+#      folded at a parent dir): matugen writes through the link, so copy
+#      the live content over the upstream seed in STOW_NEW.
+#   2. $HOME has a real file that isn't stow-managed: drop the seed from
+#      STOW_NEW entirely so `stow --restow` doesn't conflict with it.
 MATUGEN_CFG="$STOW_NEW/dotfiles/.config/matugen/config.toml"
 if [ -f "$MATUGEN_CFG" ]; then
+  STOW_REAL=$(realpath "$STOW_DIR" 2>/dev/null || echo "$STOW_DIR")
   while IFS= read -r rel; do
-    target="$HOME/$rel"
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
-      rm -f "$STOW_NEW/dotfiles/$rel"
-    fi
+    [ -f "$HOME/$rel" ] || continue
+    [ -d "$STOW_NEW/dotfiles/$(dirname "$rel")" ] || continue
+    resolved=$(realpath "$HOME/$rel")
+    case "$resolved" in
+      "$STOW_REAL"/*) cp "$resolved" "$STOW_NEW/dotfiles/$rel" ;;
+      *)              rm -f "$STOW_NEW/dotfiles/$rel" ;;
+    esac
   done < <(grep -oE "output_path = ['\"]~/[^'\"]+['\"]" "$MATUGEN_CFG" | sed -E "s/.*~\/([^'\"]+).*/\1/")
 fi
 
