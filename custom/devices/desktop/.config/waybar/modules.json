@@ -68,7 +68,7 @@
 
   // Now Playing
   "custom/nowplaying": {
-    "exec": "~/.config/ml4w/scripts/now-playing.sh",
+    "exec": "~/.config/ml4w/scripts/ml4w-now-playing",
     "format": "  {text}",
     "return-type": "json",
     "interval": 1,
@@ -83,9 +83,9 @@
   // Cliphist
   "custom/cliphist": {
     "format": "",
-    "on-click": "sleep 0.1 && ~/.config/ml4w/scripts/cliphist.sh",
-    "on-click-right": "sleep 0.1 && ~/.config/ml4w/scripts/cliphist.sh d",
-    "on-click-middle": "sleep 0.1 && ~/.config/ml4w/scripts/cliphist.sh w",
+    "on-click": "sleep 0.1 && ~/.config/ml4w/scripts/ml4w-cliphist",
+    "on-click-right": "sleep 0.1 && ~/.config/ml4w/scripts/ml4w-cliphist d",
+    "on-click-middle": "sleep 0.1 && ~/.config/ml4w/scripts/ml4w-cliphist w",
     "tooltip-format": "Left: Open clipboard Manager\nRight: Delete an entry\nMiddle: Clear list",
     "on-scroll-up": "true",
     "on-scroll-down": "true"
@@ -95,11 +95,12 @@
     "format": "  {}",
     "escape": true,
     "return-type": "json",
-    "exec": "~/.config/ml4w/scripts/updates.sh",
+    "exec": "~/.config/ml4w/scripts/ml4w-check-system-updates",
     "interval": 1800,
     "signal": 1,
     "hide-empty-text": true,
-    "on-click": "~/.config/ml4w/settings/installupdates.sh"
+    "on-click": "~/.config/ml4w/settings/installupdates.sh",
+    "on-click-right": "~/.config/ml4w/settings/software.sh"
   },
   // Wallpaper
   "custom/wallpaper": {
@@ -151,9 +152,8 @@
   // Power Menu
   "custom/exit": {
     "format": "",
-    "on-click": "~/.config/ml4w/scripts/wlogout.sh",
-    "on-click-right": "hyprlock",
-    "tooltip-format": "Left: Power menu\nRight: Lock screen"
+    "on-click": "qs ipc call power toggle",
+    "tooltip-format": "Open Power Menu"
   },
   // SwayNC
   "custom/notification": {
@@ -176,12 +176,11 @@
     "on-click-right": "swaync-client -d -sw",
     "escape": true
   },
-  // Hyprshade
+  // Hyprsunset
   "custom/hyprshade": {
     "format": "",
     "tooltip-format": "Toggle Screen Shader",
-    "on-click": "sleep 0.5; ~/.config/hypr/scripts/hyprshade.sh",
-    "on-click-right": "sleep 0.5; ~/.config/hypr/scripts/hyprshade.sh rofi",
+    "on-click": "sleep 0.5; ~/.config/ml4w/scripts/ml4w-toggle-hyprsunset",
     "on-scroll-up": "true",
     "on-scroll-down": "true"
   },
@@ -217,7 +216,7 @@
   // Clock
   "clock": {
     "format": "{:%H:%M %a}",
-    "on-click": "flatpak run com.ml4w.calendar",
+    "on-click": "qs ipc call calendar toggle",
     "timezone": "",
     "tooltip": false
   },
