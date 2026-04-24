@@ -19,15 +19,17 @@ Personal Hyprland dotfiles based on [ML4W](https://github.com/mylinuxforwork/dot
 ```bash
 git clone --recurse-submodules https://github.com/sleeyax/dotfiles.git ~/dotfiles
 cd ~/dotfiles
+./scripts/setup-plugins.sh   # install Hyprland plugins (one-time, per device)
 ./scripts/apply.sh
 ```
 
 This will:
 
-1. Install ML4W from pinned upstream
-2. Apply device-specific custom configs
+1. Install Hyprland plugins via `hyprpm` (hyprscrolling)
+2. Install ML4W from pinned upstream
+3. Apply device-specific custom configs
 
-Use `./scripts/apply.sh --force` to reinstall base.
+Use `./scripts/apply.sh --force` to reinstall base. Re-run `setup-plugins.sh` after each Hyprland upgrade.
 
 ## Update (consumer)
 
