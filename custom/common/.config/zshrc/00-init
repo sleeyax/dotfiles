@@ -7,10 +7,9 @@
 # -----------------------------------------------------
 export EDITOR="code --wait"
 export ZSH="$HOME/.oh-my-zsh"
-export PATH="$PATH:~/.cargo/bin"
-export PATH="$PATH:~/.local/bin"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
+export PATH="$PATH:$HOME/.cargo/bin"
 export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
 
 # -----------------------------------------------------
