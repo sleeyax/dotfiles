@@ -14,14 +14,19 @@
       "files": "*"
     },
     {
-      "name": "Keyboard Configuration",
-      "folder": ".config/hypr/conf",
-      "files": "keyboard.conf"
+      "name": "Input Configuration",
+      "folder": ".config/hypr",
+      "files": "input.lua"
     },
     {
       "name": "Monitor Configuration",
+      "folder": ".config/hypr",
+      "files": "monitors.lua"
+    },
+    {
+      "name": "Monitor Variant",
       "folder": ".config/hypr/conf",
-      "files": "monitor.conf"
+      "files": "monitor.lua"
     },
     {
       "name": "Waypaper Configuration",
@@ -30,22 +35,22 @@
     },
     {
       "name": "Custom Hyprland Configuration",
-      "folder": ".config/hypr/conf",
-      "files": "custom.conf"
+      "folder": ".config/hypr",
+      "files": "custom.lua"
     }
   ],
   "settings": [
     {
       "name": "Keyboard Layout",
-      "file": ".config/hypr/conf/keyboard.conf",
+      "file": ".config/hypr/input.lua",
       "value": "us",
-      "search": "kb_layout = VALUE"
+      "search": "kb_layout = \"VALUE\""
     },
     {
       "name": "Keyboard Variant",
-      "file": ".config/hypr/conf/keyboard.conf",
+      "file": ".config/hypr/input.lua",
       "value": "",
-      "search": "kb_variant = VALUE"
+      "search": "kb_variant = \"VALUE\""
     }
   ]
 }

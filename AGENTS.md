@@ -37,13 +37,24 @@ The `apply.sh` script copies upstream, overlays common, then overlays device con
 
 ### Hyprland Config Structure
 
-Custom Hyprland configs live in `custom/{common,devices/*}/.config/hypr/conf/` and override the upstream equivalents:
-- `device.conf` — monitor, input device settings (per-device)
-- `keyboard.conf` — keyboard layout (laptop only: AZERTY + Planck external keyboard)
-- `layout.conf` — workspace gestures (laptop), game workspace rules (desktop)
-- `custom.conf` — autostart apps, window rules, visual tweaks (common)
-- `keybinding.conf` — hotkey overrides (common)
-- `animation.conf`, `cursor.conf` — visual settings (common)
+Hyprland's config is Lua (`hl.*` API); the `.conf`/hyprlang format was dropped in Hyprland 0.57. The other `hypr*` tools still use hyprlang, so `hypridle.conf`, `hyprlock.conf`, `hyprpaper.conf` and `hyprsunset.conf` stay `.conf`.
+
+Upstream's entrypoint `hyprland.lua` is a list of `require`s. The `require` root is `~/.config/hypr/`, and `functions.lua` defines a global `load_variant(file, dir)` that the `conf/<name>.lua` selector files use to pull a variant out of `conf/<name>s/`.
+
+Custom configs live in `custom/{common,devices/*}/.config/hypr/`:
+- `monitors.lua` — monitor setup (per-device)
+- `input.lua` — keyboard layout, pointer settings; laptop adds `hl.device()` blocks for AZERTY built-in vs QWERTY Planck (per-device)
+- `conf/layout.lua` — picks the `default`/`laptop` layout variant, enables workspace back-and-forth (per-device; the `laptop` variant also supplies the 3-finger swipe)
+- `custom.lua` — autostart, window rules, visual tweaks; loaded last, so it wins over everything (common)
+- `games.lua` — Steam game rules, `require`d from `custom.lua` (common)
+- `conf/keybinding.lua` — loads upstream's variant, then unbinds/rebinds (common)
+- `conf/animation.lua` — selects the `disabled` animation variant (common)
+
+Override points to prefer: `custom.lua` is **not shipped** upstream (`hyprland.lua` opt-in loads it if present), so it can never be clobbered by a submodule bump. `input.lua` and `monitors.lua` are the files upstream itself marks user-owned.
+
+Colors come from matugen, which writes both `colors.conf` and `colors.lua`. `colors.lua` defines bare globals loaded before `custom.lua`, so a palette entry is referenced as plain `inverse_primary`, not `$inverse_primary`.
+
+The `hl` API is typed: `/usr/share/hypr/stubs/hl.meta.lua` (LuaLS stubs) and `/usr/share/hypr/hyprland.lua` (annotated example) are the authoritative references. `luac -p <file>` syntax-checks; `Hyprland --verify-config` validates the whole tree; `hyprctl configerrors` reports runtime errors.
 
 ### Shell Configuration
 
