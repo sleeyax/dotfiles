@@ -10,7 +10,13 @@ hl.bind("SUPER + P", hl.dsp.workspace.toggle_special("magic"),
 hl.bind("SUPER + SHIFT + P", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle-scratchpad-window"),
     { description = "Toggle window in/out of special workspace magic" })
 
-hl.bind("SUPER + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot gui"),
-    { description = "Take a screenshot" })
-hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot gui"),
-    { description = "Take a screenshot" })
+-- flameshot everywhere; upstream's screenshot.sh needs grimblast, which isn't installed
+local flameshot = "QT_SCALE_FACTOR=0.8335 flameshot gui"
+
+hl.unbind("SUPER + PRINT")
+hl.unbind("SUPER + ALT + S")
+
+hl.bind("SUPER + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
+hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
+hl.bind("SUPER + PRINT", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
+hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })

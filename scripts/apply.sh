@@ -128,6 +128,11 @@ rm -rf "$STOW_NEW"
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
 
+# ml4w-autostart is launched with its stdout redirected into this directory.
+# The redirect fails if it doesn't exist, which silently skips the whole autostart
+# (quickshell, nm-applet, wallpaper theming).
+mkdir -p "$HOME/.mydotfiles"
+
 echo "Done! Configs applied for device: $DEVICE"
 
 # Reload hyprland if running
