@@ -14,7 +14,7 @@ hl.bind("SUPER + SHIFT + P", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle
 hl.unbind("SUPER + PRINT")
 hl.unbind("SUPER + ALT + S")
 
-hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("flameshot gui"),
+hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot gui"),
     { description = "Take a screenshot" })
 
 -- upstream binds this to a config reload, which SUPER + CTRL + R already does
