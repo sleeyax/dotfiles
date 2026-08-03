@@ -20,3 +20,8 @@ hl.bind("SUPER + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screens
 hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
 hl.bind("SUPER + PRINT", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
 hl.bind("SUPER + ALT + S", hl.dsp.exec_cmd(flameshot), { description = "Take a screenshot" })
+
+-- deps: handy-bin (AUR), wtype
+-- wtype is what types the transcript into Wayland windows; without it handy falls back to enigo's X11 backend and the keystrokes only ever reach XWayland clients
+hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
+    { description = "Toggle voice transcription" })
