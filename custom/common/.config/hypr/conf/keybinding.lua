@@ -17,6 +17,12 @@ hl.unbind("SUPER + ALT + S")
 hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("flameshot gui"),
     { description = "Take a screenshot" })
 
+-- upstream binds this to a config reload, which SUPER + CTRL + R already does
+hl.unbind("SUPER + SHIFT + R")
+
+hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("kooha"),
+    { description = "Record the screen" })
+
 -- deps: handy-bin (AUR), wtype
 -- wtype is what types the transcript into Wayland windows; without it handy falls back to enigo's X11 backend and the keystrokes only ever reach XWayland clients
 hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
