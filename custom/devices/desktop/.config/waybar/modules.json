@@ -11,6 +11,7 @@
     "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({workspace = 'r-1'})\"",
     "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace = 'r+1'})\"",
     "on-click": "activate",
+    "tooltip": false,
     "active-only": false,
     "all-outputs": true,
     "format": "{}",
