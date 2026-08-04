@@ -3,8 +3,6 @@
 hl.env("XCURSOR_THEME", "breeze_cursors")
 
 hl.on("hyprland.start", function()
-    hl.exec_cmd("hyprctl setcursor breeze_cursors 24")
-
     -- intentionally launches megasync twice so it goes to the tray
     -- see: https://github.com/meganz/MEGAsync/issues/161#issuecomment-797917923
     hl.exec_cmd("sleep 60; megasync")
