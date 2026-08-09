@@ -10,7 +10,7 @@ hl.bind("SUPER + P", hl.dsp.workspace.toggle_special("magic"),
 hl.bind("SUPER + SHIFT + P", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle-scratchpad-window"),
     { description = "Toggle window in/out of special workspace magic" })
 
--- upstream's screenshot.sh needs grimblast, which isn't installed
+-- screenshot.sh needs grimblast, which we deliberately don't install; flameshot takes its place
 hl.unbind("SUPER + PRINT")
 hl.unbind("SUPER + ALT + S")
 

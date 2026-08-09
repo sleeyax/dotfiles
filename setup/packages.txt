@@ -57,7 +57,6 @@ gnome-themes-extra
 qt6ct
 breeze
 bibata-cursor-theme-bin
-kora-icon-theme
 
 # --- Fonts ---
 otf-font-awesome
@@ -67,9 +66,9 @@ ttf-fira-sans
 ttf-material-icons
 
 # --- Screenshot, clipboard, OCR ---
+# grimblast is deliberately absent: conf/keybinding.lua unbinds the screenshot bindings that need it and uses flameshot instead.
 grim
 slurp
-grimblast-git
 wl-clipboard
 xclip
 cliphist
