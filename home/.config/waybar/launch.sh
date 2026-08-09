@@ -131,7 +131,9 @@ fi
 
 # Check if waybar-disabled file exists
 if [ ! -f $HOME/.config/ml4w/settings/waybar-disabled ]; then
-    HYPRLAND_SIGNATURE=$(hyprctl instances -j | jq -r '.[0].instance')
+    # Hyprland writes the instance lock `hyprctl instances` reads a moment after it fires the autostart commands, so the query comes back empty when waybar is started from there.
+    # An empty signature costs waybar its Hyprland IPC modules: workspaces, window title and keyboard layout.
+    HYPRLAND_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-$(hyprctl instances -j | jq -r '.[0].instance')}"
     HYPRLAND_INSTANCE_SIGNATURE="$HYPRLAND_SIGNATURE" waybar -c ~/.config/waybar/themes${arrThemes[0]}/$config_file -s ~/.config/waybar/themes${arrThemes[1]}/$style_file &
     # env GTK_DEBUG=interactive waybar -c ~/.config/waybar/themes${arrThemes[0]}/$config_file -s ~/.config/waybar/themes${arrThemes[1]}/$style_file &
 else

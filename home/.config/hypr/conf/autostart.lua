@@ -20,7 +20,7 @@ hl.on("hyprland.start", function ()
     hl.exec_cmd("awww-daemon")
 
     -- Load cursor
-    hl.exec_cmd("hyprctl setcursor Bibata-Modern-Ice 24")
+    hl.exec_cmd("hyprctl setcursor breeze_cursors 24")
 
     -- Start listeners
     hl.exec_cmd("~/.config/ml4w/listeners.sh --startall")

@@ -1,12 +1,11 @@
 #!/bin/bash
-# Apply dotfiles: base tree + common overrides + device-specific overrides
+# Apply dotfiles: base tree + device-specific overrides
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
 BASE="$DOTFILES_DIR/home"
-COMMON="$DOTFILES_DIR/custom/common"
 STOW_DIR="$DOTFILES_DIR/.stow"
 
 PACKAGES_FILE="$DOTFILES_DIR/setup/packages.txt"
@@ -29,7 +28,7 @@ else
   DEVICE=$("$SCRIPT_DIR/detect-device.sh")
 fi
 
-DEVICE_DIR="$DOTFILES_DIR/custom/devices/$DEVICE"
+DEVICE_DIR="$DOTFILES_DIR/devices/$DEVICE"
 
 if [ ! -d "$DEVICE_DIR" ]; then
   echo "Error: Device directory not found: $DEVICE_DIR"
@@ -116,7 +115,6 @@ echo "Applying dotfiles for device: $DEVICE"
 STOW_NEW=$(mktemp -d)
 trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits early for whatever reason
 cp -r "$BASE" "$STOW_NEW/dotfiles"
-cp -r "$COMMON/." "$STOW_NEW/dotfiles/"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
 # Handle matugen-generated files so re-apply doesn't clobber live colors.

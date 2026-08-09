@@ -8,9 +8,10 @@
 {
   // Workspaces
   "hyprland/workspaces": {
-    "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace = 'e+1'})\"",
-    "on-scroll-up":   "hyprctl dispatch \"hl.dsp.focus({workspace = 'e-1'})\"",
+    "on-scroll-up": "hyprctl dispatch \"hl.dsp.focus({workspace = 'r-1'})\"",
+    "on-scroll-down": "hyprctl dispatch \"hl.dsp.focus({workspace = 'r+1'})\"",
     "on-click": "activate",
+    "tooltip": false,
     "active-only": false,
     "all-outputs": true,
     "format": "{}",
@@ -20,7 +21,7 @@
       "default": ""
     },
     "persistent-workspaces": {
-      "*": 5
+      "*": 10
     }
   },
   // Taskbar
@@ -53,13 +54,6 @@
       "(.*) Microsoft Teams": "$1"
     },
     "separate-outputs": true
-  },
-  // ML4W Welcome App
-  "custom/ml4w-welcome": {
-    "on-click": "qs ipc call sidebar toggle",
-    "on-click-right": "qs ipc call welcome toggle",
-    "format": " ",
-    "tooltip-format": "Left: Open ML4W Sidebar\nRight: Open ML4W Welcome App"
   },
   // Empty
   "custom/empty": {
@@ -113,7 +107,7 @@
   "custom/wallpaper": {
     "format": "",
     "on-click": "bash -c waypaper &",
-    "on-click-right": "~/.config/hypr/scripts/wallpaper-effects.sh",
+    "on-click-right": "~/.config/ml4w/scripts/ml4w-wallpaper-effects",
     "tooltip-format": "Left: Select a wallpaper\nRight: Select wallpaper effect"
   },
   // Waybar Themes
@@ -252,7 +246,7 @@
   "disk": {
     "interval": 30,
     "format": "D {percentage_used}% ",
-    "path": "/",
+    "paths": ["/"],
     "on-click": "~/.config/ml4w/settings/system-monitor.sh",
     "on-scroll-up": "true",
     "on-scroll-down": "true"

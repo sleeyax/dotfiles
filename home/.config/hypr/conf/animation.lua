@@ -1,2 +1,2 @@
-local name = "default.lua"
-load_variant(name,"animations")
+local name = "disabled.lua"
+load_variant(name, "animations")
