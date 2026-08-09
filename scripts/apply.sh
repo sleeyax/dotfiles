@@ -9,6 +9,13 @@ UPSTREAM="$DOTFILES_DIR/upstream"
 COMMON="$DOTFILES_DIR/custom/common"
 STOW_DIR="$DOTFILES_DIR/.stow"
 
+PACKAGES_FILE="$DOTFILES_DIR/setup/packages.txt"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/sleeyax-dotfiles"
+PACKAGES_STAMP="$STATE_DIR/packages.sha256"
+
+# shellcheck source=../ml4w-base.env
+source "$DOTFILES_DIR/ml4w-base.env"
+
 # Check for pacman (we only support Arch-based distro for now)
 if ! command -v pacman &>/dev/null; then
   echo "Error: pacman not found"
@@ -29,64 +36,76 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
+# Installs the ML4W settings app the way its Makefile does, without running its setup.sh (which curl|bashes and pulls an unpinned HEAD).
+install_settings_app() {
+  local tmp lib_dir colors
+  lib_dir="$HOME/.local/share/ml4w-dotfiles-settings"
+  tmp=$(mktemp -d)
+
+  git init -q "$tmp"
+  git -C "$tmp" remote add origin "$ML4W_SETTINGS_REPO"
+  git -C "$tmp" fetch -q --depth 1 origin "$ML4W_SETTINGS_COMMIT"
+  git -C "$tmp" checkout -q FETCH_HEAD
+
+  mkdir -p "$HOME/.local/bin" "$lib_dir"
+  install -m 755 "$tmp/bin/ml4w-dotfiles-settings" "$HOME/.local/bin/"
+
+  # colors/colors.json ships as a seed but is a live matugen output_path; overwriting it would reset the palette until the next wallpaper change.
+  colors="$lib_dir/colors/colors.json"
+  if [ -f "$colors" ]; then
+    rm -f "$tmp/lib/colors/colors.json"
+  fi
+  cp -r "$tmp"/lib/. "$lib_dir/"
+
+  rm -rf "$tmp"
+}
+
 install_dependencies() {
-  echo "Installing ML4W dependencies from pinned upstream..."
-
-  SETUP_DIR="$UPSTREAM/setup"
-  # post-arch.sh sources helper scripts via $repo_path
-  export repo_path="$UPSTREAM"
-
-  # Install stow if needed
-  if ! command -v stow &>/dev/null; then
-    echo "Installing stow..."
-    sudo pacman -S --noconfirm stow
-  fi
-
-  # Preflight: AUR helper install + swww removal. 
-  # Skippable via '--skip-preflight' because it unconditionally removes swww and breaks if swww is already gone.
-  if [ "$SKIP_PREFLIGHT" != "1" ]; then
-    bash "$SETUP_DIR/preflight-arch.sh"
-  fi
-
   if command -v yay &>/dev/null; then
     AUR_HELPER=yay
   elif command -v paru &>/dev/null; then
     AUR_HELPER=paru
   else
-    echo "Error: no AUR helper (yay/paru) found. Install one, then rerun."
+    echo "Error: no AUR helper found. Install yay or paru first:"
+    echo "  sudo pacman -S --needed base-devel git"
+    echo "  git clone https://aur.archlinux.org/yay-bin.git && (cd yay-bin && makepkg -si)"
     exit 1
   fi
 
-  # Install package dependencies
-  mapfile -t PKGS < <(grep -vE '^\s*(#|$)' "$SETUP_DIR/dependencies/packages" "$SETUP_DIR/dependencies/packages-arch" | awk -F: '{print $NF}')
+  # awww declares Provides/Replaces on swww, so pacman does the swap itself and --noconfirm accepts it.
+  # A different provider means the swap isn't the expected one.
+  swww_provider=$(pacman -Qq swww 2>/dev/null || true)
+  if [ -n "$swww_provider" ] && [ "$swww_provider" != "awww" ]; then
+    echo "Notice: 'swww' resolves to '$swww_provider'; installing awww will replace it."
+  fi
+
+  echo "Installing packages with $AUR_HELPER..."
+  mapfile -t PKGS < <(sed 's/#.*//' "$PACKAGES_FILE" | grep -vE '^\s*$' | tr -d '[:blank:]')
   "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
 
-  # Post: oh-my-posh, ML4W settings app, cursors/fonts/icons, xdg dirs
-  bash "$SETUP_DIR/post-arch.sh"
+  install_settings_app
 
-  # Mark as installed
-  mkdir -p "$HOME/.ml4w"
-  touch "$HOME/.ml4w/.installed"
+  xdg-user-dirs-update
+
+  mkdir -p "$STATE_DIR"
+  sha256sum "$PACKAGES_FILE" | cut -d' ' -f1 > "$PACKAGES_STAMP"
 }
 
 # Parse flags
 FORCE=0
-SKIP_PREFLIGHT=0
 for arg in "$@"; do
   case "$arg" in
     --force) FORCE=1 ;;
-    --skip-preflight) SKIP_PREFLIGHT=1 ;;
     *) echo "Unknown flag: $arg"; exit 1 ;;
   esac
 done
-export SKIP_PREFLIGHT
 
-if [ "$FORCE" == "1" ]; then
-  install_dependencies
-elif [ ! -f "$HOME/.ml4w/.installed" ]; then
+# Hashing the package list rather than setting a boolean means adding a package is enough to trigger an install on the next apply.
+WANT_HASH=$(sha256sum "$PACKAGES_FILE" | cut -d' ' -f1)
+if [ "$FORCE" == "1" ] || [ ! -f "$PACKAGES_STAMP" ] || [ "$(cat "$PACKAGES_STAMP")" != "$WANT_HASH" ]; then
   install_dependencies
 else
-  echo "Dependencies should already be installed, skipping..."
+  echo "Packages unchanged since last install, skipping..."
   echo "(Run with --force to reinstall)"
 fi
 

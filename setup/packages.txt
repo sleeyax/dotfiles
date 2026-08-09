@@ -1,0 +1,119 @@
+# Packages installed by scripts/apply.sh, via yay or paru.
+# One package per line; '#' starts a comment.
+# Grouped by subsystem so dropping a subsystem is deleting a labelled block.
+
+# --- Base tooling ---
+git
+curl
+wget
+rsync
+stow
+tar
+unzip
+jq
+inotify-tools
+figlet
+pacman-contrib
+libnotify
+libsecret
+
+# --- Hyprland session ---
+hyprland
+uwsm
+hypridle
+hyprlock
+hyprpaper
+hyprpicker
+hyprsunset
+hyprsysteminfo
+hyprshutdown
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+xdg-user-dirs
+polkit-gnome
+nwg-displays
+
+# --- Bar, launcher, notifications, dock ---
+waybar
+rofi
+swaync
+nwg-dock-hyprland
+quickshell
+
+# Qt runtime that quickshell pulls in
+qt5-wayland
+qt6-wayland
+qt6-svg
+qt6-virtualkeyboard
+qt6-multimedia-ffmpeg
+
+# --- Wallpaper and theming ---
+# awww Provides/Replaces swww, so pacman swaps it out on its own.
+awww
+matugen
+python-pywalfox
+nwg-look
+gnome-themes-extra
+qt6ct
+breeze
+bibata-cursor-theme-bin
+kora-icon-theme
+
+# --- Fonts ---
+otf-font-awesome
+ttf-firacode-nerd
+ttf-jetbrains-mono-nerd
+ttf-fira-sans
+ttf-material-icons
+
+# --- Screenshot, clipboard, OCR ---
+grim
+slurp
+grimblast-git
+wl-clipboard
+xclip
+cliphist
+imagemagick
+tesseract
+tesseract-data-eng
+
+# --- Audio, network, bluetooth, power ---
+pavucontrol
+network-manager-applet
+nm-connection-editor
+blueman
+power-profiles-daemon
+brightnessctl
+
+# --- Storage and file management ---
+udisks2
+udiskie
+gvfs
+gvfs-mtp
+nautilus
+tumbler
+loupe
+
+# --- Applications ---
+kitty
+firefox
+vlc
+gnome-text-editor
+vim
+neovim
+flatpak
+
+# --- Shell and prompt ---
+zsh
+oh-my-posh-bin
+fzf
+eza
+fastfetch
+htop
+btop
+
+# --- Python and build ---
+python-pip
+python-gobject
+python-screeninfo
+cargo
