@@ -1,56 +1,67 @@
 # Sleeyax's Dotfiles
 
-Personal Hyprland dotfiles based on [ML4W](https://github.com/mylinuxforwork/dotfiles).
+Personal Hyprland dotfiles.
+
+Based on [ML4W](https://github.com/mylinuxforwork/dotfiles) **2.14.1** (`f974938`, 2026-07-09), vendored and maintained independently since.
+ML4W's own `version.json` reports 2.12.3 at that tag; the tag is authoritative.
 
 ## Structure
 
 ```
-├── upstream/           # ML4W dotfiles (git submodule, don't edit)
-├── custom/
-│   ├── common/         # Shared configs (all devices)
-│   └── devices/
-│       ├── desktop/    # falcon-specific (QWERTY, 4K monitor)
-│       └── laptop/     # panda-specific (AZERTY, gestures)
-└── scripts/            # Apply/switch scripts
+├── home/               # The base tree. Maps 1:1 to $HOME
+├── devices/
+│   ├── desktop/        # falcon-specific (QWERTY, 4K monitor)
+│   └── laptop/         # panda-specific (AZERTY, gestures)
+├── setup/
+│   └── packages.txt    # Packages installed by apply.sh
+└── scripts/            # Apply/switch/upstream scripts
 ```
+
+`home/` is deployed as-is, then `devices/$DEVICE/` is overlaid on top of it, so a device file always wins over the base file at the same path.
 
 ## Install
 
 ```bash
-git clone --recurse-submodules https://github.com/sleeyax/dotfiles.git ~/dotfiles
+git clone https://github.com/sleeyax/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./scripts/apply.sh
 ```
 
 This will:
 
-1. Install ML4W from pinned upstream
-2. Apply device-specific custom configs
+1. Install everything in [setup/packages.txt](setup/packages.txt)
+2. Merge the base tree with your device's configs and deploy them with stow
 
-Use `./scripts/apply.sh --force` to reinstall base.
+Packages are installed when the list changes, so adding an entry is enough to get it installed on the next apply.
+Use `./scripts/apply.sh --force` to reinstall regardless.
 
-## Update (consumer)
+## Upstream (ML4W)
 
-If you are using the dotfiles from this repository, pull new changes and update the submodule to the latest pinned commit:
+The tree under `home/` came from ML4W and is now ours to edit; there is no submodule and no merge to keep up with.
+ML4W is still available as a git remote, so individual features can be pulled from newer releases on demand.
 
-```bash
-$ git pull
-$ git submodule update
-```
-
-Then run the apply script again.
-
-## Update (contributor)
-
-If you want to update the upstream ML4W dotfiles, use the update script:
+[ml4w-base.env](ml4w-base.env) records which upstream commit `home/` is based on.
+[scripts/ml4w.sh](scripts/ml4w.sh) queries that upstream and ports changes out of it:
 
 ```bash
-./scripts/update.sh <tag>
+./scripts/ml4w.sh sync                     # fetch ML4W (creates the remote on first run)
+./scripts/ml4w.sh tags                     # list upstream releases
+./scripts/ml4w.sh diff base 2.15 .config/waybar  # what changed upstream
+./scripts/ml4w.sh status                   # what we changed, base vs home/
+./scripts/ml4w.sh take 2.15 <path>         # overwrite home/<path> with upstream's
+./scripts/ml4w.sh port 2.15 <path>         # 3-way merge upstream's change into ours
 ```
 
-Example: `./scripts/update.sh 2.10.0`
+Upstream's tags are fetched into `refs/ml4w-tags/*` rather than `refs/tags/*`, so they never show up in `git tag` or get pushed.
 
-### Other scripts
+### Ported from later versions
+
+Nothing yet — `home/` is still 2.14.1 throughout.
+
+| Date | ML4W version | Paths | What and why |
+| ---- | ------------ | ----- | ------------ |
+
+## Other scripts
 
 **Auto-detect device** (by hostname):
 
@@ -85,7 +96,7 @@ Two things to know:
 - The install is driven over Chromium's DevTools pipe, using the experimental `PWA` domain. If a future Chromium drops it, install by hand (⋮ → *Cast, save, and share* → *Install page as app…*, from a browser started with `chromium --user-data-dir=~/.config/chromium-<slug>`) and then run `./scripts/install-webapp.py fix-class <slug>`.
 - Chromium writes `StartupWMClass=crx_<id>`, which no window ever reports: an app window's Wayland app id is the entry's own basename, `chrome-<id>-Default`. The script corrects it, so taskbars and Hyprland rules match. Chromium rewrites the entry when an app updates, undoing the fix; `fix-class <slug>` puts it back. Use `hyprctl clients` to read the class for a window rule.
 
-Note that [chromium-flags.conf](custom/common/.config/chromium-flags.conf) applies to every Chromium instance, web apps included — Arch's launcher reads it regardless of `--user-data-dir`.
+Note that [chromium-flags.conf](home/.config/chromium-flags.conf) applies to every Chromium instance, web apps included — Arch's launcher reads it regardless of `--user-data-dir`.
 
 ## Devices
 
