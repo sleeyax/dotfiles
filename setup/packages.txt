@@ -34,7 +34,8 @@ polkit-gnome
 nwg-displays
 
 # --- Bar, launcher, notifications, dock ---
-waybar
+# waybar-git, not waybar: it Provides waybar but also Conflicts with it, so listing the repo package makes the transaction unresolvable.
+waybar-git
 rofi
 swaync
 nwg-dock-hyprland
