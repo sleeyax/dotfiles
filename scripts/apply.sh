@@ -1,11 +1,11 @@
 #!/bin/bash
-# Apply dotfiles: upstream base + common overrides + device-specific overrides
+# Apply dotfiles: base tree + common overrides + device-specific overrides
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
-UPSTREAM="$DOTFILES_DIR/upstream"
+BASE="$DOTFILES_DIR/home"
 COMMON="$DOTFILES_DIR/custom/common"
 STOW_DIR="$DOTFILES_DIR/.stow"
 
@@ -115,7 +115,7 @@ echo "Applying dotfiles for device: $DEVICE"
 # (avoids breaking symlinks in $HOME which causes screen flicker)
 STOW_NEW=$(mktemp -d)
 trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits early for whatever reason
-cp -r "$UPSTREAM/dotfiles" "$STOW_NEW/dotfiles"
+cp -r "$BASE" "$STOW_NEW/dotfiles"
 cp -r "$COMMON/." "$STOW_NEW/dotfiles/"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
