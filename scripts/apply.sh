@@ -128,6 +128,10 @@ rm -rf "$STOW_NEW"
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
 
+# ~/.mydotfiles is the ML4W installer's project store, which this repo never creates because it deploys with stow instead.
+# conf/autostart.lua still redirects ml4w-autostart's stdout into it, and a failed redirect silently skips the whole autostart (quickshell, nm-applet, wallpaper theming).
+mkdir -p "$HOME/.mydotfiles"
+
 echo "Done! Configs applied for device: $DEVICE"
 
 # Reload hyprland if running

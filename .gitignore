@@ -3,3 +3,6 @@ device
 
 # Merged stow package (built by apply.sh)
 .stow
+
+# Python bytecode cache
+__pycache__/

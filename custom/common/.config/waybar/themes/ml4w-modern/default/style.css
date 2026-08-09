@@ -11,3 +11,9 @@
 
 /* Import base style */
 @import '../style.css';
+
+/* The base theme sets a font on `*`, which matches the label inside the module directly and so beats the font-family inherited from #custom-notification.
+   Material Icons has no latin glyphs, so losing it renders the ligature name as the literal word "notifications". */
+#custom-notification label {
+    font-family: "Material Icons";
+}
