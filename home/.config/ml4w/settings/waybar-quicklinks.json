@@ -39,11 +39,6 @@ You can reload waybar with SUPER + SHIFT + B
         "on-click": "thunderbird",
         "tooltip-format": "Open Thunderbird"
     },
-    "custom/quicklink_calculator": {
-        "format": "",
-        "on-click": "~/.config/ml4w/settings/calculator.sh",
-        "tooltip-format": "Open calculator"
-    },
 /*
 Don't remove the quicklinkempty
 */

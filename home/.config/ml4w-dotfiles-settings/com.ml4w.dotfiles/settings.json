@@ -234,14 +234,6 @@
       "mode": "overwrite",
       "default": ""
     },{
-      "name": "Default Calculator",
-      "id": "default_calculator",
-      "instructions": "Enter the command to execute the calculator",
-      "file": "~/.config/ml4w/settings/calculator.sh",
-      "type": "textfield",
-      "mode": "overwrite",
-      "default": "flatpak run org.gnome.Calculator"
-    },{
       "name": "Default Screenshot Editor",
       "id": "default_screenshoteditor",
       "instructions": "Enter the command to execute the screenshot editor",
