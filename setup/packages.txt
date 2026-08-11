@@ -37,7 +37,6 @@ nwg-displays
 waybar-git
 rofi
 swaync
-nwg-dock-hyprland
 quickshell
 
 # Qt runtime that quickshell pulls in

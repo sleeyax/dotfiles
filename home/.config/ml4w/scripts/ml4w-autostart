@@ -55,7 +55,7 @@ sleep 0.5
 info "Quickshell ready"
 
 # Apply wallpaper theming on every start — qs is guaranteed ready for IPC calls.
-# Theming (matugen colors, quickshell reload, nwg-dock launch) must always run.
+# Theming (matugen colors, waybar and quickshell reload) must always run.
 # Only the awww image set is skipped when already cached, to avoid a flicker.
 if [[ -z $(find "$AWWW_CACHE_FOLDER" -mindepth 1 -maxdepth 1 -type f -print -quit 2>/dev/null) ]]; then
     info "Set wallpaper to cache file $(cat $CACHE_FILE)"
