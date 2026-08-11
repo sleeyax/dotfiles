@@ -257,14 +257,6 @@
       "type": "textfield",
       "mode": "overwrite",
       "default": "btop"
-    },{
-      "name": "Default AUR Helper",
-      "id": "default_aur",
-      "instructions": "Enter the command to execute the AUR helper",
-      "file": "~/.config/ml4w/settings/aur.sh",
-      "type": "textfield",
-      "mode": "overwrite",
-      "default": "yay"
     }]
   },{
     "group":"System Settings",
