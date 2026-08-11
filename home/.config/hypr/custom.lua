@@ -46,16 +46,6 @@ hl.window_rule({
     opaque = true,
 })
 
--- calendar top-right (overrides glass theme default of top-left)
-hl.window_rule({
-    name = "ml4w-calendar",
-    match = { class = "(com.ml4w.calendar)" },
-    float = true,
-    move = { "(monitor_w*1)-window_w-20", "76" },
-    pin = true,
-    size = { "400", "400" },
-})
-
 -- jetbrains IDE popup fix
 -- see: https://github.com/hyprwm/Hyprland/discussions/11981
 hl.window_rule({
