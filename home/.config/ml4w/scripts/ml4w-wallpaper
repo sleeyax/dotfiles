@@ -112,13 +112,13 @@ run_matugen() {
     local mode="light"
     [ "$theme_pref" -eq 1 ] && mode="dark"
 
-    local bin="matugen"
-    [ -f "$HOME/.cargo/bin/matugen" ] && bin="$HOME/.cargo/bin/matugen"
-    [ -f "$HOME/.local/bin/matugen" ] && bin="$HOME/.local/bin/matugen"
-
     info "Running matugen in $mode mode"
-    "$bin" image "$IMAGE_PATH" --source-color-index 0 -m "$mode"
-    info "Matugen updated"
+    if matugen image "$IMAGE_PATH" --source-color-index 0 -m "$mode"; then
+        info "Matugen updated"
+    else
+        error "matugen failed; every theme file still holds the previous palette"
+        return 1
+    fi
 }
 
 reload_waybar() {
