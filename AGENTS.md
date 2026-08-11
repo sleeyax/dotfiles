@@ -44,7 +44,7 @@ Whether to install is decided by hashing that file into `$XDG_STATE_HOME/sleeyax
 
 ### Hyprland Config Structure
 
-Hyprland's config is Lua (`hl.*` API); the `.conf`/hyprlang format was dropped in Hyprland 0.57. The other `hypr*` tools still use hyprlang, so `hypridle.conf`, `hyprlock.conf`, `hyprpaper.conf` and `hyprsunset.conf` stay `.conf`.
+Hyprland's config is Lua (`hl.*` API); the `.conf`/hyprlang format was dropped in Hyprland 0.57. The other `hypr*` tools still use hyprlang, so `hypridle.conf`, `hyprlock.conf` and `hyprsunset.conf` stay `.conf`.
 
 The entrypoint `hyprland.lua` is a list of `require`s. The `require` root is `~/.config/hypr/`, and `functions.lua` defines a global `load_variant(file, dir)` that the `conf/<name>.lua` selector files use to pull a variant out of `conf/<name>s/`.
 

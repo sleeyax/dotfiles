@@ -7,22 +7,14 @@
 #           |_|
 #
 
-# -----------------------------------------------------
-# Load Launcher
-# -----------------------------------------------------
-launcher=$(cat $HOME/.config/ml4w/settings/launcher)
-if [ "$launcher" == "walker" ]; then
-    $HOME/.config/walker/launch.sh -m clipboard -N -H
-else
-    case $1 in
-        d)
-            cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist delete
-        ;;
-        w)    
-            cliphist wipe
-        ;;
-        *)
-            cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist decode | wl-copy
-        ;;
-    esac
-fi
+case $1 in
+    d)
+        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist delete
+    ;;
+    w)
+        cliphist wipe
+    ;;
+    *)
+        cliphist list | rofi -dmenu -replace -config ~/.config/rofi/config-cliphist.rasi | cliphist decode | wl-copy
+    ;;
+esac
