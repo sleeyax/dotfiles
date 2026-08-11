@@ -305,15 +305,6 @@
         "match": "local name = \".*\"",
         "default": "default.lua",
         "filetypes": ".lua"
-    },{
-      "name": "Launcher",
-      "id": "system_launcher",
-      "instructions": "Please select the launcher.",
-      "file": "~/.config/ml4w/settings/launcher",
-      "type": "choose",
-      "mode": "overwrite",
-      "default": "rofi",
-      "options": ["rofi"]
     }]
   }
 ]
