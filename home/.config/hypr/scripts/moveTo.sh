@@ -1,9 +1,4 @@
 #!/usr/bin/env bash
-#                         __     
-#   __ _  ___ _  _____   / /____ 
-#  /  ' \/ _ \ |/ / -_) / __/ _ \
-# /_/_/_/\___/___/\__/  \__/\___/
-#                                
 
 # Function to log messages (useful for debugging)
 log_message() {
