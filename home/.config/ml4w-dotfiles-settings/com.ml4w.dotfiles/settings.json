@@ -100,61 +100,6 @@
       "mode": "overwrite",
       "default": "50x30"
     },{
-        "name": "Select Animation",
-        "id": "variant_animation",
-        "instructions": "Choose your preferred animation variant:",
-        "file": "~/.config/hypr/conf/animation.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/animations",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Decoration Variants",
-        "id": "variant_decoration",
-        "instructions": "Choose your preferred decoration variant:",
-        "file": "~/.config/hypr/conf/decoration.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/decorations",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Window Variants",
-        "id": "variant_window",
-        "instructions": "Choose your preferred window variant:",
-        "file": "~/.config/hypr/conf/window.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/windows",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Layout Variants",
-        "id": "variant_layout",
-        "instructions": "Choose your preferred layout variant:",
-        "file": "~/.config/hypr/conf/layout.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/layouts",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Workspace Variants",
-        "id": "variant_workspace",
-        "instructions": "Choose your preferred workspace variant:",
-        "file": "~/.config/hypr/conf/workspace.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/workspaces",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
       "name": "Kitty Cursor Trail",
       "id": "toggle_kittycursortrail",
       "instructions": "Do you want to enable the Kitty cursor trail?",
@@ -249,54 +194,6 @@
       "type": "textfield",
       "mode": "overwrite",
       "default": "btop"
-    }]
-  },{
-    "group":"System Settings",
-    "description":"Overview of core key system settings",
-    "settings":[{
-        "name": "Keybinding Variants",
-        "id": "variant_keybinding",
-        "instructions": "Choose your preferred keybinding variant:",
-        "file": "~/.config/hypr/conf/keybinding.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/keybindings",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Monitor Variants",
-        "id": "variant_monitor",
-        "instructions": "Choose your preferred monitor variant:",
-        "file": "~/.config/hypr/conf/monitor.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/monitors",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Environment Variants",
-        "id": "variant_environment",
-        "instructions": "Choose your preferred environmant variant:",
-        "file": "~/.config/hypr/conf/environment.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/environments",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
-    },{
-        "name": "Windowrule Variants",
-        "id": "variant_windowrule",
-        "instructions": "Choose your preferred windowrule variant:",
-        "file": "~/.config/hypr/conf/windowrule.lua",
-        "type": "files",
-        "folder": "~/.config/hypr/conf/windowrules",
-        "mode": "replace",
-        "match": "local name = \".*\"",
-        "default": "default.lua",
-        "filetypes": ".lua"
     }]
   }
 ]
