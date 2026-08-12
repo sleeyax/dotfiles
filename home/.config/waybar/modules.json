@@ -100,8 +100,7 @@
   "custom/wallpaper": {
     "format": "",
     "on-click": "bash -c waypaper &",
-    "on-click-right": "~/.config/ml4w/scripts/ml4w-wallpaper-effects",
-    "tooltip-format": "Left: Select a wallpaper\nRight: Select wallpaper effect"
+    "tooltip-format": "Select a wallpaper"
   },
   // Settings
   "custom/settings": {

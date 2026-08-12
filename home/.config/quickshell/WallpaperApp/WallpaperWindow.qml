@@ -401,14 +401,6 @@ PanelWindow {
                         }
                         
                         ML4WMenuItem { 
-                            text: "Wallpaper Effects"
-                            onClicked: {
-                                root.isOpen = false
-                                Quickshell.execDetached(["bash", "-c", Quickshell.env("HOME") + "/.config/ml4w/scripts/ml4w-wallpaper-effects"])
-                            } 
-                        }
-
-                        ML4WMenuItem { 
                             text: "Clear Wallpaper Cache"
                             onClicked: {
                                 root.isOpen = false

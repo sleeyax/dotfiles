@@ -4,7 +4,6 @@
 # Variables
 # ============================================================
 IMAGE_PATH=""
-EFFECT=""
 NOTIFICATIONS=false
 SKIP_WALLPAPER=false
 SKIP_THEMING=false
@@ -18,7 +17,6 @@ SQUARE_WALLPAPER="$CACHE_FOLDER/square_wallpaper.png"
 RASI_FILE="$CACHE_FOLDER/current_wallpaper.rasi"
 SETTINGS_BLUR="$HOME/.config/ml4w/settings/blur.sh"
 SETTINGS_WALLPAPER_FOLDER="$HOME/.config/ml4w/settings/wallpaper-folder"
-SETTINGS_WALLPAPER_EFFECT="$HOME/.config/ml4w/settings/wallpaper-effect"
 SETTINGS_TRANSITION_EFFECT=$(cat "$HOME/.config/ml4w/settings/wallpaper-transition-effect")
 BLUR=$(cat "$SETTINGS_BLUR")
 
@@ -45,7 +43,6 @@ show_help() {
     echo "  PATH_TO_IMAGE          Path to the image file to set as wallpaper."
     echo ""
     echo "Optional Parameters:"
-    echo "  --effect NAME          Apply a specific wallpaper effect."
     echo "  --random [FOLDER]      Select a random image from FOLDER."
     echo "  --notifications        Enable desktop notifications."
     echo "  --skip-wallpaper       Will skip setting the wallpaper with awww."
@@ -59,17 +56,6 @@ show_help() {
 send_notification() {
     [ "$NOTIFICATIONS" = true ] || return
     notify-send -a "ml4w-wallpaper" -i "preferences-desktop-wallpaper-symbolic" "$1" "$2"
-}
-
-apply_effect() {
-    [ -f "$SETTINGS_WALLPAPER_EFFECT" ] || return
-    EFFECT=$(cat "$SETTINGS_WALLPAPER_EFFECT")
-    [ "$EFFECT" = "off" ] && return
-    info "Applying wallpaper effect: $EFFECT"
-    local cached="$CACHE_FOLDER/$EFFECT-$(basename "$IMAGE_PATH")"
-    [ ! -f "$cached" ] && cp "$IMAGE_PATH" "$cached"
-    IMAGE_PATH="$cached"
-    source "$HOME/.config/hypr/effects/wallpaper/$EFFECT"
 }
 
 wait_for_awww() {
@@ -177,8 +163,6 @@ while [[ $# -gt 0 ]]; do
             SKIP_WALLPAPER=true; shift ;;
         --skip-theming)
             SKIP_THEMING=true; shift ;;
-        --effect)
-            EFFECT="$2"; shift 2 ;;
         --random)
             if [[ -n "$2" && "$2" != -* ]]; then
                 RANDOM_FOLDER="$2"; shift 2
@@ -234,7 +218,6 @@ info "Cache updated: $IMAGE_PATH"
 # ============================================================
 # Main
 # ============================================================
-apply_effect
 wait_for_awww
 set_wallpaper
 if "$SKIP_THEMING"; then
