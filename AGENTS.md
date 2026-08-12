@@ -51,7 +51,7 @@ The entrypoint `hyprland.lua` is a list of `require`s. The `require` root is `~/
 Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/hypr/`:
 - `monitors.lua` — monitor setup (per-device)
 - `input.lua` — keyboard layout, pointer settings; laptop adds `hl.device()` blocks for AZERTY built-in vs QWERTY Planck (per-device)
-- `conf/layout.lua` — picks the `default`/`laptop` layout variant, enables workspace back-and-forth (per-device; the `laptop` variant also supplies the 3-finger swipe)
+- `conf/layout.lua` — picks the `default` layout variant, enables workspace back-and-forth (base; the `laptop` variant is unusable because its 3-finger swipe collides with `gestures.lua`)
 - `custom.lua` — autostart, window rules, visual tweaks; loaded last, so it wins over everything (base)
 - `games.lua` — Steam game rules, `require`d from `custom.lua` (base)
 - `conf/keybinding.lua` — loads the keybinding variant, then unbinds/rebinds (base)
@@ -59,7 +59,7 @@ Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/
 
 `custom.lua` and `games.lua` are files ML4W never shipped; `hyprland.lua` opt-in loads `custom.lua` if present. Since it is loaded last, it remains the cheapest place to put a change that has to win.
 
-The base copies of `input.lua`, `monitors.lua`, `hypridle.conf` and `conf/layout.lua` never deploy, because both devices override them. They are kept anyway: `gestures.lua` is laptop-only, so the base tree is not uniformly dead here.
+The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy, because both devices override them. They are kept anyway: `gestures.lua` is laptop-only, so the base tree is not uniformly dead here.
 
 Colors come from matugen, which writes both `colors.conf` and `colors.lua`. `colors.lua` defines bare globals loaded before `custom.lua`, so a palette entry is referenced as plain `inverse_primary`, not `$inverse_primary`.
 
