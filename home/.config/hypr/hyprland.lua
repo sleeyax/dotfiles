@@ -42,6 +42,3 @@ if f then
     f:close()
     require("custom")
 end
-
--- HYPRMOD
-require("hyprland-gui")
