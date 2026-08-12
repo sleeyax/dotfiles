@@ -117,13 +117,15 @@ trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits earl
 cp -r "$BASE" "$STOW_NEW/dotfiles"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
-# Handle matugen-generated files so re-apply doesn't clobber live colors.
-# Upstream ships seed copies in the stow tree; two cases to untangle:
+# Carry the live matugen palette across, so re-applying doesn't clobber it.
+# Nothing under home/ is a matugen output: stow folds at the directory level, so
+# matugen writes into the stow tree rather than the repo, and rsync --delete below
+# would drop those files on every apply if they weren't preserved here.
+# Two cases to untangle:
 #   1. $HOME path resolves into the stow tree (stow symlink, possibly
-#      folded at a parent dir): matugen writes through the link, so copy
-#      the live content over the upstream seed in STOW_NEW.
-#   2. $HOME has a real file that isn't stow-managed: drop the seed from
-#      STOW_NEW entirely so `stow --restow` doesn't conflict with it.
+#      folded at a parent dir): copy the live content into STOW_NEW.
+#   2. $HOME has a real file that isn't stow-managed: drop it from
+#      STOW_NEW so `stow --restow` doesn't conflict with it.
 MATUGEN_CFG="$STOW_NEW/dotfiles/.config/matugen/config.toml"
 if [ -f "$MATUGEN_CFG" ]; then
   STOW_REAL=$(realpath "$STOW_DIR" 2>/dev/null || echo "$STOW_DIR")
@@ -144,6 +146,17 @@ rm -rf "$STOW_NEW"
 
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
+
+# A machine that has never set a wallpaper has never run matugen, so it has no palette at all.
+# That is fatal rather than ugly: hypr/colors.lua is require()d and hyprlock.conf sources colors.conf.
+# Mirrors run_matugen in ml4w-wallpaper, including how it picks the mode.
+if [ ! -f "$HOME/.config/hypr/colors.lua" ]; then
+  echo "No palette found, generating one from the default wallpaper..."
+  theme_pref=$(grep -E '^gtk-application-prefer-dark-theme=' "$HOME/.config/gtk-3.0/settings.ini" | awk -F'=' '{print $2}')
+  mode="light"
+  [ "$theme_pref" = "1" ] && mode="dark"
+  matugen image "$HOME/.config/ml4w/wallpapers/default.jpg" --source-color-index 0 -m "$mode" || true
+fi
 
 # ~/.mydotfiles is the ML4W installer's project store, which this repo never creates because it deploys with stow instead.
 # conf/autostart.lua still redirects ml4w-autostart's stdout into it, and a failed redirect silently skips the whole autostart (quickshell, nm-applet, wallpaper theming).

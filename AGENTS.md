@@ -61,9 +61,19 @@ Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/
 
 The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy, because both devices override them. They are kept anyway: `gestures.lua` is laptop-only, so the base tree is not uniformly dead here.
 
-Colors come from matugen, which writes both `colors.conf` and `colors.lua`. `colors.lua` defines bare globals loaded before `custom.lua`, so a palette entry is referenced as plain `inverse_primary`, not `$inverse_primary`.
+Colors come from matugen (see **Colors** below), which writes both `colors.conf` and `colors.lua`. `colors.lua` defines bare globals loaded before `custom.lua`, so a palette entry is referenced as plain `inverse_primary`, not `$inverse_primary`.
 
 The `hl` API is typed: `/usr/share/hypr/stubs/hl.meta.lua` (LuaLS stubs) and `/usr/share/hypr/hyprland.lua` (annotated example) are the authoritative references. `luac -p <file>` syntax-checks; `Hyprland --verify-config` validates the whole tree; `hyprctl configerrors` reports runtime errors.
+
+### Colors
+
+`~/.config/matugen/config.toml` maps each template in `matugen/templates/` to an output: `hypr/colors.lua`, `hypr/colors.conf`, `waybar/colors.css`, `rofi/colors.rasi`, `gtk-{3,4}.0/colors.css`, `btop/themes/matugen.theme`, and the rest. `ml4w-wallpaper` re-renders all of them on every wallpaper change.
+
+**No matugen output is tracked under `home/`.** Stow folds at the directory level — `~/.config/waybar` is a symlink to `.stow/dotfiles/.config/waybar`, not a tree of per-file symlinks — so matugen writes into the generated `.stow/` tree and never touches the repo. Tracking a copy under `home/` therefore only ever produces a frozen snapshot that nothing reads. `apply.sh` copies the live palette into the tree it is about to rsync, since `rsync --delete` would otherwise wipe it on every apply.
+
+Two consequences when adding a matugen output:
+- Its directory has to exist in the stow tree, or `apply.sh` skips carrying the live copy across and `rsync --delete` wipes it on the next apply. `btop/themes/` and `ml4w/colors/` contain nothing but generated files, so they hold a `.gitkeep` to survive.
+- A machine with no palette yet gets one from `ml4w/wallpapers/default.jpg` at the end of `apply.sh`. Missing outputs are fatal, not cosmetic: `hyprland.lua` does `require("colors")` and `hyprlock.conf` does `source = colors.conf`.
 
 ### Integrating a feature from a newer ML4W
 
