@@ -60,19 +60,6 @@
     "on-scroll-down": "true"
   },
 
-  // Now Playing
-  "custom/nowplaying": {
-    "exec": "~/.config/ml4w/scripts/ml4w-now-playing",
-    "format": "  {text}",
-    "return-type": "json",
-    "interval": 1,
-    "escape": true,
-    "hide-empty-text": false,
-    "on-click": "playerctl play-pause",
-    "on-click-right": "playerctl next",
-    "on-click-middle": "playerctl previous",
-    "tooltip-format": "Left: Play/Pause\nRight: Next\nMiddle: Previous"
-  },
   
   // Cliphist
   "custom/cliphist": {
@@ -96,37 +83,12 @@
     "on-click": "~/.config/ml4w/settings/installupdates.sh",
     "on-click-right": "~/.config/ml4w/settings/software.sh"
   },
-  // Wallpaper
-  "custom/wallpaper": {
-    "format": "",
-    "on-click": "bash -c waypaper &",
-    "tooltip-format": "Select a wallpaper"
-  },
-  // Keybindings
-  "custom/keybindings": {
-    "format": "",
-    "on-click": "~/.config/hypr/scripts/keybindings.sh",
-    "tooltip": false
-  },
-  // Calculator
-  "custom/calculator": {
-    "format": "",
-    "on-click": "qalculate-gtk",
-    "tooltip-format": "Open calculator"
-  },
   // Rofi Application Launcher
   "custom/appmenu": {
     // START APPS LABEL
     "format": "Apps",
     // END APPS LABEL
     "on-click": "~/.config/hypr/scripts/launcher.sh",
-    "on-click-right": "~/.config/hypr/scripts/keybindings.sh",
-    "tooltip-format": "Left: Open the application launcher\nRight: Show all keybindings"
-  },
-  // Rofi Application Launcher
-  "custom/appmenuicon": {
-    "format": "",
-    "on-click": "sleep 0.2;rofi -show drun -replace",
     "on-click-right": "~/.config/hypr/scripts/keybindings.sh",
     "tooltip-format": "Left: Open the application launcher\nRight: Show all keybindings"
   },
@@ -174,18 +136,6 @@
     "interval": 60,
     "exec": "~/.config/hypr/scripts/hypridle.sh status",
     "on-click": "~/.config/hypr/scripts/hypridle.sh toggle",
-    "on-scroll-up": "true",
-    "on-scroll-down": "true"
-  },
-  // Keyboard State
-  "keyboard-state": {
-    "numlock": true,
-    "capslock": true,
-    "format": "{name} {icon}",
-    "format-icons": {
-      "locked": "",
-      "unlocked": ""
-    },
     "on-scroll-up": "true",
     "on-scroll-down": "true"
   },
@@ -266,26 +216,6 @@
       "custom/hypridle",
       "custom/hyprshade",
       "power-profiles-daemon"
-    ]
-  },
-  // Group Links
-  "group/links": {
-    "orientation": "horizontal",
-    "modules": [
-      "custom/chatgpt",
-      "custom/empty"
-    ]
-  },
-  // Group Settings
-  "group/settings": {
-    "orientation": "inherit",
-    "drawer": {
-      "transition-duration": 300,
-      "children-class": "not-memory",
-      "transition-left-to-right": true
-    },
-    "modules": [
-      "custom/wallpaper"
     ]
   },
   // Network
@@ -374,32 +304,4 @@
   "tooltip-format-enumerate-connected-battery": "{device_alias}\t| Battery life: {device_battery_percentage}%",
   "format-no-controller": ""
   },
-  // Other
-  "user": {
-    "format": "{user}",
-    "interval": 60,
-    "icon": false
-  },
-  // backlight:
-  "backlight": {
-    "format": "{icon} {percent}%",
-    "format-icons": [
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      ""
-    ],
-    "scroll-step": 1
-  }
 }

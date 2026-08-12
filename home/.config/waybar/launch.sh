@@ -24,43 +24,6 @@ sleep 0.5
 default_theme="/ml4w-modern;/ml4w-modern/default"
 
 # -----------------------------------------------------
-# Remove incompatible themes
-# -----------------------------------------------------
-
-if [ -f ~/.config/ml4w/settings/waybar-theme.sh ]; then
-    themestyle=$(cat ~/.config/ml4w/settings/waybar-theme.sh)
-    case "$themestyle" in
-    "/ml4w-modern;/ml4w-modern/light")
-        echo "$default_theme" >~/.config/ml4w/settings/waybar-theme.sh
-        ;;
-    "/ml4w-modern;/ml4w-modern/dark")
-        echo "$default_theme" >~/.config/ml4w/settings/waybar-theme.sh
-        ;;
-    "/ml4w;/ml4w/light")
-        echo "$default_theme" >~/.config/ml4w/settings/waybar-theme.sh
-        ;;
-    "/ml4w;/ml4w/dark")
-        echo "$default_theme" >~/.config/ml4w/settings/waybar-theme.sh
-        ;;
-    *)
-        echo
-        ;;
-    esac
-    if [ -d $HOME/.config/waybar/themes/ml4w-modern/light ]; then
-        rm -rf $HOME/.config/waybar/themes/ml4w-modern/light
-    fi
-    if [ -d $HOME/.config/waybar/themes/ml4w-modern/dark ]; then
-        rm -rf $HOME/.config/waybar/themes/ml4w-modern/dark
-    fi
-    if [ -d $HOME/.config/waybar/themes/ml4w/light ]; then
-        rm -rf $HOME/.config/waybar/themes/ml4w/light
-    fi
-    if [ -d $HOME/.config/waybar/themes/ml4w/dark ]; then
-        rm -rf $HOME/.config/waybar/themes/ml4w/dark
-    fi
-fi
-
-# -----------------------------------------------------
 # Get current theme information from ~/.config/ml4w/settings/waybar-theme.sh
 # -----------------------------------------------------
 

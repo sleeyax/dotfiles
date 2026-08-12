@@ -17,7 +17,6 @@
         "hyprland/workspaces",
         //"wlr/taskbar",
         //"group/quicklinks",
-        //"custom/nowplaying",        
         "custom/empty"
     ],
     // Modules Center
@@ -29,7 +28,6 @@
     "modules-right": [
         "custom/updates",
         "pulseaudio",
-        //"backlight",
         "bluetooth",
         "network",
         "battery",
