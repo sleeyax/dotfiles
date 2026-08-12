@@ -64,10 +64,6 @@ output_path = '~/.config/ml4w/colors/onsurface'
 input_path = '~/.config/matugen/templates/onprimary'
 output_path = '~/.config/ml4w/colors/onprimary'
 
-[templates.ml4w_dotfiles_settings]
-input_path  = "./templates/colors.json"
-output_path = "~/.local/share/ml4w-dotfiles-settings/colors/colors.json"
-
 [templates.quickshell_overview]
 input_path  = "./templates/quickshell-overview.qml"
 output_path = "~/.config/quickshell/overview/common/Appearance.colors.qml"

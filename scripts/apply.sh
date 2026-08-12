@@ -35,30 +35,6 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
-# Installs the ML4W settings app the way its Makefile does, without running its setup.sh (which curl|bashes and pulls an unpinned HEAD).
-install_settings_app() {
-  local tmp lib_dir colors
-  lib_dir="$HOME/.local/share/ml4w-dotfiles-settings"
-  tmp=$(mktemp -d)
-
-  git init -q "$tmp"
-  git -C "$tmp" remote add origin "$ML4W_SETTINGS_REPO"
-  git -C "$tmp" fetch -q --depth 1 origin "$ML4W_SETTINGS_COMMIT"
-  git -C "$tmp" checkout -q FETCH_HEAD
-
-  mkdir -p "$HOME/.local/bin" "$lib_dir"
-  install -m 755 "$tmp/bin/ml4w-dotfiles-settings" "$HOME/.local/bin/"
-
-  # colors/colors.json ships as a seed but is a live matugen output_path; overwriting it would reset the palette until the next wallpaper change.
-  colors="$lib_dir/colors/colors.json"
-  if [ -f "$colors" ]; then
-    rm -f "$tmp/lib/colors/colors.json"
-  fi
-  cp -r "$tmp"/lib/. "$lib_dir/"
-
-  rm -rf "$tmp"
-}
-
 install_dependencies() {
   if command -v yay &>/dev/null; then
     AUR_HELPER=yay
@@ -81,8 +57,6 @@ install_dependencies() {
   echo "Installing packages with $AUR_HELPER..."
   mapfile -t PKGS < <(sed 's/#.*//' "$PACKAGES_FILE" | grep -vE '^\s*$' | tr -d '[:blank:]')
   "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
-
-  install_settings_app
 
   xdg-user-dirs-update
 

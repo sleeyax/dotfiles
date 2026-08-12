@@ -102,12 +102,6 @@
     "on-click": "bash -c waypaper &",
     "tooltip-format": "Select a wallpaper"
   },
-  // Settings
-  "custom/settings": {
-    "format": "",
-    "on-click": "sleep 0.1 && com.ml4w.dotfilessettings",
-    "tooltip-format": "ML4W Settings"
-  },
   // Keybindings
   "custom/keybindings": {
     "format": "",
@@ -291,7 +285,6 @@
       "transition-left-to-right": true
     },
     "modules": [
-      "custom/settings",
       "custom/wallpaper"
     ]
   },

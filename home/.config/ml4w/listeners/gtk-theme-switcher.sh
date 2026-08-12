@@ -45,10 +45,6 @@ apply_theme() {
         qs ipc call theme-manager reload
         echo "Quickshell Theme updated"
 
-        # Update ML4W Dotfiles Settings theme
-        qs -p $HOME/.local/share/ml4w-dotfiles-settings/quickshell ipc call theme-manager reload
-        echo "ML4W Dotfiles Settings Theme updated"
-
         # Reload Waybar
         nohup bash -c "$HOME/.config/waybar/launch.sh" > /dev/null 2>&1 &
         disown

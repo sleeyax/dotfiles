@@ -121,7 +121,6 @@ reload_waybar() {
 reload_quickshell() {
     if pgrep -x qs >/dev/null; then
         qs ipc call theme-manager reload
-        qs -p "$HOME/.local/share/ml4w-dotfiles-settings/quickshell" ipc call theme-manager reload
         info "Quickshell theme updated"
     else
         warn "Quickshell not running, skipping theme reload"
