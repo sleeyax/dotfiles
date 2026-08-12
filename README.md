@@ -35,6 +35,13 @@ This will:
 Packages are installed when the list changes, so adding an entry is enough to get it installed on the next apply.
 Use `./scripts/apply.sh --force` to reinstall regardless.
 
+### Local shell config
+
+The zsh setup lives in [home/.config/zshrc/](home/.config/zshrc/) and is the same on every machine.
+For anything you don't want committed, put it in `~/.zshrc_custom`; it is sourced last, so it overrides everything in the repo.
+
+Don't add files under `~/.config/zshrc/` directly — that path is a stow symlink into the generated tree, and the next `apply.sh` deletes anything the repo didn't put there.
+
 ## Upstream (ML4W)
 
 The tree under `home/` came from ML4W and is now ours to edit; there is no submodule and no merge to keep up with.
