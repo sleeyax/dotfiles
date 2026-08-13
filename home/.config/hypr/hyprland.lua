@@ -1,8 +1,5 @@
 -- Advanced configuration for Hyprland
 
--- FUNCTIONS
-require("functions")
-
 -- MONITORS
 require("conf.monitors")
 require("monitors")

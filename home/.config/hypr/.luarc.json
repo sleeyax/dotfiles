@@ -3,6 +3,6 @@
     "library": ["/usr/share/hypr/stubs"]
   },
   "diagnostics": {
-    "globals": ["hl", "activate_gamemode", "inverse_primary"]
+    "globals": ["hl", "inverse_primary"]
   }
 }
