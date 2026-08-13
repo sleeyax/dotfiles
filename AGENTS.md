@@ -46,16 +46,16 @@ Whether to install is decided by hashing that file into `$XDG_STATE_HOME/sleeyax
 
 Hyprland's config is Lua (`hl.*` API); the `.conf`/hyprlang format was dropped in Hyprland 0.57. The other `hypr*` tools still use hyprlang, so `hypridle.conf`, `hyprlock.conf` and `hyprsunset.conf` stay `.conf`.
 
-The entrypoint `hyprland.lua` is a list of `require`s. The `require` root is `~/.config/hypr/`, and `functions.lua` defines a global `load_variant(file, dir)` that the `conf/<name>.lua` selector files use to pull a variant out of `conf/<name>s/`.
+The entrypoint `hyprland.lua` is a list of `require`s, with `~/.config/hypr/` as the `require` root. Each `conf/*.lua` is one flat file. ML4W shipped these as a `conf/<name>.lua` selector calling `load_variant()` to pick a file out of `conf/<name>s/`; with a single variant left per section that indirection bought nothing, so the variant is now the file. `conf/monitors.lua` is the generic fallback (`output = ""`), applied before the per-device `monitors.lua` narrows it.
 
 Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/hypr/`:
 - `monitors.lua` — monitor setup (per-device)
 - `input.lua` — keyboard layout, pointer settings; laptop adds `hl.device()` blocks for AZERTY built-in vs QWERTY Planck (per-device)
-- `conf/layout.lua` — picks the `default` layout variant, enables workspace back-and-forth (base)
+- `conf/layouts.lua` — dwindle settings, workspace back-and-forth (base)
 - `custom.lua` — autostart, window rules, visual tweaks; loaded last, so it wins over everything (base)
 - `games.lua` — Steam game rules, `require`d from `custom.lua` (base)
-- `conf/keybinding.lua` — loads the keybinding variant, then unbinds/rebinds (base)
-- `conf/animation.lua` — selects the `disabled` animation variant (base)
+- `conf/keybindings.lua` — every bind, then our unbinds/rebinds at the end (base)
+- `conf/animations.lua` — animations off (base)
 
 `custom.lua` and `games.lua` are files ML4W never shipped; `hyprland.lua` opt-in loads `custom.lua` if present. Since it is loaded last, it remains the cheapest place to put a change that has to win.
 
