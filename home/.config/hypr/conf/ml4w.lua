@@ -19,16 +19,6 @@ hl.window_rule({
     size = "700 600"
 })
 
--- Waypaper
-hl.window_rule({
-    name = "waypaper",
-    match = {class = "*waypaper*"},
-    float = true,
-    center = true,
-    pin = true,
-    size = "900 700"
-})
-
 -- Blueman Manager
 hl.window_rule({
     name = "blueman-manager",

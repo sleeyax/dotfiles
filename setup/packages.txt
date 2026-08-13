@@ -49,7 +49,6 @@ qt6-multimedia-ffmpeg
 # --- Wallpaper and theming ---
 # awww Provides/Replaces swww, so pacman swaps it out on its own.
 awww
-waypaper
 matugen
 python-pywalfox
 nwg-look
