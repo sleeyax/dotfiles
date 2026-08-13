@@ -35,9 +35,3 @@ gsettings set "$gnome_schema" icon-theme "$icon_theme"
 gsettings set "$gnome_schema" cursor-theme "$cursor_theme"
 gsettings set "$gnome_schema" font-name "$font_name"
 gsettings set "$gnome_schema" color-scheme "$prefer_dark_theme_value"
-
-# Update cursor for Hyprland
-if [ -f ~/.config/hypr/conf/cursor.conf ]; then
-    echo "exec-once = hyprctl setcursor $cursor_theme $cursor_size" >~/.config/hypr/conf/cursor.conf
-    hyprctl setcursor $cursor_theme $cursor_size
-fi
