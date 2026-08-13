@@ -62,10 +62,6 @@ hl.bind(mainMod .. " + ALT + down", hl.dsp.window.swap({ direction = "d" }), { d
 
 -- Actions
 hl.bind(mainMod .. " + CTRL + R", hl.dsp.exec_cmd("hyprctl reload"), { description = "Reload Hyprland configuration" })
-hl.bind(mainMod .. " + PRINT", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh"), { description = "Take a screenshot" })
-hl.bind(mainMod .. " + ALT + F", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh --instant"), { description = "Take an instant full-screen screenshot" })
-hl.bind(mainMod .. " + ALT + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh --instant-area"), { description = "Take an instant area screenshot" })
-hl.bind(mainMod .. " + ALT + A", hl.dsp.exec_cmd("~/.config/hypr/scripts/text-extractor.sh"), { description = "Extract text from an area" })
 hl.bind(mainMod .. " + CTRL + P", hl.dsp.exec_cmd("qs ipc call power toggle"), { description = "Start Power Menu" })
 hl.bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-wallpaper-app --random"), { description = "Change the wallpaper" })
 hl.bind(mainMod .. " + CTRL + W", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-wallpaper-app"), { description = "Open wallpaper selector" })
@@ -114,10 +110,6 @@ hl.bind("SUPER + P", hl.dsp.workspace.toggle_special("magic"),
     { description = "Toggle special workspace magic" })
 hl.bind("SUPER + SHIFT + P", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle-scratchpad-window"),
     { description = "Toggle window in/out of special workspace magic" })
-
--- screenshot.sh needs grimblast, which we deliberately don't install; flameshot takes its place
-hl.unbind("SUPER + PRINT")
-hl.unbind("SUPER + ALT + S")
 
 hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot gui"),
     { description = "Take a screenshot" })

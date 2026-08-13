@@ -54,6 +54,8 @@ matugen
 python-pywalfox
 nwg-look
 gnome-themes-extra
+# imagemagick: ml4w-wallpaper shells out to `magick` for the blurred and square variants.
+imagemagick
 qt6ct
 breeze
 bibata-cursor-theme-bin
@@ -65,16 +67,10 @@ ttf-jetbrains-mono-nerd
 ttf-fira-sans
 ttf-material-icons
 
-# --- Screenshot, clipboard, OCR ---
-# grimblast is deliberately absent: conf/keybinding.lua unbinds the screenshot bindings that need it and uses flameshot instead.
-grim
-slurp
+# --- Clipboard ---
 wl-clipboard
 xclip
 cliphist
-imagemagick
-tesseract
-tesseract-data-eng
 
 # --- Audio, network, bluetooth, power ---
 pavucontrol
