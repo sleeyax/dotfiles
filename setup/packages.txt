@@ -97,6 +97,7 @@ loupe
 kitty
 firefox
 vlc
+gnome-calculator
 gnome-text-editor
 vim
 neovim
