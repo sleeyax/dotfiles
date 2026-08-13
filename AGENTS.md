@@ -81,7 +81,7 @@ The tree under `home/` was vendored from ML4W and is now ours. `ml4w-base.env` r
 
 1. `./scripts/ml4w.sh sync` — fetch ML4W (creates the `ml4w` remote on first run).
 2. `./scripts/ml4w.sh tags` — confirm the target version exists.
-3. `./scripts/ml4w.sh diff base <target> [subpath]` — read what changed upstream. Narrow with a subpath (e.g. `.config/waybar`) once you know where the feature lives.
+3. `./scripts/ml4w.sh diff base <target> [subpath]` — read what changed upstream. Narrow with a subpath (e.g. `.config/waybar`) once you know where the feature lives. `log base..<target> [subpath]` gives the commits behind that diff, and `show <target> <path>` prints upstream's copy of one file without touching the tree.
 4. Map paths: upstream `dotfiles/<p>` → `home/<p>`. Per-device variants live at `devices/desktop/<p>` and `devices/laptop/<p>`.
 5. For each file, check whether we've modified it: `./scripts/ml4w.sh status <p>`.
    - **Empty (untouched):** `./scripts/ml4w.sh take <target> <p>`.

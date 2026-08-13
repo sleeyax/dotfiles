@@ -54,6 +54,8 @@ ML4W is still available as a git remote, so individual features can be pulled fr
 ./scripts/ml4w.sh sync                     # fetch ML4W (creates the remote on first run)
 ./scripts/ml4w.sh tags                     # list upstream releases
 ./scripts/ml4w.sh diff base 2.15 .config/waybar  # what changed upstream
+./scripts/ml4w.sh log base..2.15 [path]    # commits behind that diff
+./scripts/ml4w.sh show 2.15 <path>         # print upstream's copy of a file
 ./scripts/ml4w.sh status                   # what we changed, base vs home/
 ./scripts/ml4w.sh take 2.15 <path>         # overwrite home/<path> with upstream's
 ./scripts/ml4w.sh port 2.15 <path>         # 3-way merge upstream's change into ours
