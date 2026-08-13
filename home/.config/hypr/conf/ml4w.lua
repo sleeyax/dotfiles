@@ -19,16 +19,6 @@ hl.window_rule({
     size = "700 600"
 })
 
--- ML4W Settings App
-hl.window_rule({
-    name = "ml4w-settings-app",
-    match = {title = "ML4W Dotfiles Settings"},
-    float = true,
-    center = true,
-    pin = true,
-    size = "900 600"
-})
-
 -- Waypaper
 hl.window_rule({
     name = "waypaper",
@@ -37,16 +27,6 @@ hl.window_rule({
     center = true,
     pin = true,
     size = "900 700"
-})
-
--- Newelle
-hl.window_rule({
-    name = "newelle",
-    match = {class = "io.github.qwersyk.Newelle"},
-    float = true,
-    center = true,
-    pin = true,
-    size = "1000 700"
 })
 
 -- Blueman Manager
@@ -73,16 +53,6 @@ hl.window_rule({
     match = {class = "nwg-displays"},
     float = true,
     center = true,
-    size = "900 600"
-})
-
--- System Mission Center
-hl.window_rule({
-    name = "missioncenter",
-    match = {class = "io.missioncenter.MissionCenter"},
-    float = true,
-    center = true,
-    pin = true,
     size = "900 600"
 })
 
@@ -121,15 +91,6 @@ hl.window_rule({
     float = true,
     center = true,
     size = "800 700"
-})
-
--- Hyprmod
-hl.window_rule({
-    name = "io.github.bluemancz.hyprmod",
-    match = {class = "io.github.bluemancz.hyprmod"},
-    float = true,
-    center = true,
-    size = "1000 700"
 })
 
 -- ML4W Floating
