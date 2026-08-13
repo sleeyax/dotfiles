@@ -67,6 +67,11 @@ ttf-jetbrains-mono-nerd
 ttf-fira-sans
 ttf-material-icons
 
+# --- Screenshot and screen recording ---
+# flameshot-git, not flameshot: the repo package Conflicts with it, so listing both makes the transaction unresolvable.
+flameshot-git
+kooha
+
 # --- Clipboard ---
 wl-clipboard
 xclip
@@ -96,7 +101,11 @@ vlc
 gnome-text-editor
 vim
 neovim
+visual-studio-code-bin
 flatpak
+# wtype is what lets handy type its transcript into Wayland windows; without it enigo falls back to X11 and only XWayland clients see the keystrokes.
+handy-bin
+wtype
 
 # --- Shell and prompt ---
 zsh

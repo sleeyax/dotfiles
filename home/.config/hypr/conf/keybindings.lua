@@ -123,7 +123,5 @@ hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("kooha"),
 hl.bind("SUPER + K", hl.dsp.exec_cmd("code"),
     { description = "Launch Visual Studio Code" })
 
--- deps: handy-bin (AUR), wtype
--- wtype is what types the transcript into Wayland windows; without it handy falls back to enigo's X11 backend and the keystrokes only ever reach XWayland clients
 hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
     { description = "Toggle voice transcription" })
