@@ -120,7 +120,7 @@
     "escape": true
   },
   // Hyprsunset
-  "custom/hyprshade": {
+  "custom/hyprsunset": {
     "format": "",
     "tooltip-format": "Toggle Screen Shader",
     "on-click": "sleep 0.5; ~/.config/ml4w/scripts/ml4w-toggle-hyprsunset",
@@ -214,7 +214,7 @@
       "custom/tools",
       "custom/cliphist",
       "custom/hypridle",
-      "custom/hyprshade",
+      "custom/hyprsunset",
       "power-profiles-daemon"
     ]
   },
