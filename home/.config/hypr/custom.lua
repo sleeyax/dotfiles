@@ -2,6 +2,13 @@
 
 hl.env("XCURSOR_THEME", "breeze_cursors")
 
+-- Hyprland starts with a bare PATH, so keybinds and launchers would miss the wrappers in ~/.local/bin that the shell already picks up.
+local user_bin = os.getenv("HOME") .. "/.local/bin"
+local path = os.getenv("PATH") or ""
+if not path:find(user_bin, 1, true) then
+    hl.env("PATH", user_bin .. ":" .. path)
+end
+
 hl.on("hyprland.start", function()
     -- intentionally launches megasync twice so it goes to the tray
     -- see: https://github.com/meganz/MEGAsync/issues/161#issuecomment-797917923
