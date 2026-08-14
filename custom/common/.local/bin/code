@@ -1,0 +1,12 @@
+#!/bin/sh
+# VS Code's Claude agent only reads its credentials from the environment or ~/.claude/settings.json, so load them from an untracked file at launch instead of exporting them system-wide.
+set -e
+
+env_file="${XDG_CONFIG_HOME:-$HOME/.config}/claude/env"
+if [ -r "$env_file" ]; then
+    set -a
+    . "$env_file"
+    set +a
+fi
+
+exec /usr/bin/code "$@"
