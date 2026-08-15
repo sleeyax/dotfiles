@@ -107,22 +107,6 @@ Two things to know:
 
 Note that [chromium-flags.conf](home/.config/chromium-flags.conf) applies to every Chromium instance, web apps included — Arch's launcher reads it regardless of `--user-data-dir`.
 
-## VS Code Claude credentials
-
-VS Code's built-in Claude agent takes its credentials from the environment or from `~/.claude/settings.json`; there is no VS Code setting for it. To keep the token out of both this repo and the global environment, [`home/.local/bin/code`](home/.local/bin/code) wraps `code`, sources `~/.config/claude/env` and execs `/usr/bin/code`.
-
-Create the file per device (it is never tracked here):
-
-```bash
-mkdir -p ~/.config/claude
-printf 'CLAUDE_CODE_OAUTH_TOKEN=%s\n' "$(claude setup-token)" > ~/.config/claude/env
-chmod 600 ~/.config/claude/env
-```
-
-`ANTHROPIC_API_KEY` works there too, as does any other variable — the file is sourced with `set -a`, so plain `KEY=value` lines are exported.
-
-Every launch path resolves to the wrapper: `~/.local/bin` comes first in the shell's `PATH`, and `custom.lua` prepends it to Hyprland's `PATH` so keybinds and the app launcher (`Exec=code %F`) hit it as well. Quit all VS Code windows after changing the file — a running instance handles new `code` invocations itself, so it keeps the environment it started with.
-
 ## Devices
 
 | Device  | Hostname | Keyboard    | Monitor            |
