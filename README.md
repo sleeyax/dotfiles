@@ -13,13 +13,14 @@ Upstream's own `version.json` reports 2.12.3 at that tag; the tag is authoritati
 │   ├── desktop/        # falcon-specific (QWERTY, 4K monitor)
 │   └── laptop/         # panda-specific (AZERTY, gestures)
 ├── setup/
-│   └── packages.txt    # Packages installed by apply.sh
+│   ├── packages.txt    # Packages installed by apply.sh
+│   └── packages.desktop.txt  # ...plus these, on falcon only
 └── scripts/            # Apply/switch scripts
 ```
 
 `home/` is deployed as-is, then `devices/$DEVICE/` is overlaid on top of it, so a device file always wins over the base file at the same path.
 
-Packages are the exception: `devices/$DEVICE/packages.txt` is *added* to `setup/packages.txt` rather than replacing it, so it only exists to give a device something the other one shouldn't have.
+Packages work differently: `setup/packages.$DEVICE.txt` is *added* to `setup/packages.txt` rather than replacing it, so it only exists to give a device something the other one shouldn't have.
 
 ## Install
 

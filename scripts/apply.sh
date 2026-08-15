@@ -33,9 +33,10 @@ if [ ! -d "$DEVICE_DIR" ]; then
 fi
 
 # The device list is additive: a device without one installs exactly the global list.
+# It lives in setup/ rather than devices/, because everything under devices/ is copied into the stow tree verbatim and would land in $HOME.
 PACKAGES_FILES=("$PACKAGES_FILE")
-if [ -f "$DEVICE_DIR/packages.txt" ]; then
-  PACKAGES_FILES+=("$DEVICE_DIR/packages.txt")
+if [ -f "$DOTFILES_DIR/setup/packages.$DEVICE.txt" ]; then
+  PACKAGES_FILES+=("$DOTFILES_DIR/setup/packages.$DEVICE.txt")
 fi
 
 packages_hash() {

@@ -35,7 +35,9 @@ There is no "common" layer: shared customisations are edits to `home/` itself. A
 
 `setup/packages.txt` is the package list, one per line with `#` comments, grouped by subsystem. `apply.sh` installs it with `yay`/`paru`.
 
-`devices/<device>/packages.txt` is an optional second list, appended to the global one rather than overriding it — unlike the config tree, where a device file replaces the base file at the same path. A device without one installs exactly the global list. Only put a package there if a device genuinely must *not* have it; the default is global.
+`setup/packages.<device>.txt` is an optional second list, appended to the global one rather than overriding it — unlike the config tree, where a device file replaces the base file at the same path. A device without one installs exactly the global list. Only put a package there if a device genuinely must *not* have it; the default is global.
+
+It lives in `setup/` and not `devices/<device>/` because `apply.sh` copies everything under `devices/<device>/` into the stow tree verbatim; a package list there would be symlinked into `$HOME`.
 
 Whether to install is decided by hashing both lists into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to either therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless.
 

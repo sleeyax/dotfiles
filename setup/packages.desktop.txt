@@ -1,4 +1,4 @@
-# Packages installed on falcon only, in addition to setup/packages.txt.
+# Packages installed on falcon only, in addition to packages.txt.
 # Same format: one package per line, '#' starts a comment.
 
 # --- Chat ---
