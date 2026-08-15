@@ -99,18 +99,17 @@ trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits earl
 cp -r "$BASE" "$STOW_NEW/dotfiles"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
 
-# Carry the live matugen palette across, so re-applying doesn't clobber it.
-# Nothing under home/ is a matugen output: stow folds at the directory level, so
-# matugen writes into the stow tree rather than the repo, and rsync --delete below
-# would drop those files on every apply if they weren't preserved here.
+# Carry live, untracked files across, so re-applying doesn't clobber them.
+# Stow folds at the directory level, so a program writing to ~/.config/<dir>/<file>
+# writes into the stow tree rather than the repo, and rsync --delete below would
+# drop the file on every apply if it weren't preserved here.
 # Two cases to untangle:
 #   1. $HOME path resolves into the stow tree (stow symlink, possibly
 #      folded at a parent dir): copy the live content into STOW_NEW.
 #   2. $HOME has a real file that isn't stow-managed: drop it from
 #      STOW_NEW so `stow --restow` doesn't conflict with it.
-MATUGEN_CFG="$STOW_NEW/dotfiles/.config/matugen/config.toml"
-if [ -f "$MATUGEN_CFG" ]; then
-  STOW_REAL=$(realpath "$STOW_DIR" 2>/dev/null || echo "$STOW_DIR")
+STOW_REAL=$(realpath "$STOW_DIR" 2>/dev/null || echo "$STOW_DIR")
+preserve_live_files() {
   while IFS= read -r rel; do
     [ -f "$HOME/$rel" ] || continue
     [ -d "$STOW_NEW/dotfiles/$(dirname "$rel")" ] || continue
@@ -119,8 +118,28 @@ if [ -f "$MATUGEN_CFG" ]; then
       "$STOW_REAL"/*) cp "$resolved" "$STOW_NEW/dotfiles/$rel" ;;
       *)              rm -f "$STOW_NEW/dotfiles/$rel" ;;
     esac
-  done < <(grep -oE "output_path = ['\"]~/[^'\"]+['\"]" "$MATUGEN_CFG" | sed -E "s/.*~\/([^'\"]+).*/\1/")
+  done
+}
+
+# Nothing under home/ is a matugen output; the palette only ever exists in the stow tree.
+MATUGEN_CFG="$STOW_NEW/dotfiles/.config/matugen/config.toml"
+if [ -f "$MATUGEN_CFG" ]; then
+  grep -oE "output_path = ['\"]~/[^'\"]+['\"]" "$MATUGEN_CFG" \
+    | sed -E "s/.*~\/([^'\"]+).*/\1/" \
+    | preserve_live_files
 fi
+
+# GTK parses every bookmark as an absolute file:// URI and expands nothing itself, so the tracked default carries a $HOME placeholder for us to fill in.
+BOOKMARKS="$STOW_NEW/dotfiles/.config/gtk-3.0/bookmarks"
+if [ -f "$BOOKMARKS" ]; then
+  sed -i "s|\$HOME|$HOME|g" "$BOOKMARKS"
+fi
+
+# Files a GUI owns. A tracked copy under home/ is only a seed for a machine that has none, since the live file wins here.
+PRESERVE=(
+  .config/gtk-3.0/bookmarks # Nautilus sidebar (GTK4 reads this path too)
+)
+printf '%s\n' "${PRESERVE[@]}" | preserve_live_files
 
 mkdir -p "$STOW_DIR"
 rsync -a --delete "$STOW_NEW/" "$STOW_DIR/"

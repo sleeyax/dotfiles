@@ -81,6 +81,20 @@ Two consequences when adding a matugen output:
 - Its directory has to exist in the stow tree, or `apply.sh` skips carrying the live copy across and `rsync --delete` wipes it on the next apply. `btop/themes/` and `ml4w/colors/` contain nothing but generated files, so they hold a `.gitkeep` to survive.
 - A machine with no palette yet gets one from `ml4w/wallpapers/default.jpg` at the end of `apply.sh`. Missing outputs are fatal, not cosmetic: `hyprland.lua` does `require("colors")` and `hyprlock.conf` does `source = colors.conf`.
 
+### Preserved files
+
+Anything a program writes under a stow-folded directory lands in `.stow/`, not the repo, and the `rsync --delete` in `apply.sh` wipes it on the next apply.
+`preserve_live_files` copies such a file out of `$HOME` back into the tree being rsynced.
+It is fed the matugen outputs (see **Colors** above) and the `PRESERVE` list, which holds files a GUI owns: currently `.config/gtk-3.0/bookmarks`, the Nautilus sidebar.
+
+Preserving and tracking are not exclusive, and `bookmarks` is both.
+The live file wins over the tracked one, so `home/.config/gtk-3.0/bookmarks` only ever seeds a machine that has none, and edits made in Nautilus survive.
+Committing a change to it therefore does nothing on a machine that already has the file — edit the sidebar there instead, and copy it into `home/` to move the default.
+GTK parses each line as an absolute `file://` URI and expands nothing itself, so the tracked copy writes `$HOME` and `apply.sh` substitutes it while staging.
+That makes the tracked copy unusable as-is: stowing `home/` by hand rather than through `apply.sh` produces a sidebar of dead entries.
+
+The same directory-must-exist rule applies: a `PRESERVE` entry only survives if its parent directory is in the stow tree.
+
 ### Integrating a feature from a newer ML4W
 
 The tree under `home/` was vendored from ML4W and is now ours. The base commit is the one named in README's opening paragraph; it is the merge base for any port.
