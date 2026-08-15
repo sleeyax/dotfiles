@@ -96,6 +96,12 @@ Two things to know:
 
 Note that [chromium-flags.conf](home/.config/chromium-flags.conf) applies to every Chromium instance, web apps included — Arch's launcher reads it regardless of `--user-data-dir`.
 
+## Nautilus extensions
+
+[copy-path.py](home/.local/share/nautilus-python/extensions/copy-path.py) adds a *Copy Path* entry to the right-click menu, for the selection or for the folder being viewed, and puts the absolute paths on the clipboard one per line.
+
+Nautilus loads extensions once at startup, so run `nautilus -q` after an apply to pick up a change.
+
 ## Devices
 
 | Device  | Hostname | Keyboard    | Monitor            |

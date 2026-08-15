@@ -93,6 +93,8 @@ udiskie
 gvfs
 gvfs-mtp
 nautilus
+# nautilus-python runs .local/share/nautilus-python/extensions/copy-path.py.
+nautilus-python
 tumbler
 loupe
 
