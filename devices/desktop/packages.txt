@@ -1,0 +1,12 @@
+# Packages installed on falcon only, in addition to setup/packages.txt.
+# Same format: one package per line, '#' starts a comment.
+
+# --- Chat ---
+# custom.lua autostarts discord and slack, and routes all three to workspace 9.
+discord
+slack-desktop
+telegram-desktop
+
+# --- Gaming ---
+# games.lua rules match steam_app_* windows.
+steam
