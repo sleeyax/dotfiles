@@ -127,12 +127,6 @@ reload_quickshell() {
     fi
 }
 
-reload_pywalfox() {
-    type pywalfox >/dev/null 2>&1 || return
-    pywalfox update
-    info "Pywalfox updated"
-}
-
 reload_swaync() {
     sleep 0.1
     swaync-client -rs
@@ -225,7 +219,6 @@ else
     run_matugen
     reload_waybar
     reload_quickshell
-    reload_pywalfox
     reload_swaync
     generate_image_variants
 fi

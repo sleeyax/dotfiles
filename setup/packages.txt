@@ -51,7 +51,6 @@ qt6-multimedia-ffmpeg
 # awww Provides/Replaces swww, so pacman swaps it out on its own.
 awww
 matugen
-python-pywalfox
 # waypaper is launched by hand, not by any config here; its config.ini drives the theming pipeline through ml4w-wallpaper.
 waypaper
 nwg-look
