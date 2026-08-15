@@ -3,7 +3,7 @@
 Personal Hyprland dotfiles.
 
 Based on [ML4W](https://github.com/mylinuxforwork/dotfiles) **2.14.1** (`f974938`, 2026-07-09), vendored and maintained independently since.
-ML4W's own `version.json` reports 2.12.3 at that tag; the tag is authoritative.
+Upstream's own `version.json` reports 2.12.3 at that tag; the tag is authoritative, and that file is not vendored here.
 
 ## Structure
 

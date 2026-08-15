@@ -52,6 +52,7 @@ The entrypoint `hyprland.lua` is a list of `require`s, with `~/.config/hypr/` as
 Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/hypr/`:
 - `monitors.lua` — monitor setup (per-device)
 - `input.lua` — keyboard layout, pointer settings; laptop adds `hl.device()` blocks for AZERTY built-in vs QWERTY Planck (per-device)
+- `gestures.lua` — touchpad swipes and pinches (laptop only; falcon has no touchpad)
 - `conf/layouts.lua` — dwindle settings, workspace back-and-forth (base)
 - `custom.lua` — autostart, window rules, visual tweaks; loaded last, so it wins over everything (base)
 - `games.lua` — Steam game rules, `require`d from `custom.lua` (base)
