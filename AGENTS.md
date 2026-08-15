@@ -71,6 +71,31 @@ Colors come from matugen (see **Colors** below), which writes both `colors.conf`
 
 The `hl` API is typed: `/usr/share/hypr/stubs/hl.meta.lua` (LuaLS stubs) and `/usr/share/hypr/hyprland.lua` (annotated example) are the authoritative references. `luac -p <file>` syntax-checks; `Hyprland --verify-config` validates the whole tree; `hyprctl configerrors` reports runtime errors.
 
+### Waybar
+
+Every module definition lives in the single `home/.config/waybar/modules.json`, including the custom ones.
+A theme's `config` only picks which modules appear and in what order.
+`launch.sh` `sed`s a fixed few of those entries out of the theme `config` by exact string, so each name stays on its own line in the canonical `"name",` form.
+
+`modules.json` is JSONC: it has `//` comments and a trailing comma, so `jq` cannot parse it and waybar is the only parser. Run waybar in the foreground to see a syntax error.
+
+**Signal registry.** `signal: N` makes a module re-exec on `SIGRTMIN+N`, and the numbers are global to the bar, so a new module takes the next free one:
+
+| Signal | Module | Fired from |
+| ------ | ------ | ---------- |
+| 1 | `custom/updates` | `ml4w/settings/install-updates.sh` |
+| 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh feed` |
+
+`escape: true` escapes Pango markup, which is right for a module printing arbitrary text and wrong for one drawing with markup. A module that draws leaves it off and escapes its own interpolations instead — or, as `claude-usage.sh` does, interpolates nothing but generated integers and fixed labels.
+
+**Module state never goes under a stow-folded config dir.** `~/.config/waybar` and `~/.config/hypr` are symlinks into `.stow/dotfiles/`, which `apply.sh` runs `rsync -a --delete` over, so a cache written beside the script is destroyed on the next apply. Write to `${XDG_CACHE_HOME:-$HOME/.cache}` instead. (This is the general form of the rule in **Preserved files** below.)
+
+`claude-usage.sh` is a pure renderer and makes no network calls. Its only data source is `home/.claude/statusline.sh`, which pipes the statusline payload into `claude-usage.sh feed` because the `statusLine` command is the one place Claude Code exposes `rate_limits`.
+
+`home/.claude/` holds `statusline.sh` and nothing else — no `settings.json`, no credentials, no agents.
+`apply.sh` runs `mkdir -p "$HOME/.claude"` *before* stowing for the folding reason above: without it, stow would make `~/.claude` a symlink into `.stow/` and Claude Code's own state would land there.
+(The `mkdir -p "$HOME/.mydotfiles"` further down is the same idea but runs after stow, since nothing is stowed into it.)
+
 ### Colors
 
 `~/.config/matugen/config.toml` maps each template in `matugen/templates/` to an output: `hypr/colors.lua`, `hypr/colors.conf`, `waybar/colors.css`, `rofi/colors.rasi`, `gtk-{3,4}.0/colors.css`, `btop/themes/matugen.theme`, and the rest. `ml4w-wallpaper` re-renders all of them on every wallpaper change.

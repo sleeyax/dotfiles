@@ -145,6 +145,10 @@ mkdir -p "$STOW_DIR"
 rsync -a --delete "$STOW_NEW/" "$STOW_DIR/"
 rm -rf "$STOW_NEW"
 
+# Stow folds at the directory level, so an absent ~/.claude would become a symlink into .stow/ and Claude Code would write its credentials and sessions where rsync --delete destroys them.
+# With the directory already there, stow descends and links only statusline.sh.
+mkdir -p "$HOME/.claude"
+
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
 

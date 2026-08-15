@@ -64,6 +64,21 @@
     "on-click": "~/.config/ml4w/settings/install-updates.sh",
     "on-click-right": "~/.config/ml4w/settings/software.sh"
   },
+  // Claude Code usage limits, fed by ~/.claude/statusline.sh
+  "custom/claude-usage": {
+    "format": "{}",
+    "return-type": "json",
+    // No escaping: text and tooltip are Pango markup, which "escape": true would mangle.
+    "escape": false,
+    "exec": "~/.config/waybar/scripts/claude-usage.sh",
+    "interval": 30,
+    "signal": 2,
+    "hide-empty-text": true,
+    "tooltip": true,
+    "on-click": "xdg-open https://claude.ai/settings/usage",
+    "on-scroll-up": "true",
+    "on-scroll-down": "true"
+  },
   // Rofi Application Launcher
   "custom/appmenu": {
     // START APPS LABEL

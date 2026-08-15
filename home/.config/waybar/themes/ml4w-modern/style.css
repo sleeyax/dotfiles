@@ -280,6 +280,44 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
+ * Claude Code Usage
+ * ----------------------------------------------------- */
+
+#custom-claude-usage {
+    background-color: @background;
+    font-size: 14px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;
+}
+
+/* The `*` rule at the top of this file matches the inner label directly, beating any
+   font-family inherited from the module box. The bars only tile at a constant width
+   if every cell has the same advance. */
+#custom-claude-usage,
+#custom-claude-usage label {
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
+}
+
+#custom-claude-usage:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+#custom-claude-usage.warn {
+    color: @tertiary;
+}
+
+#custom-claude-usage.crit {
+    color: @error;
+    border-color: @error;
+}
+
+/* -----------------------------------------------------
  * Hardware Group
  * ----------------------------------------------------- */
 

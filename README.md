@@ -102,6 +102,19 @@ Note that [chromium-flags.conf](home/.config/chromium-flags.conf) applies to eve
 
 Nautilus loads extensions once at startup, so run `nautilus -q` after an apply to pick up a change.
 
+## Claude Code usage
+
+The waybar pill next to the update counter shows how much of each Claude Code quota is gone: the left bar is the rolling 5-hour session window, the right one the 7-day window. It turns amber past 75% and red past 90%.
+
+Hover for the breakdown — used and left, when each window resets and how far off that is, and whether the 5-hour window is being burned faster or slower than the clock. Click to open the usage dashboard on claude.ai.
+
+The numbers come from [statusline.sh](home/.claude/statusline.sh): Claude Code hands the statusline command a `rate_limits` object, which it forwards to [claude-usage.sh](home/.config/waybar/scripts/claude-usage.sh) to cache in `~/.cache/claude-usage/`. Nothing here talks to the network.
+
+Two consequences of that:
+
+- The pill hides itself until Claude Code has run once on this machine, and stays hidden on a plan that has no rate limits to report.
+- It only counts what this machine used. Sessions on claude.ai, the other device, or in the cloud move the real quota without moving the bars. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
+
 ## Devices
 
 | Device  | Hostname | Keyboard    | Monitor            |

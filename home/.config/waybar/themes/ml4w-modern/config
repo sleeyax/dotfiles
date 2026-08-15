@@ -24,6 +24,7 @@
     // Modules Right    
     "modules-right": [
         "custom/updates",
+        "custom/claude-usage",
         "pulseaudio",
         "bluetooth",
         "network",
