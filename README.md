@@ -49,21 +49,7 @@ Don't add files under `~/.config/zshrc/` directly — that path is a stow symlin
 The tree under `home/` came from ML4W and is now ours to edit; there is no submodule and no merge to keep up with.
 ML4W is still available as a git remote, so individual features can be pulled from newer releases on demand.
 
-[ml4w-base.env](ml4w-base.env) records which upstream commit `home/` is based on.
-[scripts/ml4w.sh](scripts/ml4w.sh) queries that upstream and ports changes out of it:
-
-```bash
-./scripts/ml4w.sh sync                     # fetch ML4W (creates the remote on first run)
-./scripts/ml4w.sh tags                     # list upstream releases
-./scripts/ml4w.sh diff base 2.15 .config/waybar  # what changed upstream
-./scripts/ml4w.sh log base..2.15 [path]    # commits behind that diff
-./scripts/ml4w.sh show 2.15 <path>         # print upstream's copy of a file
-./scripts/ml4w.sh status                   # what we changed, base vs home/
-./scripts/ml4w.sh take 2.15 <path>         # overwrite home/<path> with upstream's
-./scripts/ml4w.sh port 2.15 <path>         # 3-way merge upstream's change into ours
-```
-
-Upstream's tags are fetched into `refs/ml4w-tags/*` rather than `refs/tags/*`, so they never show up in `git tag` or get pushed.
+The base commit above is the merge base for porting a feature out of a newer release. The recipe is in [AGENTS.md](AGENTS.md#integrating-a-feature-from-a-newer-ml4w); it is plain `git diff` and `git show` against an `ml4w` remote, so there is no wrapper script to keep working.
 
 ### Ported from later versions
 

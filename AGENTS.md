@@ -13,7 +13,6 @@ Personal Hyprland dotfiles for Arch Linux, originally based on [ML4W](https://gi
 ./scripts/apply.sh --force  # Reinstall all packages
 ./scripts/set-device.sh desktop  # Manually switch to desktop config
 ./scripts/set-device.sh laptop   # Manually switch to laptop config
-./scripts/ml4w.sh status         # What we've changed relative to the vendored ML4W base
 ```
 
 ## Architecture
@@ -81,20 +80,26 @@ Two consequences when adding a matugen output:
 
 ### Integrating a feature from a newer ML4W
 
-The tree under `home/` was vendored from ML4W and is now ours. `ml4w-base.env` records the commit it came from; that commit is the merge base for porting.
+The tree under `home/` was vendored from ML4W and is now ours. The base commit is the one named in README's opening paragraph; it is the merge base for any port.
 
-1. `./scripts/ml4w.sh sync` — fetch ML4W (creates the `ml4w` remote on first run).
-2. `./scripts/ml4w.sh tags` — confirm the target version exists.
-3. `./scripts/ml4w.sh diff base <target> [subpath]` — read what changed upstream. Narrow with a subpath (e.g. `.config/waybar`) once you know where the feature lives. `log base..<target> [subpath]` gives the commits behind that diff, and `show <target> <path>` prints upstream's copy of one file without touching the tree.
-4. Map paths: upstream `dotfiles/<p>` → `home/<p>`. Per-device variants live at `devices/desktop/<p>` and `devices/laptop/<p>`.
-5. For each file, check whether we've modified it: `./scripts/ml4w.sh status <p>`.
-   - **Empty (untouched):** `./scripts/ml4w.sh take <target> <p>`.
-   - **Non-empty (ours):** `./scripts/ml4w.sh port <target> <p>`, then resolve conflict markers by hand. Our changes win on intent; upstream's win on new mechanism.
-6. Check for device twins: `ls devices/*/<p>` — the same hunk usually has to be applied there too.
-7. Update provenance: a **full** sync bumps `ML4W_TAG`/`ML4W_COMMIT`/`ML4W_DATE` in `ml4w-base.env` *and* the version sentence in README. A **partial** port leaves `ml4w-base.env` alone and adds a row to README's "Ported from later versions" table.
-8. Verify: `./scripts/apply.sh`; `luac -p` every touched `.lua`; `Hyprland --verify-config`; `hyprctl configerrors`.
+```bash
+BASE=f974938fd39382bc54816dcf5e76983239108914   # from README
+git remote add ml4w https://github.com/mylinuxforwork/dotfiles.git   # first time only
+git fetch ml4w 'refs/tags/*:refs/ml4w-tags/*' "$BASE"
+```
 
-Never edit `ml4w-base.env` to "fix" a diff — it describes history, not intent.
+Fetching upstream tags into `refs/ml4w-tags/*` rather than `refs/tags/*` keeps them out of `git tag` and out of anything pushed.
+
+1. Read what changed upstream: `git diff "$BASE:dotfiles" ml4w-tags/<target>:dotfiles [-- <subpath>]`. Narrow with a subpath once you know where the feature lives.
+2. Map paths: upstream `dotfiles/<p>` → `home/<p>`. Per-device variants live at `devices/desktop/<p>` and `devices/laptop/<p>`.
+3. For each file, check whether we've modified it: `git diff "$BASE:dotfiles/<p>" "HEAD:home/<p>"`.
+   - **Empty (untouched):** take upstream's copy wholesale — `git show ml4w-tags/<target>:dotfiles/<p> > home/<p>`.
+   - **Non-empty (ours):** 3-way merge it, using the base as the ancestor, then resolve markers by hand. Our changes win on intent; upstream's win on new mechanism.
+4. Check for device twins: `ls devices/*/<p>` — the same hunk usually has to be applied there too.
+5. Update provenance: a **full** sync rewrites the version sentence in README. A **partial** port leaves it alone and adds a row to README's "Ported from later versions" table.
+6. Verify: `./scripts/apply.sh`; `luac -p` every touched `.lua`; `Hyprland --verify-config`; `hyprctl configerrors`.
+
+Never rewrite the recorded base commit to "fix" a diff — it describes history, not intent.
 
 ### Web Apps
 

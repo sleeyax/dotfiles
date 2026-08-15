@@ -12,9 +12,6 @@ PACKAGES_FILE="$DOTFILES_DIR/setup/packages.txt"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/sleeyax-dotfiles"
 PACKAGES_STAMP="$STATE_DIR/packages.sha256"
 
-# shellcheck source=../ml4w-base.env
-source "$DOTFILES_DIR/ml4w-base.env"
-
 # Check for pacman (we only support Arch-based distro for now)
 if ! command -v pacman &>/dev/null; then
   echo "Error: pacman not found"
