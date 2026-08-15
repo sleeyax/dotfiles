@@ -12,7 +12,6 @@ tar
 unzip
 jq
 inotify-tools
-figlet
 pacman-contrib
 libnotify
 libsecret

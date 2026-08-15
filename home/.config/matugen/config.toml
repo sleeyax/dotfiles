@@ -48,22 +48,6 @@ output_path = '~/.cache/wal/colors.json'
 input_path = '~/.config/matugen/templates/colors.css'
 output_path = '~/.config/swaync/colors.css'
 
-[templates.primary]
-input_path = '~/.config/matugen/templates/primary'
-output_path = '~/.config/ml4w/colors/primary'
-
-[templates.secondary]
-input_path = '~/.config/matugen/templates/secondary'
-output_path = '~/.config/ml4w/colors/secondary'
-
-[templates.on_surface]
-input_path = '~/.config/matugen/templates/onsurface'
-output_path = '~/.config/ml4w/colors/onsurface'
-
-[templates.on_primary]
-input_path = '~/.config/matugen/templates/onprimary'
-output_path = '~/.config/ml4w/colors/onprimary'
-
 [templates.quickshell_overview]
 input_path  = "./templates/quickshell-overview.qml"
 output_path = "~/.config/quickshell/overview/common/Appearance.colors.qml"
