@@ -14,7 +14,6 @@ alias shutdown='systemctl poweroff'
 alias wifi='nmtui'
 alias filemanager='~/.config/ml4w/settings/filemanager'
 alias lock='hyprlock'
-alias clock='tty-clock'
 alias system='~/.config/ml4w/settings/systemmonitor'
 
 # -----------------------------------------------------
