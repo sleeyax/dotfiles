@@ -61,7 +61,9 @@ Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/
 
 `custom.lua` and `games.lua` are files ML4W never shipped; `hyprland.lua` opt-in loads `custom.lua` if present. Since it is loaded last, it remains the cheapest place to put a change that has to win.
 
-The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy, because both devices override them. They are kept anyway: `gestures.lua` is laptop-only, so the base tree is not uniformly dead here.
+The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy, because both devices override them. They are kept as the documented shape of a per-device file: adding a third device means copying one, not inventing it.
+
+`gestures.lua` is laptop-only and lives only in `devices/laptop/`, so `hyprland.lua` guards its `require` the way it guards `custom.lua`.
 
 Colors come from matugen (see **Colors** below), which writes both `colors.conf` and `colors.lua`. `colors.lua` defines bare globals loaded before `custom.lua`, so a palette entry is referenced as plain `inverse_primary`, not `$inverse_primary`.
 

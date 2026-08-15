@@ -8,7 +8,12 @@ require("monitors")
 require("input")
 
 -- GESTURE
-require("gestures")
+-- Only devices with a touchpad ship a gestures.lua.
+local g = io.open(os.getenv("HOME") .. "/.config/hypr/gestures.lua", "r")
+if g then
+    g:close()
+    require("gestures")
+end
 
 -- AUTOSTART
 require("conf.autostart")
