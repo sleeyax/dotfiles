@@ -21,7 +21,6 @@ hyprland
 uwsm
 hypridle
 hyprlock
-hyprpicker
 hyprsunset
 hyprsysteminfo
 hyprshutdown
