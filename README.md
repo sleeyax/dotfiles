@@ -14,10 +14,12 @@ ML4W's own `version.json` reports 2.12.3 at that tag; the tag is authoritative.
 │   └── laptop/         # panda-specific (AZERTY, gestures)
 ├── setup/
 │   └── packages.txt    # Packages installed by apply.sh
-└── scripts/            # Apply/switch/upstream scripts
+└── scripts/            # Apply/switch scripts
 ```
 
 `home/` is deployed as-is, then `devices/$DEVICE/` is overlaid on top of it, so a device file always wins over the base file at the same path.
+
+Packages are the exception: `devices/$DEVICE/packages.txt` is *added* to `setup/packages.txt` rather than replacing it, so it only exists to give a device something the other one shouldn't have.
 
 ## Install
 

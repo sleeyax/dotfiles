@@ -35,6 +35,16 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
+# The device list is additive: a device without one installs exactly the global list.
+PACKAGES_FILES=("$PACKAGES_FILE")
+if [ -f "$DEVICE_DIR/packages.txt" ]; then
+  PACKAGES_FILES+=("$DEVICE_DIR/packages.txt")
+fi
+
+packages_hash() {
+  cat "${PACKAGES_FILES[@]}" | sha256sum | cut -d' ' -f1
+}
+
 install_dependencies() {
   if command -v yay &>/dev/null; then
     AUR_HELPER=yay
@@ -55,13 +65,13 @@ install_dependencies() {
   fi
 
   echo "Installing packages with $AUR_HELPER..."
-  mapfile -t PKGS < <(sed 's/#.*//' "$PACKAGES_FILE" | grep -vE '^\s*$' | tr -d '[:blank:]')
+  mapfile -t PKGS < <(sed 's/#.*//' "${PACKAGES_FILES[@]}" | grep -vE '^\s*$' | tr -d '[:blank:]')
   "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
 
   xdg-user-dirs-update
 
   mkdir -p "$STATE_DIR"
-  sha256sum "$PACKAGES_FILE" | cut -d' ' -f1 > "$PACKAGES_STAMP"
+  packages_hash > "$PACKAGES_STAMP"
 }
 
 # Parse flags
@@ -73,8 +83,8 @@ for arg in "$@"; do
   esac
 done
 
-# Hashing the package list rather than setting a boolean means adding a package is enough to trigger an install on the next apply.
-WANT_HASH=$(sha256sum "$PACKAGES_FILE" | cut -d' ' -f1)
+# Hashing the package lists rather than setting a boolean means adding a package is enough to trigger an install on the next apply.
+WANT_HASH=$(packages_hash)
 if [ "$FORCE" == "1" ] || [ ! -f "$PACKAGES_STAMP" ] || [ "$(cat "$PACKAGES_STAMP")" != "$WANT_HASH" ]; then
   install_dependencies
 else
