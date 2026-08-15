@@ -22,7 +22,6 @@ uwsm
 hypridle
 hyprlock
 hyprsunset
-hyprsysteminfo
 hyprshutdown
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
@@ -40,11 +39,10 @@ rofi
 swaync
 quickshell
 
-# Qt runtime that quickshell pulls in
+# Qt runtime. qt6-svg and qt6-wayland are quickshell's; the other two are for Qt apps generally.
 qt5-wayland
 qt6-wayland
 qt6-svg
-qt6-virtualkeyboard
 qt6-multimedia-ffmpeg
 
 # --- Wallpaper and theming ---
@@ -77,7 +75,6 @@ kooha
 
 # --- Clipboard ---
 wl-clipboard
-xclip
 cliphist
 
 # --- Audio, network, bluetooth, power ---
