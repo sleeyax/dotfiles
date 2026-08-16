@@ -283,28 +283,41 @@ window#waybar.empty #window {
  * Claude Code Usage
  * ----------------------------------------------------- */
 
+/* The two discs are SVGs that claude-usage.sh redraws at the exact percentage, painted over the
+   spacer it puts after the mascot. Reserving that width with padding instead would leave them
+   outside the label's hit region, so neither they nor the tooltip would respond to hover.
+   The url()s are relative to this file, and resolve to where the script writes them. */
 #custom-claude-usage {
     background-color: @background;
-    font-size: 14px;
+    background-image: url("../../../../.cache/claude-usage/five_hour.svg"),
+                      url("../../../../.cache/claude-usage/seven_day.svg");
+    background-repeat: no-repeat, no-repeat;
+    background-position: 30px center, 54px center;
+    background-size: 16px 16px, 16px 16px;
+    font-size: 16px;
     color: @on_surface;
     border-radius: 8px;
-    padding: 2px 10px 0px 10px;
+    /* No horizontal padding: the script's leading and trailing spacers hold those margins open
+       instead, and unlike padding they are part of the label, so the whole pill stays hoverable. */
+    padding: 2px 0px 0px 0px;
     margin: 3px 10px 3px 0px;
     border: 2px solid @border_color;
     transition: all 0.3s ease-out;
 }
 
 /* The `*` rule at the top of this file matches the inner label directly, beating any
-   font-family inherited from the module box. The bars only tile at a constant width
-   if every cell has the same advance. */
+   font-family inherited from the module box, and the mascot and the gauge discs are
+   Nerd Font glyphs that exist in no other family here. */
 #custom-claude-usage,
 #custom-claude-usage label {
     font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
 }
 
+/* background-color, not the background shorthand: the shorthand resets background-image and takes
+   the discs with it. */
 #custom-claude-usage:hover {
     color: @on_surface;
-    background: @primary_container;
+    background-color: @primary_container;
     border-color: @primary;
 }
 

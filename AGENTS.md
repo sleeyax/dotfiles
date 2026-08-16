@@ -86,11 +86,21 @@ A theme's `config` only picks which modules appear and in what order.
 | 1 | `custom/updates` | `ml4w/settings/install-updates.sh` |
 | 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh feed` |
 
+`SIGUSR2` is different in kind: it reloads the whole bar's config and stylesheet rather than re-execing one module. `claude-usage.sh` fires it, and only a module drawing with images has any reason to.
+
 `escape: true` escapes Pango markup, which is right for a module printing arbitrary text and wrong for one drawing with markup. A module that draws leaves it off and escapes its own interpolations instead — or, as `claude-usage.sh` does, interpolates nothing but generated integers and fixed labels.
 
 **Module state never goes under a stow-folded config dir.** `~/.config/waybar` and `~/.config/hypr` are symlinks into `.stow/dotfiles/`, which `apply.sh` runs `rsync -a --delete` over, so a cache written beside the script is destroyed on the next apply. Write to `${XDG_CACHE_HOME:-$HOME/.cache}` instead. (This is the general form of the rule in **Preserved files** below.)
 
 `claude-usage.sh` is a pure renderer and makes no network calls. Its only data source is `home/.claude/statusline.sh`, which pipes the statusline payload into `claude-usage.sh feed` because the `statusLine` command is the one place Claude Code exposes `rate_limits`.
+
+**Drawing with images.** The module's text is the mascot glyph alone; the two usage discs are SVGs the script writes to `$XDG_CACHE_HOME/claude-usage/`, and `themes/ml4w-modern/style.css` paints them as `background-image` layers. No font glyph fills continuously — the closest, `nf-md-circle_slice_1..8`, quantises to eighths — so an exact percentage has to be drawn.
+
+Three things follow, and they are the price of the exact fill:
+- **The script owns the colour.** An image cannot inherit the module's CSS `color:`, so `claude-usage.sh` resolves `on_surface`/`tertiary`/`error` out of `~/.config/waybar/colors.css` itself and writes the hex into the SVG. A wallpaper change rewrites that palette silently, so the colour is re-read every render and the discs catch up within one `interval`.
+- **A rewritten disc needs `SIGUSR2`.** GTK holds the decoded image in the style provider, so nothing repaints until the stylesheet reloads. The script compares the SVG it would write against the file on disk and signals only on a real change, because that reload restarts every module on the bar.
+- **The text holds the space open, not the padding.** A label's hit region follows its text, so anything sitting over CSS padding is unhoverable — with padding the discs took no hover and the tooltip appeared only over the mascot glyph. The module therefore has no horizontal padding at all: the script emits a non-breaking space, the mascot, then six more, and the discs are painted over those at fixed pixel offsets. The spaces are non-breaking because Pango may drop ordinary ones at an edge. Changing `font-size`, the mascot or the spacer count means re-measuring the offsets. The `url()` paths are relative to `style.css` and assume the default `~/.cache`; a non-default `XDG_CACHE_HOME` needs them updated to match.
+- Anything hover-related on this module must set `background-color`, never the `background` shorthand: the shorthand resets `background-image` and the discs vanish on hover.
 
 `home/.claude/` holds `statusline.sh` and nothing else — no `settings.json`, no credentials, no agents.
 `apply.sh` runs `mkdir -p "$HOME/.claude"` *before* stowing for the folding reason above: without it, stow would make `~/.claude` a symlink into `.stow/` and Claude Code's own state would land there.

@@ -104,7 +104,7 @@ Nautilus loads extensions once at startup, so run `nautilus -q` after an apply t
 
 ## Claude Code usage
 
-The waybar pill next to the update counter shows how much of each Claude Code quota is gone: the left bar is the rolling 5-hour session window, the right one the 7-day window. It turns amber past 75% and red past 90%.
+The waybar pill next to the update counter shows how much of each Claude Code quota is gone: a starburst, then a disc per window — the rolling 5-hour session first, the 7-day second. Each disc is filled to its exact percentage, and the whole pill turns amber past 75% and red past 90%.
 
 Hover for the breakdown — used and left, when each window resets and how far off that is, and whether the 5-hour window is being burned faster or slower than the clock. Click to open the usage dashboard on claude.ai.
 
