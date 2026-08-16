@@ -104,7 +104,9 @@ Nautilus loads extensions once at startup, so run `nautilus -q` after an apply t
 
 ## Claude Code usage
 
-The waybar pill next to the update counter shows how much of each Claude Code quota is gone: a starburst, then a ring per window — the rolling 5-hour session first, the 7-day second. Each ring fills clockwise from 12 o'clock to its exact percentage, and the whole pill turns amber past 75% and red past 90%.
+The waybar pill next to the update counter shows how much of each Claude Code quota is gone: the Claude mark, then a ring per window — the rolling 5-hour session first, the 7-day second. Each ring fills clockwise from 12 o'clock to its exact percentage, and the rings turn amber past 75% and red past 90%.
+
+[claude.svg](home/.config/waybar/claude.svg) is the Claude mark from [Simple Icons](https://simpleicons.org), recoloured to Claude orange.
 
 Hover for the breakdown — used and left, when each window resets and how far off that is, and whether the 5-hour window is being burned faster or slower than the clock. Click to open the usage dashboard on claude.ai.
 

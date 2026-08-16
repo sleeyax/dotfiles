@@ -11,15 +11,12 @@ set -uo pipefail
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-usage"
 CACHE="$CACHE_DIR/usage.json"
 
-# The Claude starburst as a Unicode character (U+2733) is absent from JetBrainsMono Nerd Font and
-# falls back to Noto Color Emoji, which is a fixed colour and a different advance width.
-# nf-fa-asterisk is the same shape, in the font already in use, and takes the module's CSS colour.
-MASCOT=$'\uF069' # nf-fa-asterisk
-# The label's hit region follows its text, not its CSS padding, so every margin here is spaces
-# rather than padding: with padding, the rings are unhoverable and the tooltip only appears
-# over the mascot itself. Non-breaking, because Pango is free to drop ordinary ones at an edge.
-LEAD=$'\u00a0'
-SPACER=$'\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0'
+# The module draws entirely with images, so its text is nothing but the spaces they are painted
+# over. A label's hit region follows its text and not its CSS padding, so holding the width open
+# with padding instead would leave the mark and the rings unhoverable and the tooltip unreachable.
+# Non-breaking, because Pango is free to drop ordinary spaces at an edge.
+# One per 9.6px at font-size 16px: margin, mark (18px), gap, ring, gap, ring, margin.
+SPACER=$'\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0'
 
 # The rings are drawn as SVG rather than picked from the eight nf-md-circle_slice glyphs, so a
 # percentage renders at its exact angle. style.css points at these paths and paints them over the
@@ -161,7 +158,7 @@ render() {
   ((fh_reset > 0 && now >= fh_reset)) && { fh_pct=0; fh_reset=0; }
   ((sd_reset > 0 && now >= sd_reset)) && { sd_pct=0; sd_reset=0; }
 
-  # The text is only the mascot and its spacer; the rings are CSS backgrounds painted over the latter.
+  # Everything visible is a CSS background image; the text only holds the space open.
   local tooltip='' footer='' pace_txt='' age age_txt maxpct=0 class=ok
   if ((fh_pct >= 0)); then
     tooltip+=$(row '5 hour' "$fh_pct" "$fh_reset" "$now")
@@ -188,7 +185,7 @@ render() {
 
   # The tooltip is its own GTK window, so #custom-claude-usage never reaches it and the columns only
   # line up if the markup asks for the monospace font itself.
-  jq -cn --arg text "$LEAD$MASCOT$SPACER" --arg tt "<span font_family=\"JetBrainsMono Nerd Font\">$tooltip</span>" \
+  jq -cn --arg text "$SPACER" --arg tt "<span font_family=\"JetBrainsMono Nerd Font\">$tooltip</span>" \
     --arg cls "$class" --argjson pct "$maxpct" \
     '{text: $text, class: $cls, tooltip: $tt, percentage: $pct}'
 
