@@ -16,21 +16,22 @@ CACHE="$CACHE_DIR/usage.json"
 # nf-fa-asterisk is the same shape, in the font already in use, and takes the module's CSS colour.
 MASCOT=$'\uF069' # nf-fa-asterisk
 # The label's hit region follows its text, not its CSS padding, so every margin here is spaces
-# rather than padding: with padding, the discs are unhoverable and the tooltip only appears
+# rather than padding: with padding, the rings are unhoverable and the tooltip only appears
 # over the mascot itself. Non-breaking, because Pango is free to drop ordinary ones at an edge.
 LEAD=$'\u00a0'
 SPACER=$'\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0'
 
-# The discs are drawn as SVG rather than picked from the eight nf-md-circle_slice glyphs, so a
+# The rings are drawn as SVG rather than picked from the eight nf-md-circle_slice glyphs, so a
 # percentage renders at its exact angle. style.css points at these paths and paints them over the
 # spacer that follows the mascot.
 FIVE_HOUR_SVG="$CACHE_DIR/five_hour.svg"
 SEVEN_DAY_SVG="$CACHE_DIR/seven_day.svg"
 # An image cannot inherit the module's CSS colour, so the palette lookup CSS would have done moves here.
 PALETTE="$HOME/.config/waybar/colors.css"
-# The ring is the outline of the disc, not a dimmed track: at 16px a faint one disappears against the pill.
-TRACK_OPACITY=1
-TRACK_WIDTH=3
+# Progress runs along the rim rather than filling a wedge: a wedge tapers to nothing at the centre,
+# so the low percentages that most of a quota's life is spent at read as less than they are.
+ARC_WIDTH=5
+TRACK_OPACITY=0.45
 
 FIVE_HOUR_WINDOW=18000
 
@@ -66,29 +67,29 @@ palette() { # $1 = matugen colour name, $2 = fallback
 
 # A window that is absent renders as nothing at all rather than as an empty ring, which would claim
 # the quota is untouched.
-svg_disc() { # $1 = 0..100, or negative for absent; $2 = fill colour
-  awk -v pct="$1" -v fill="$2" -v track="$TRACK_OPACITY" -v sw="$TRACK_WIDTH" 'BEGIN {
-    size = 32; c = size / 2; r = c * 0.86 - sw / 2; pi = 3.141592653589793
+svg_ring() { # $1 = 0..100, or negative for absent; $2 = stroke colour
+  awk -v pct="$1" -v col="$2" -v track="$TRACK_OPACITY" -v sw="$ARC_WIDTH" 'BEGIN {
+    size = 32; c = size / 2; r = c * 0.95 - sw / 2; pi = 3.141592653589793
     printf "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">", size, size, size, size
     if (pct >= 0) {
-      printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-opacity=\"%s\" stroke-width=\"%g\"/>", c, c, r, fill, track, sw
-      # A 100% arc ends where it starts, which draws nothing, so the full disc is its own case.
+      printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-opacity=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, track, sw
+      # A 100% arc ends where it starts, which draws nothing, so the closed ring is its own case.
       if (pct >= 100)
-        printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"%s\"/>", c, c, r, fill
+        printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, sw
       else if (pct > 0) {
         a = 2 * pi * pct / 100 - pi / 2
-        printf "<path d=\"M %g %g L %g %g A %g %g 0 %d 1 %.2f %.2f Z\" fill=\"%s\"/>",
-          c, c, c, c - r, r, r, (pct > 50), c + r * cos(a), c + r * sin(a), fill
+        printf "<path d=\"M %g %g A %g %g 0 %d 1 %.2f %.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>",
+          c, c - r, r, r, (pct > 50), c + r * cos(a), c + r * sin(a), col, sw
       }
     }
     printf "</svg>"
   }'
 }
 
-write_disc() { # $1 = path, $2 = svg; true when the file changed
+write_ring() { # $1 = path, $2 = svg; true when the file changed
   [ "$2" = "$(cat "$1" 2>/dev/null)" ] && return 1
   local tmp
-  tmp=$(mktemp "$CACHE_DIR/.disc.XXXXXX") || return 1
+  tmp=$(mktemp "$CACHE_DIR/.ring.XXXXXX") || return 1
   printf '%s\n' "$2" >"$tmp" && mv -f "$tmp" "$1" && return 0
   rm -f "$tmp"
   return 1
@@ -160,7 +161,7 @@ render() {
   ((fh_reset > 0 && now >= fh_reset)) && { fh_pct=0; fh_reset=0; }
   ((sd_reset > 0 && now >= sd_reset)) && { sd_pct=0; sd_reset=0; }
 
-  # The text is only the mascot and its spacer; the discs are CSS backgrounds painted over the latter.
+  # The text is only the mascot and its spacer; the rings are CSS backgrounds painted over the latter.
   local tooltip='' footer='' pace_txt='' age age_txt maxpct=0 class=ok
   if ((fh_pct >= 0)); then
     tooltip+=$(row '5 hour' "$fh_pct" "$fh_reset" "$now")
@@ -207,8 +208,8 @@ draw_discs() { # $1 = five hour percentage, $2 = seven day percentage, $3 = clas
   esac
 
   mkdir -p "$CACHE_DIR" || return
-  write_disc "$FIVE_HOUR_SVG" "$(svg_disc "$1" "$fill")" && changed=0
-  write_disc "$SEVEN_DAY_SVG" "$(svg_disc "$2" "$fill")" && changed=0
+  write_ring "$FIVE_HOUR_SVG" "$(svg_ring "$1" "$fill")" && changed=0
+  write_ring "$SEVEN_DAY_SVG" "$(svg_ring "$2" "$fill")" && changed=0
 
   # GTK holds the decoded image in the style provider, so only a stylesheet reload picks up a
   # rewritten disc. That reload covers the whole bar, hence only on an actual change.

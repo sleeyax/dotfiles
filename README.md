@@ -104,7 +104,7 @@ Nautilus loads extensions once at startup, so run `nautilus -q` after an apply t
 
 ## Claude Code usage
 
-The waybar pill next to the update counter shows how much of each Claude Code quota is gone: a starburst, then a disc per window — the rolling 5-hour session first, the 7-day second. Each disc is filled to its exact percentage, and the whole pill turns amber past 75% and red past 90%.
+The waybar pill next to the update counter shows how much of each Claude Code quota is gone: a starburst, then a ring per window — the rolling 5-hour session first, the 7-day second. Each ring fills clockwise from 12 o'clock to its exact percentage, and the whole pill turns amber past 75% and red past 90%.
 
 Hover for the breakdown — used and left, when each window resets and how far off that is, and whether the 5-hour window is being burned faster or slower than the clock. Click to open the usage dashboard on claude.ai.
 
@@ -113,7 +113,7 @@ The numbers come from [statusline.sh](home/.claude/statusline.sh): Claude Code h
 Two consequences of that:
 
 - The pill hides itself until Claude Code has run once on this machine, and stays hidden on a plan that has no rate limits to report.
-- It only counts what this machine used. Sessions on claude.ai, the other device, or in the cloud move the real quota without moving the bars. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
+- It only counts what this machine used. Sessions on claude.ai, the other device, or in the cloud move the real quota without moving the rings. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
 
 ## Devices
 
