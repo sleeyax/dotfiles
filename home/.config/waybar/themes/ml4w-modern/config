@@ -6,6 +6,8 @@
     "margin-left": 0,
     "margin-right": 0,
     "spacing": 0,
+    // Lets claude-usage.sh repaint its rings by rewriting an imported stylesheet.
+    "reload_style_on_change": true,
     // Load Modules
     "include": [
         "~/.config/waybar/modules.json"

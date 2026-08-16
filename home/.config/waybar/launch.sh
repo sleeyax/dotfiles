@@ -84,6 +84,14 @@ if [ -f ~/.config/waybar/themes${arrThemes[1]}/style-custom.css ]; then
     style_file="style-custom.css"
 fi
 
+# -----------------------------------------------------
+# Generated stylesheets
+# -----------------------------------------------------
+
+# Waybar only watches the @imports that resolved when it parsed the stylesheet, so the Claude usage
+# rings have to exist before the bar starts or they never reload.
+"$HOME/.config/waybar/scripts/claude-usage.sh" >/dev/null
+
 # Check if waybar-disabled file exists
 if [ ! -f $HOME/.config/ml4w/settings/waybar-disabled ]; then
     # Hyprland writes the instance lock `hyprctl instances` reads a moment after it fires the autostart commands, so the query comes back empty when waybar is started from there.

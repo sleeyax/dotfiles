@@ -129,11 +129,15 @@ if [ -f "$MATUGEN_CFG" ]; then
     | preserve_live_files
 fi
 
-# GTK parses every bookmark as an absolute file:// URI and expands nothing itself, so the tracked default carries a $HOME placeholder for us to fill in.
-BOOKMARKS="$STOW_NEW/dotfiles/.config/gtk-3.0/bookmarks"
-if [ -f "$BOOKMARKS" ]; then
-  sed -i "s|\$HOME|$HOME|g" "$BOOKMARKS"
-fi
+# Files that need an absolute path where nothing on the reading side expands one, so the tracked copy carries a placeholder for us to fill in.
+EXPAND=(
+  .config/gtk-3.0/bookmarks                           # GTK parses every bookmark as an absolute file:// URI
+  .config/waybar/themes/ml4w-modern/default/style.css # waybar only watches an @import it can resolve, and it resolves nothing relative to the importing file
+)
+for f in "${EXPAND[@]}"; do
+  [ -f "$STOW_NEW/dotfiles/$f" ] || continue
+  sed -i -e "s|\$XDG_CACHE_HOME|${XDG_CACHE_HOME:-$HOME/.cache}|g" -e "s|\$HOME|$HOME|g" "$STOW_NEW/dotfiles/$f"
+done
 
 # Files a GUI owns. A tracked copy under home/ is only a seed for a machine that has none, since the live file wins here.
 PRESERVE=(
