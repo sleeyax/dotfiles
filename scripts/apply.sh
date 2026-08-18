@@ -90,6 +90,25 @@ else
   echo "(Run with --force to reinstall)"
 fi
 
+# power-profiles-daemon ships D-Bus activated, so it only starts once a client asks for it, and waybar is that client.
+# Its power-profiles module segfaults when the activation lands in the window where the greeter session's bus connections are still going away.
+# Enabling the unit means the name is already taken by the time the bar starts.
+SERVICES=(power-profiles-daemon.service)
+
+enable_services() {
+  local pending=()
+  for svc in "${SERVICES[@]}"; do
+    systemctl is-enabled --quiet "$svc" 2>/dev/null || pending+=("$svc")
+  done
+
+  if [ ${#pending[@]} -gt 0 ]; then
+    echo "Enabling system services: ${pending[*]}"
+    sudo systemctl enable --now "${pending[@]}"
+  fi
+}
+
+enable_services
+
 echo "Applying dotfiles for device: $DEVICE"
 
 # Build merged dotfiles in temp dir, then sync into .stow in-place

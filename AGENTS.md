@@ -41,6 +41,16 @@ It lives in `setup/` and not `devices/<device>/` because `apply.sh` copies every
 
 Whether to install is decided by hashing both lists into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to either therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless.
 
+### Services
+
+Installing a package is not the same as enabling its unit, and `apply.sh` enables the handful that have to be running before the session rather than on demand.
+The list is the `SERVICES` array in `apply.sh` itself: with one entry, a `setup/services.txt` alongside the package lists would buy nothing.
+`enable_services` skips whatever `systemctl is-enabled` already reports, so a normal apply never prompts for sudo.
+
+Only a unit whose *timing* matters belongs here.
+`power-profiles-daemon` is the case that forced it: it ships D-Bus activated, waybar's power-profiles module is what triggers the activation, and that module segfaults when the call lands in the window where the display manager's greeter session is tearing its bus connections down.
+The race is won on most boots and lost on a slow one, which makes it look like a change when nothing changed.
+
 ### Device Detection
 
 `scripts/detect-device.sh` maps hostname to device name (`falcon` → desktop, `panda` → laptop). A manual override can be saved to `~/dotfiles/device` (gitignored).
