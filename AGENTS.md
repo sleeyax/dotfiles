@@ -96,7 +96,10 @@ A theme's `config` only picks which modules appear and in what order.
 | 1 | `custom/updates` | `ml4w/settings/install-updates.sh` |
 | 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh feed` |
 
-`SIGUSR2` is different in kind: it resets the whole bar rather than re-execing one module, so every module blinks out and back and the widths around them shift while they refill. Only `ml4w/scripts/ml4w-wallpaper` fires it, where a palette change makes the reset worth it; nothing on a timer may.
+`SIGUSR2` is different in kind, and nothing fires it.
+Waybar answers it by tearing every bar down and rebuilding it, which frees the modules while their async DBus calls are still in flight; `power-profiles-daemon` then segfaults when its reply lands on the freed object, and `launch.sh` backgrounds waybar under no supervision, so the bar simply stays gone.
+The wallpaper hook that used to send it now relaunches waybar through `launch.sh` instead — the same rebuild, in a process with no stale callbacks.
+Anything wanting a whole-bar refresh does the same; a module that only needs its own output refreshed takes a signal from the table above.
 
 `reload_style_on_change` is the one that costs nothing: waybar watches the stylesheet, and reloads the style provider alone without touching a module. It resolves an `@import` against its own config directories and never against the importing file, so an import it is meant to watch has to be an absolute path — see **Drawing with images** below.
 

@@ -107,15 +107,13 @@ run_matugen() {
     fi
 }
 
+# A relaunch rather than SIGUSR2, which waybar answers by tearing every bar down and rebuilding it.
+# That teardown frees the modules while their async DBus calls are still in flight, and power-profiles-daemon then segfaults when its reply lands on the freed object.
+# launch.sh already kills any running instance and holds a flock against parallel invocations, so a fresh process costs the same rebuild without the stale callbacks.
 reload_waybar() {
-    if pgrep -x waybar >/dev/null; then
-        pkill -SIGUSR2 waybar
-        info "Waybar reloaded"
-    else
-        nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
-        disown
-        info "Waybar launched"
-    fi
+    nohup bash -c "$HOME/.config/waybar/launch.sh" >/dev/null 2>&1 &
+    disown
+    info "Waybar relaunched"
 }
 
 reload_quickshell() {
