@@ -259,22 +259,14 @@ window#waybar.empty #window {
     transition: all 0.3s ease-out;    
 }
 
-#custom-updates.green:hover {
+/* Scoped to .normal so the critical tier keeps its colour under the pointer. */
+#custom-updates.normal:hover {
     color: @on_surface;
-    background: @primary_container;
+    background-color: @primary_container;
     border-color: @primary;
 }
 
-#custom-updates.green {
-    background-color: @background;
-}
-
-#custom-updates.yellow {
-    background-color: @tertiary;
-    color: @on_tertiary;
-}
-
-#custom-updates.red {
+#custom-updates.critical {
     background-color: @error;
     color: @on_error;
 }
