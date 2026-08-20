@@ -94,7 +94,7 @@ A theme's `config` only picks which modules appear and in what order.
 | Signal | Module | Fired from |
 | ------ | ------ | ---------- |
 | 1 | `custom/updates` | `ml4w/settings/install-updates.sh` |
-| 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh feed` |
+| 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh fetch` |
 
 `SIGUSR2` is different in kind, and nothing fires it.
 Waybar answers it by tearing every bar down and rebuilding it, which frees the modules while their async DBus calls are still in flight; `power-profiles-daemon` then segfaults when its reply lands on the freed object, and `launch.sh` backgrounds waybar under no supervision, so the bar simply stays gone.
@@ -107,7 +107,16 @@ Anything wanting a whole-bar refresh does the same; a module that only needs its
 
 **Module state never goes under a stow-folded config dir.** `~/.config/waybar` and `~/.config/hypr` are symlinks into `.stow/dotfiles/`, which `apply.sh` runs `rsync -a --delete` over, so a cache written beside the script is destroyed on the next apply. Write to `${XDG_CACHE_HOME:-$HOME/.cache}` instead. (This is the general form of the rule in **Preserved files** below.)
 
-`claude-usage.sh` is a pure renderer and makes no network calls. Its only data source is `home/.claude/statusline.sh`, which pipes the statusline payload into `claude-usage.sh feed` because the `statusLine` command is the one place Claude Code exposes `rate_limits`.
+`claude-usage.sh fetch` is the module's only source: it reads the OAuth token out of `$CLAUDE_CONFIG_DIR/.credentials.json` (`~/.claude` when that is unset) and asks `GET /api/oauth/usage`, which is where Claude Code itself gets these percentages.
+Asking is the only way to have the numbers.
+The `statusLine` command is the one place Claude Code hands `rate_limits` to a script, and a statusline only renders in the terminal client, so a session driven through the SDK (like T3 Code) yields none — which is why `home/.claude/statusline.sh` prints a readout and feeds nothing.
+
+Nothing else a session leaves behind carries a percentage either: the SDK's `rate_limit_event`, the `anthropic-ratelimit-unified-*` response headers and the CLI's startup `quota_check` all report a status and a reset time, while the transcripts under `~/.claude/projects/` and the `claude_code.*` OTel metrics report tokens.
+`~/.claude.json` holds a `cachedUsageUtilization` snapshot of the right shape, but no SDK session refreshes it, which is the same gap again.
+
+`render` starts a `fetch` in the background once the `last-fetch` marker is older than `REFRESH_INTERVAL`.
+The marker records attempts and not successes, so a broken endpoint is asked no oftener than a working one.
+That endpoint is undocumented, so a failure is expected rather than a bug to chase: the cache keeps the last numbers and the tooltip reports their age.
 
 **Drawing with images.** The module has no text beyond spaces: three `background-image` layers are painted over them. The first is `waybar/claude.svg`, a tracked asset: the Claude mark from Simple Icons, recoloured, and drawn at 18px against the rings' 16px so it reads as the label rather than a third gauge. The other two are the usage rings. No font glyph fills continuously — the closest, `nf-md-circle_slice_1..8`, quantises to eighths — so an exact percentage has to be drawn.
 

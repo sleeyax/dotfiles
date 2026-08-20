@@ -2,14 +2,26 @@
 # Waybar readout of the two Claude Code rate limit windows.
 #
 #   claude-usage.sh        print one line of JSON for waybar (default)
-#   claude-usage.sh feed   read statusline JSON on stdin, update the cache, signal waybar on change
+#   claude-usage.sh fetch  ask Anthropic for the two windows, cache them, signal waybar on change
 #
-# There is no network access here: the numbers arrive from ~/.claude/statusline.sh, which is the
-# only place Claude Code hands rate_limits to userspace.
+# Asking is the only way to have the numbers at all. The statusline is the one place Claude Code
+# hands `rate_limits` to userspace, and it only renders in the terminal client, so a session driven
+# through the SDK (like T3 Code) produces none. `render` starts a `fetch` when the last one has aged.
 set -uo pipefail
 
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/claude-usage"
 CACHE="$CACHE_DIR/usage.json"
+
+# The one surface that reports the windows as percentages, and where the statusline's own numbers
+# come from. It is undocumented, so a shape change has to degrade rather than break: a failed fetch
+# leaves the last cache on the bar with its age in the tooltip.
+USAGE_URL="https://api.anthropic.com/api/oauth/usage"
+# Whichever client is running keeps this token fresh, T3 Code included, so nothing here refreshes it.
+CREDENTIALS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/.credentials.json"
+# Waybar re-execs this script every 30s, which is far oftener than the windows move and far oftener
+# than an undocumented endpoint deserves to be asked.
+REFRESH_INTERVAL=300
+ATTEMPTED="$CACHE_DIR/last-fetch"
 
 # The module draws entirely with images, so its text is nothing but the spaces they are painted
 # over. A label's hit region follows its text and not its CSS padding, so holding the width open
@@ -32,23 +44,95 @@ TRACK_OPACITY=0.45
 
 FIVE_HOUR_WINDOW=18000
 
-feed() {
+feed() { # rate_limits JSON on stdin
   local new new_body old_body tmp
-  new=$(jq -c '{updated_at: (now | floor)} + (.rate_limits // {} | {five_hour, seven_day})') || exit 0
-  [ -n "$new" ] || exit 0
+  new=$(jq -c '{updated_at: (now | floor)} + (.rate_limits // {} | {five_hour, seven_day})') || return 1
+  [ -n "$new" ] || return 1
 
-  mkdir -p "$CACHE_DIR" || exit 0
+  mkdir -p "$CACHE_DIR" || return 1
   new_body=$(jq -c 'del(.updated_at)' <<<"$new")
   old_body=$(jq -c 'del(.updated_at)' "$CACHE" 2>/dev/null)
 
-  tmp=$(mktemp "$CACHE_DIR/.usage.XXXXXX") || exit 0
+  tmp=$(mktemp "$CACHE_DIR/.usage.XXXXXX") || return 1
   if ! printf '%s\n' "$new" >"$tmp" || ! mv -f "$tmp" "$CACHE"; then
     rm -f "$tmp"
-    exit 0
+    return 1
   fi
 
-  # Signalling on every statusline tick would re-exec the module every 300ms for identical numbers.
+  # A percentage moves a few times an hour at most, so most fetches come back identical and a signal
+  # per fetch would re-exec the module for nothing.
   [ "$new_body" = "$old_body" ] || pkill -RTMIN+2 waybar
+}
+
+epoch() { # $1 = ISO 8601 timestamp, or empty
+  [ -n "$1" ] || return 0
+  date -d "$1" +%s 2>/dev/null
+}
+
+# The response names the same two windows twice: an older five_hour/seven_day pair, and a limits[]
+# array keyed by kind. Reading both means either one going away costs nothing.
+fetch() {
+  local token body five_pct five_at seven_pct seven_at payload
+  token=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDENTIALS" 2>/dev/null)
+  if [ -z "$token" ]; then
+    echo "claude-usage: no OAuth token in $CREDENTIALS" >&2
+    return 1
+  fi
+
+  body=$(curl -fsS --max-time 10 \
+    -H "Authorization: Bearer $token" \
+    -H 'anthropic-beta: oauth-2025-04-20' \
+    -H 'Content-Type: application/json' \
+    "$USAGE_URL") || {
+    echo "claude-usage: GET $USAGE_URL failed" >&2
+    return 1
+  }
+
+  IFS=$'\t' read -r five_pct five_at seven_pct seven_at <<<"$(
+    jq -r '
+      def window($obj; $kind):
+        ([.limits[]? | select(.kind == $kind and (.percent | type) == "number")] | first) as $limit
+        | if $limit then [$limit.percent, $limit.resets_at]
+          elif (($obj | type) == "object" and ($obj.utilization | type) == "number")
+            then [$obj.utilization, $obj.resets_at]
+          else [null, null]
+          end;
+      window(.five_hour; "session") + window(.seven_day; "weekly_all") | map(. // "") | @tsv
+    ' <<<"$body" 2>/dev/null
+  )"
+
+  if [ -z "$five_pct" ] && [ -z "$seven_pct" ]; then
+    echo "claude-usage: no usable windows in the response from $USAGE_URL" >&2
+    return 1
+  fi
+
+  payload=$(jq -cn \
+    --arg fp "$five_pct" --arg fr "$(epoch "$five_at")" \
+    --arg sp "$seven_pct" --arg sr "$(epoch "$seven_at")" '
+    def window($pct; $reset):
+      if $pct == "" then null
+      else {used_percentage: ($pct | tonumber)}
+        + (if $reset == "" then {} else {resets_at: ($reset | tonumber)} end)
+      end;
+    {rate_limits: ({five_hour: window($fp; $fr), seven_day: window($sp; $sr)}
+      | with_entries(select(.value != null)))}
+  ') || return 1
+
+  feed <<<"$payload"
+}
+
+# The marker records attempts rather than successes, so a broken endpoint is asked no oftener than a
+# working one.
+maybe_refresh() { # $1 = now
+  local attempted
+  attempted=$(stat -c %Y "$ATTEMPTED" 2>/dev/null)
+  [[ $attempted =~ ^[0-9]+$ ]] || attempted=0
+  (($1 - attempted < REFRESH_INTERVAL)) && return
+
+  mkdir -p "$CACHE_DIR" || return
+  touch "$ATTEMPTED" || return
+  # Waybar reads this script's stdout until it closes, so the fetch cannot be left holding it open.
+  fetch >/dev/null 2>&1 &
 }
 
 hide() {
@@ -154,6 +238,9 @@ row() { # $1 = label, $2 = used percentage, $3 = resets_at (0 = unknown), $4 = n
 
 render() {
   local updated fh_pct fh_reset sd_pct sd_reset now
+  now=$(date +%s)
+  maybe_refresh "$now"
+
   [ -r "$CACHE" ] || hide
   IFS=$'\t' read -r updated fh_pct fh_reset sd_pct sd_reset <<<"$(
     jq -r '[
@@ -166,8 +253,6 @@ render() {
   )" || hide
   [ -n "${sd_reset:-}" ] || hide
   ((fh_pct < 0 && sd_pct < 0)) && hide
-
-  now=$(date +%s)
 
   # resets_at is absolute, so a window whose reset has passed is empty again no matter how stale the
   # cache is. The next window's reset time is not derivable, hence the 0 rather than an extrapolation.
@@ -244,6 +329,6 @@ write_style() { # $1 = five hour percentage, $2 = seven day percentage, $3 = cla
 }
 
 case "${1:-}" in
-feed) feed ;;
+fetch) fetch ;;
 *) render ;;
 esac

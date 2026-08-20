@@ -3,9 +3,6 @@ set -uo pipefail
 
 input=$(cat)
 
-# The statusline is the only place Claude Code exposes rate_limits; hand them to waybar.
-printf '%s' "$input" | "$HOME/.config/waybar/scripts/claude-usage.sh" feed &
-
 IFS=$'\t' read -r model dir used total pct <<<"$(
   printf '%s' "$input" | jq -r '[
     .model.display_name // "?",
