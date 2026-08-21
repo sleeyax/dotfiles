@@ -6,7 +6,7 @@
     "margin-left": 0,
     "margin-right": 0,
     "spacing": 0,
-    // Lets claude-usage.sh repaint its rings by rewriting an imported stylesheet.
+    // Lets the usage scripts repaint their rings by rewriting an imported stylesheet.
     "reload_style_on_change": true,
     // Load Modules
     "include": [
@@ -27,6 +27,7 @@
     "modules-right": [
         "custom/updates",
         "custom/claude-usage",
+        "custom/codex-usage",
         "pulseaudio",
         "bluetooth",
         "network",

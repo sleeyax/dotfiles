@@ -272,14 +272,15 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
- * Claude Code Usage
+ * Coding Agent Usage
  * ----------------------------------------------------- */
 
-/* Three layers over an empty label: the Claude mark, then a ring per window. They are declared in
-   the generated rings.css that default/style.css @imports, since the ring url() changes with the
+/* A vendor mark and then a ring per window, layered over an empty label. They are declared in the
+   generated rings.css that default/style.css @imports, since the ring url() changes with the
    percentage. The label holds only spaces, because a hit region follows text and not padding —
    reserving this width with padding would leave the images and the tooltip unhoverable. */
-#custom-claude-usage {
+#custom-claude-usage,
+#custom-codex-usage {
     background-color: @background;
     font-size: 16px;
     color: @on_surface;
@@ -291,26 +292,31 @@ window#waybar.empty #window {
 }
 
 /* The label is all spaces, but their advance is what positions everything: the font has to be the
-   monospace one the script's spacer count assumes, and the `*` rule at the top of this file would
+   monospace one the scripts' spacer counts assume, and the `*` rule at the top of this file would
    otherwise reach the inner label directly and override it. */
 #custom-claude-usage,
-#custom-claude-usage label {
+#custom-claude-usage label,
+#custom-codex-usage,
+#custom-codex-usage label {
     font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
 }
 
 /* background-color, not the background shorthand: the shorthand resets background-image and takes
    the discs with it. */
-#custom-claude-usage:hover {
+#custom-claude-usage:hover,
+#custom-codex-usage:hover {
     color: @on_surface;
     background-color: @primary_container;
     border-color: @primary;
 }
 
-#custom-claude-usage.warn {
+#custom-claude-usage.warn,
+#custom-codex-usage.warn {
     color: @tertiary;
 }
 
-#custom-claude-usage.crit {
+#custom-claude-usage.crit,
+#custom-codex-usage.crit {
     color: @error;
     border-color: @error;
 }

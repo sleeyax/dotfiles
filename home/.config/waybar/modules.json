@@ -79,6 +79,21 @@
     "on-scroll-up": "true",
     "on-scroll-down": "true"
   },
+  // Codex usage limits, fetched from the account by the script itself.
+  "custom/codex-usage": {
+    "format": "{}",
+    "return-type": "json",
+    // No escaping: the tooltip is Pango markup, which "escape": true would mangle.
+    "escape": false,
+    "exec": "~/.config/waybar/scripts/codex-usage.sh",
+    "interval": 30,
+    "signal": 3,
+    "hide-empty-text": true,
+    "tooltip": true,
+    "on-click": "xdg-open https://chatgpt.com/codex/settings/usage",
+    "on-scroll-up": "true",
+    "on-scroll-down": "true"
+  },
   // Rofi Application Launcher
   "custom/appmenu": {
     // START APPS LABEL

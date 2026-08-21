@@ -102,21 +102,31 @@ Note that [chromium-flags.conf](home/.config/chromium-flags.conf) applies to eve
 
 Nautilus loads extensions once at startup, so run `nautilus -q` after an apply to pick up a change.
 
-## Claude Code usage
+## Coding agent usage
 
-The waybar pill next to the update counter shows how much of each Claude Code quota is gone: the Claude mark, then a ring per window — the rolling 5-hour session first, the 7-day second. Each ring fills clockwise from 12 o'clock to its exact percentage, and the rings turn amber past 75% and red past 90%.
+Two waybar pills next to the update counter show how much of each coding agent's quota is gone: a vendor mark, then a ring per rate limit window. Each ring fills clockwise from 12 o'clock to its exact percentage, and the rings turn amber past 75% and red past 90%. Hover either for the breakdown — used and left, when each window resets and how far off that is, and whether the first window is being burned faster or slower than the clock.
+
+### Claude Code
+
+The Claude pill has two rings: the rolling 5-hour session first, the 7-day second. Click to open the usage dashboard on claude.ai.
 
 [claude.svg](home/.config/waybar/claude.svg) is the Claude mark from [Simple Icons](https://simpleicons.org), recoloured to Claude orange.
 
-Hover for the breakdown — used and left, when each window resets and how far off that is, and whether the 5-hour window is being burned faster or slower than the clock. Click to open the usage dashboard on claude.ai.
-
 [claude-usage.sh](home/.config/waybar/scripts/claude-usage.sh) asks Anthropic for the numbers: it reads the OAuth token Claude Code keeps in `~/.claude/.credentials.json`, pulls the two windows off the account, and caches them under `~/.cache/claude-usage/`. Waybar re-runs the script every 30 seconds and it fetches at most every five minutes. Nothing has to be running for the pill to be right — no session, no particular client. ([statusline.sh](home/.claude/statusline.sh) still draws the model, branch and context readout inside Claude Code; it used to feed the pill and no longer does.)
 
-Three consequences of that:
+### Codex
 
-- The pill hides itself until the first fetch lands, and stays hidden on a plan that has no rate limits to report.
-- It reports the account, not the machine, so sessions on claude.ai, the other device or in the cloud move the rings too. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
-- The endpoint is the one Claude Code itself gets these numbers from, and Anthropic documents it nowhere. When it fails the last numbers stay on the bar and the tooltip's age line is what gives it away; run `claude-usage.sh fetch` by hand to see why.
+The Codex pill draws a ring per window the plan actually has — one on a Plus plan, whose single limit is weekly; two where a shorter window exists as well. Each ring's label comes from the window length the account reports, so the pill neither invents a window nor hides one. The tooltip adds a credits line when the account has any. Click to open the usage page on chatgpt.com.
+
+[openai.svg](home/.config/waybar/openai.svg) is the OpenAI mark, recoloured white to read against the dark bar.
+
+[codex-usage.sh](home/.config/waybar/scripts/codex-usage.sh) works the same way, reading the token Codex keeps in `~/.codex/auth.json` and caching under `~/.cache/codex-usage/`. Codex does write the same figures into every session rollout under `~/.codex/sessions/`, but only for sessions that ran on this machine, which is the wrong question.
+
+### Both
+
+- A pill hides itself until its first fetch lands, and stays hidden on a plan that has no rate limits to report.
+- It reports the account, not the machine, so sessions on the web, the other device or in the cloud move the rings too. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
+- Both endpoints are the ones the agents themselves get these numbers from, and neither vendor documents them. When one fails the last numbers stay on the bar and the tooltip's age line is what gives it away; run the script with `fetch` by hand to see why.
 
 ## Devices
 
