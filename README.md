@@ -112,7 +112,7 @@ The Claude pill has two rings: the rolling 5-hour session first, the 7-day secon
 
 [claude.svg](home/.config/waybar/claude.svg) is the Claude mark from [Simple Icons](https://simpleicons.org), recoloured to Claude orange.
 
-[claude-usage.sh](home/.config/waybar/scripts/claude-usage.sh) asks Anthropic for the numbers: it reads the OAuth token Claude Code keeps in `~/.claude/.credentials.json`, pulls the two windows off the account, and caches them under `~/.cache/claude-usage/`. Waybar re-runs the script every 30 seconds and it fetches at most every five minutes. Nothing has to be running for the pill to be right — no session, no particular client. ([statusline.sh](home/.claude/statusline.sh) still draws the model, branch and context readout inside Claude Code; it used to feed the pill and no longer does.)
+[claude-usage.sh](home/.config/waybar/scripts/claude-usage.sh) asks Anthropic for the numbers: it reads the OAuth token Claude Code keeps in `~/.claude/.credentials.json`, pulls the two windows off the account, and caches them under `~/.cache/claude-usage/`. Waybar re-runs the script every 30 seconds and it fetches at most every five minutes. Nothing has to be running for the pill to be right — no session, no particular client. (Claude Code's own status line draws a model, branch and context readout inside the terminal; it lives in my [skills repo](https://github.com/sleeyax/skills) and feeds nothing here.)
 
 ### Codex
 
