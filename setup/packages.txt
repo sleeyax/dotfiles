@@ -107,7 +107,6 @@ gnome-text-editor
 vim
 neovim
 visual-studio-code-bin
-flatpak
 # megasync-bin is autostarted twice by custom.lua so it lands in the tray.
 megasync-bin
 # wtype is what lets handy type its transcript into Wayland windows; without it enigo falls back to X11 and only XWayland clients see the keystrokes.
