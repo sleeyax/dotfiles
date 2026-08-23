@@ -8,6 +8,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("sleep 60; megasync")
 
     hl.exec_cmd("sleep 15; discord --start-minimized")
+    -- --startup only hides the window when Slack's own hideOnStartup setting is on.
+    -- Slack's "Launch app on login" has to stay off too: it symlinks its .desktop into ~/.config/autostart, and that copy starts without the flag and wins the race.
     hl.exec_cmd("sleep 5; slack --startup")
 end)
 
