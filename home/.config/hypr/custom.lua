@@ -37,6 +37,13 @@ for _, class in ipairs({ "^(discord)$", "^(Slack)$", [[^(org\.telegram\.desktop)
     })
 end
 
+-- route MEGA to workspace 10 silently on startup
+hl.window_rule({
+    name = "windowrule-megasync",
+    match = { class = [[^(?i)megasync$]] },
+    workspace = "10 silent",
+})
+
 hl.window_rule({
     name = "windowrule-flameshot",
     match = { class = "(flameshot)" },
