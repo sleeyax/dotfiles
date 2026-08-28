@@ -222,13 +222,13 @@ pace() { # $1 = label, $2 = used percentage, $3 = resets_at (0 = unknown), $4 = 
   elapsed=$((($5 - ($3 - $4)) * 100 / $4))
   ((elapsed < 0 || elapsed > 100)) && return
   diff=$(($2 - elapsed))
-  printf '%s: ' "$1"
+  # The label and the figure sit in the columns row() uses, so the two blocks read as one table.
   if ((diff > 3)); then
-    printf '%d%% ahead of pace' "$diff"
+    printf '%-7s %3d%% ahead of pace' "$1" "$diff"
   elif ((diff < -3)); then
-    printf '%d%% behind pace' $((-diff))
+    printf '%-7s %3d%% behind pace' "$1" $((-diff))
   else
-    printf 'on pace'
+    printf '%-7s %4s on pace' "$1" ''
   fi
 }
 
@@ -269,14 +269,14 @@ render() {
   if ((fh_pct >= 0)); then
     tooltip+=$(row '5 hour' "$fh_pct" "$fh_reset" "$now")
     pace_txt=$(pace '5 hour' "$fh_pct" "$fh_reset" "$FIVE_HOUR_WINDOW" "$now")
-    [ -n "$pace_txt" ] && paces+=${paces:+' · '}$pace_txt
+    [ -n "$pace_txt" ] && paces+=${paces:+$'\n'}$pace_txt
     ((fh_pct > maxpct)) && maxpct=$fh_pct
   fi
   if ((sd_pct >= 0)); then
     [ -n "$tooltip" ] && tooltip+=$'\n'
     tooltip+=$(row 'Week' "$sd_pct" "$sd_reset" "$now")
     pace_txt=$(pace 'Week' "$sd_pct" "$sd_reset" "$SEVEN_DAY_WINDOW" "$now")
-    [ -n "$pace_txt" ] && paces+=${paces:+' · '}$pace_txt
+    [ -n "$pace_txt" ] && paces+=${paces:+$'\n'}$pace_txt
     ((sd_pct > maxpct)) && maxpct=$sd_pct
   fi
 
@@ -287,8 +287,8 @@ render() {
     age_txt="$(fmt_delta "$age") ago"
   fi
   tooltip+=$'\n\n'
-  # Each pace reads as a sentence, so they get their own line rather than a column in the rows above.
-  [ -n "$paces" ] && tooltip+="$paces"$'\n'
+  # A pace is a line of its own: appended to its row it would pass the width the tooltip wraps at.
+  [ -n "$paces" ] && tooltip+="$paces"$'\n\n'
   tooltip+="updated $age_txt"
 
   ((maxpct >= 75)) && class=warn
