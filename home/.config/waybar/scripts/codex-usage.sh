@@ -204,14 +204,15 @@ window_label() { # $1 = window length in seconds
   esac
 }
 
-# A window's length is reported, so the fraction of it that has elapsed is knowable and worth
-# comparing against the fraction consumed.
-pace() { # $1 = used percentage, $2 = resets_at, $3 = window seconds, $4 = now
+# A window's length is reported, so the fraction of it that has elapsed is knowable and is what the
+# fraction consumed is worth reading against.
+pace() { # $1 = label, $2 = used percentage, $3 = resets_at (0 = unknown), $4 = window seconds, $5 = now
   local elapsed diff
-  (($3 > 0)) || return
-  elapsed=$((($4 - ($2 - $3)) * 100 / $3))
+  (($3 > 0 && $4 > 0)) || return
+  elapsed=$((($5 - ($3 - $4)) * 100 / $4))
   ((elapsed < 0 || elapsed > 100)) && return
-  diff=$(($1 - elapsed))
+  diff=$(($2 - elapsed))
+  printf '%s: ' "$1"
   if ((diff > 3)); then
     printf '%d%% ahead of pace' "$diff"
   elif ((diff < -3)); then
@@ -239,7 +240,7 @@ render() {
   [[ $updated =~ ^[0-9]+$ ]] || hide
 
   local -a pcts=() tooltip_rows=()
-  local footer='' maxpct=0 class=ok
+  local paces='' pace_txt maxpct=0 class=ok
   while IFS=$'\t' read -r pct reset window; do
     [ -n "$pct" ] || continue
     # resets_at is absolute, so a window whose reset has passed is empty again no matter how stale
@@ -249,12 +250,8 @@ render() {
     tooltip_rows+=("$(row "$label" "$pct" "$reset" "$now")")
     pcts+=("$pct")
     ((pct > maxpct)) && maxpct=$pct
-    # Only the first window gets a pace figure: the tooltip wraps around 60 characters.
-    if [ -z "$footer" ] && ((reset > 0)); then
-      local pace_txt
-      pace_txt=$(pace "$pct" "$reset" "$window" "$now")
-      [ -n "$pace_txt" ] && footer="$label: $pace_txt · "
-    fi
+    pace_txt=$(pace "$label" "$pct" "$reset" "$window" "$now")
+    [ -n "$pace_txt" ] && paces+=${paces:+' · '}$pace_txt
   done < <(jq -r '.windows[]? | [(.used_percentage | round), (.resets_at // 0), (.window_seconds // 0)] | @tsv' "$CACHE" 2>/dev/null)
 
   ((${#pcts[@]})) || hide
@@ -271,7 +268,10 @@ render() {
     age_txt="$(fmt_delta "$age") ago"
   fi
   [ -n "$credits" ] && tooltip+=$'\n'"$credits"
-  tooltip+=$'\n\n'"${footer}updated $age_txt"
+  tooltip+=$'\n\n'
+  # Each pace reads as a sentence, so they get their own line rather than a column in the rows above.
+  [ -n "$paces" ] && tooltip+="$paces"$'\n'
+  tooltip+="updated $age_txt"
 
   ((maxpct >= 75)) && class=warn
   ((maxpct >= 90)) && class=crit

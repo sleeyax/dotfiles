@@ -42,7 +42,11 @@ PALETTE="$HOME/.config/waybar/colors.css"
 ARC_WIDTH=5
 TRACK_OPACITY=0.45
 
+# Neither window's length is in the response, only its reset time. Both are named by their length
+# instead — the weekly one twice, as `seven_day` and as `weekly_all` — so a window's start is its
+# reset minus its length and the fraction of it that has elapsed is knowable.
 FIVE_HOUR_WINDOW=18000
+SEVEN_DAY_WINDOW=604800
 
 feed() { # rate_limits JSON on stdin
   local new new_body old_body tmp
@@ -211,13 +215,14 @@ fmt_delta() { # $1 = seconds
   fi
 }
 
-# The 5-hour window is exactly 5 hours long, so its elapsed fraction is knowable and worth comparing
-# against the consumed fraction. The weekly window's true length is not, so it gets no pace figure.
-pace() { # $1 = used percentage, $2 = resets_at, $3 = now
+# The elapsed fraction of a window is what the consumed fraction is worth reading against.
+pace() { # $1 = label, $2 = used percentage, $3 = resets_at (0 = unknown), $4 = window seconds, $5 = now
   local elapsed diff
-  elapsed=$((($3 - ($2 - FIVE_HOUR_WINDOW)) * 100 / FIVE_HOUR_WINDOW))
+  (($3 > 0)) || return
+  elapsed=$((($5 - ($3 - $4)) * 100 / $4))
   ((elapsed < 0 || elapsed > 100)) && return
-  diff=$(($1 - elapsed))
+  diff=$(($2 - elapsed))
+  printf '%s: ' "$1"
   if ((diff > 3)); then
     printf '%d%% ahead of pace' "$diff"
   elif ((diff < -3)); then
@@ -260,16 +265,18 @@ render() {
   ((sd_reset > 0 && now >= sd_reset)) && { sd_pct=0; sd_reset=0; }
 
   # Everything visible is a CSS background image; the text only holds the space open.
-  local tooltip='' footer='' pace_txt='' age age_txt maxpct=0 class=ok
+  local tooltip='' paces='' pace_txt age age_txt maxpct=0 class=ok
   if ((fh_pct >= 0)); then
     tooltip+=$(row '5 hour' "$fh_pct" "$fh_reset" "$now")
-    ((fh_reset > 0)) && pace_txt=$(pace "$fh_pct" "$fh_reset" "$now")
-    [ -n "$pace_txt" ] && footer="5 hour: $pace_txt · "
+    pace_txt=$(pace '5 hour' "$fh_pct" "$fh_reset" "$FIVE_HOUR_WINDOW" "$now")
+    [ -n "$pace_txt" ] && paces+=${paces:+' · '}$pace_txt
     ((fh_pct > maxpct)) && maxpct=$fh_pct
   fi
   if ((sd_pct >= 0)); then
     [ -n "$tooltip" ] && tooltip+=$'\n'
     tooltip+=$(row 'Week' "$sd_pct" "$sd_reset" "$now")
+    pace_txt=$(pace 'Week' "$sd_pct" "$sd_reset" "$SEVEN_DAY_WINDOW" "$now")
+    [ -n "$pace_txt" ] && paces+=${paces:+' · '}$pace_txt
     ((sd_pct > maxpct)) && maxpct=$sd_pct
   fi
 
@@ -279,7 +286,10 @@ render() {
   else
     age_txt="$(fmt_delta "$age") ago"
   fi
-  tooltip+=$'\n\n'"${footer}updated $age_txt"
+  tooltip+=$'\n\n'
+  # Each pace reads as a sentence, so they get their own line rather than a column in the rows above.
+  [ -n "$paces" ] && tooltip+="$paces"$'\n'
+  tooltip+="updated $age_txt"
 
   ((maxpct >= 75)) && class=warn
   ((maxpct >= 90)) && class=crit
