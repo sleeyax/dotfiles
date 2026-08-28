@@ -32,9 +32,20 @@ if [ ! -d "$DEVICE_DIR" ]; then
   exit 1
 fi
 
-# The device list is additive: a device without one installs exactly the global list.
-# It lives in setup/ rather than devices/, because everything under devices/ is copied into the stow tree verbatim and would land in $HOME.
+# Per-device knobs. Only a device that isn't a graphical workstation needs a file; the defaults below are what the others want.
+# Like the package lists, they live in setup/ rather than devices/, because everything under devices/ is copied into the stow tree verbatim and would land in $HOME.
+GRAPHICAL=1   # 0 drops the graphical package list and every step below that assumes a session
+STOW_PATHS=() # non-empty means stow only these paths out of the merged tree
+DEVICE_CONF="$DOTFILES_DIR/setup/device.$DEVICE.sh"
+if [ -f "$DEVICE_CONF" ]; then
+  source "$DEVICE_CONF"
+fi
+
+# The graphical and device lists are both additive: a device without either installs exactly the global list.
 PACKAGES_FILES=("$PACKAGES_FILE")
+if [ "$GRAPHICAL" == "1" ]; then
+  PACKAGES_FILES+=("$DOTFILES_DIR/setup/packages.graphical.txt")
+fi
 if [ -f "$DOTFILES_DIR/setup/packages.$DEVICE.txt" ]; then
   PACKAGES_FILES+=("$DOTFILES_DIR/setup/packages.$DEVICE.txt")
 fi
@@ -66,7 +77,11 @@ install_dependencies() {
   mapfile -t PKGS < <(sed 's/#.*//' "${PACKAGES_FILES[@]}" | grep -vE '^\s*$' | tr -d '[:blank:]')
   "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
 
-  xdg-user-dirs-update
+  # xdg-user-dirs ships with the session; a headless device has neither the
+  # package nor anything that would read ~/Desktop.
+  if [ "$GRAPHICAL" == "1" ]; then
+    xdg-user-dirs-update
+  fi
 
   mkdir -p "$STATE_DIR"
   packages_hash > "$PACKAGES_STAMP"
@@ -107,7 +122,10 @@ enable_services() {
   fi
 }
 
-enable_services
+# Every unit here belongs to the session, so a headless device has none of them installed.
+if [ "$GRAPHICAL" == "1" ]; then
+  enable_services
+fi
 
 echo "Applying dotfiles for device: $DEVICE"
 
@@ -117,6 +135,24 @@ STOW_NEW=$(mktemp -d)
 trap 'rm -rf "$STOW_NEW"' EXIT # Cleans up the temp dir if the script exits early for whatever reason
 cp -r "$BASE" "$STOW_NEW/dotfiles"
 cp -r "$DEVICE_DIR/." "$STOW_NEW/dotfiles/"
+
+# A device with STOW_PATHS keeps only the paths it names; most of home/ is a
+# desktop and means nothing without one. Filtering here, after the overlay
+# rather than before it, keeps the usual precedence at a path that is kept.
+if [ ${#STOW_PATHS[@]} -gt 0 ]; then
+  KEPT=$(mktemp -d)
+  for rel in "${STOW_PATHS[@]}"; do
+    if [ ! -e "$STOW_NEW/dotfiles/$rel" ]; then
+      echo "Warning: STOW_PATHS names '$rel', which is not in the merged tree"
+      continue
+    fi
+    mkdir -p "$KEPT/dotfiles/$(dirname "$rel")"
+    cp -r "$STOW_NEW/dotfiles/$rel" "$KEPT/dotfiles/$rel"
+  done
+  rm -rf "$STOW_NEW/dotfiles"
+  mv "$KEPT/dotfiles" "$STOW_NEW/dotfiles"
+  rmdir "$KEPT"
+fi
 
 # Carry live, untracked files across, so re-applying doesn't clobber them.
 # Stow folds at the directory level, so a program writing to ~/.config/<dir>/<file>
@@ -174,7 +210,7 @@ cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
 # A machine that has never set a wallpaper has never run matugen, so it has no palette at all.
 # That is fatal rather than ugly: hypr/colors.lua is require()d and hyprlock.conf sources colors.conf.
 # Mirrors run_matugen in ml4w-wallpaper, including how it picks the mode.
-if [ ! -f "$HOME/.config/hypr/colors.lua" ]; then
+if [ "$GRAPHICAL" == "1" ] && [ ! -f "$HOME/.config/hypr/colors.lua" ]; then
   echo "No palette found, generating one from the default wallpaper..."
   theme_pref=$(grep -E '^gtk-application-prefer-dark-theme=' "$HOME/.config/gtk-3.0/settings.ini" | awk -F'=' '{print $2}')
   mode="light"
@@ -184,7 +220,9 @@ fi
 
 # ~/.mydotfiles is the ML4W installer's project store, which this repo never creates because it deploys with stow instead.
 # conf/autostart.lua still redirects ml4w-autostart's stdout into it, and a failed redirect silently skips the whole autostart (quickshell, nm-applet, wallpaper theming).
-mkdir -p "$HOME/.mydotfiles"
+if [ "$GRAPHICAL" == "1" ]; then
+  mkdir -p "$HOME/.mydotfiles"
+fi
 
 echo "Done! Configs applied for device: $DEVICE"
 

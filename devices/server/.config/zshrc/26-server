@@ -1,0 +1,12 @@
+# -----------------------------------------------------
+# SERVER
+# -----------------------------------------------------
+# Numbered after 25-aliases so it wins over the aliases set there.
+
+# No VS Code on the box itself; it is edited over SSH.
+export EDITOR=nvim
+
+# The rest of 25-aliases points at a session this machine doesn't have.
+# 'shutdown' goes back to being the real command on purpose: an alias that
+# powers a remote VPS off is one typo away from a trip to the provider console.
+unalias filemanager lock shutdown system wifi 2>/dev/null

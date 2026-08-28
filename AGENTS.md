@@ -4,7 +4,7 @@ This file provides guidance to AI agents when working with code in this reposito
 
 ## Overview
 
-Personal Hyprland dotfiles for Arch Linux, originally based on [ML4W](https://github.com/mylinuxforwork/dotfiles) and vendored since. Manages configuration across two devices (desktop "falcon" and laptop "panda") using GNU Stow.
+Personal Hyprland dotfiles for Arch Linux, originally based on [ML4W](https://github.com/mylinuxforwork/dotfiles) and vendored since. Manages configuration across three machines using GNU Stow: desktop "falcon", laptop "panda" and headless VPS "aardwolf".
 
 ## Key Commands
 
@@ -13,6 +13,7 @@ Personal Hyprland dotfiles for Arch Linux, originally based on [ML4W](https://gi
 ./scripts/apply.sh --force  # Reinstall all packages
 ./scripts/set-device.sh desktop  # Manually switch to desktop config
 ./scripts/set-device.sh laptop   # Manually switch to laptop config
+./scripts/set-device.sh server   # Manually switch to server config
 ```
 
 ## Architecture
@@ -25,27 +26,36 @@ Configs are merged in order: **base → device-specific**, where the device laye
 home/                           # The base tree, ours to edit; maps 1:1 to $HOME
 devices/desktop/                # falcon-specific (QWERTY, 4K DP-5 @ 144Hz, scale 1.2)
 devices/laptop/                 # panda-specific (AZERTY + QWERTY toggle, eDP-1, gestures)
+devices/server/                 # aardwolf-specific (headless; shell only)
 ```
 
 The `apply.sh` script copies `home/`, overlays device configs into `.stow/dotfiles/`, and runs `stow -t $HOME --restow dotfiles` to symlink everything into `$HOME`.
 
-There is no "common" layer: shared customisations are edits to `home/` itself. A file only belongs in `devices/` if the two machines genuinely need different content.
+There is no "common" layer: shared customisations are edits to `home/` itself. A file only belongs in `devices/` if a machine genuinely needs different content.
+
+`home/` is a Hyprland desktop, so a headless device takes only a slice of it — see **Headless devices** below.
 
 ### Packages
 
-`setup/packages.txt` is the package list, one per line with `#` comments, grouped by subsystem. `apply.sh` installs it with `yay`/`paru`.
+The lists are one package per line with `#` comments, grouped by subsystem, and `apply.sh` installs them with `yay`/`paru`. Every list is *appended* to the ones before it rather than overriding them — unlike the config tree, where a device file replaces the base file at the same path.
 
-`setup/packages.<device>.txt` is an optional second list, appended to the global one rather than overriding it — unlike the config tree, where a device file replaces the base file at the same path. A device without one installs exactly the global list. Only put a package there if a device genuinely must *not* have it; the default is global.
+| List | Installed on |
+| ---- | ------------ |
+| `setup/packages.txt` | every machine, headless included |
+| `setup/packages.graphical.txt` | every machine with `GRAPHICAL=1`, i.e. falcon and panda |
+| `setup/packages.<device>.txt` | that device only |
 
-It lives in `setup/` and not `devices/<device>/` because `apply.sh` copies everything under `devices/<device>/` into the stow tree verbatim; a package list there would be symlinked into `$HOME`.
+The split between the first two is the load-bearing one, and the question for a new package is which side of it the package falls on: anything that opens a window, draws on one, themes one or talks to a session daemon goes in `packages.graphical.txt`. `packages.<device>.txt` is for the narrower case of one machine wanting something the others shouldn't have; the default is the widest list the package works on.
 
-Whether to install is decided by hashing both lists into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to either therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless.
+They live in `setup/` and not `devices/<device>/` because `apply.sh` copies everything under `devices/<device>/` into the stow tree verbatim; a package list there would be symlinked into `$HOME`.
+
+Whether to install is decided by hashing the lists in play into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to any of them therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless. The hash covers only the lists that device uses, so an edit to `packages.graphical.txt` doesn't churn the VPS.
 
 ### Services
 
 Installing a package is not the same as enabling its unit, and `apply.sh` enables the handful that have to be running before the session rather than on demand.
 The list is the `SERVICES` array in `apply.sh` itself: with one entry, a `setup/services.txt` alongside the package lists would buy nothing.
-`enable_services` skips whatever `systemctl is-enabled` already reports, so a normal apply never prompts for sudo.
+`enable_services` skips whatever `systemctl is-enabled` already reports, so a normal apply never prompts for sudo. It doesn't run at all on a headless device, where none of these units is installed.
 
 Only a unit whose *timing* matters belongs here.
 `power-profiles-daemon` is the case that forced it: it ships D-Bus activated, waybar's power-profiles module is what triggers the activation, and that module segfaults when the call lands in the window where the display manager's greeter session is tearing its bus connections down.
@@ -53,7 +63,22 @@ The race is won on most boots and lost on a slow one, which makes it look like a
 
 ### Device Detection
 
-`scripts/detect-device.sh` maps hostname to device name (`falcon` → desktop, `panda` → laptop). A manual override can be saved to `~/dotfiles/device` (gitignored).
+`scripts/detect-device.sh` maps hostname to device name (`falcon` → desktop, `panda` → laptop, `aardwolf` → server). A manual override can be saved to `~/dotfiles/device` (gitignored). The fallback for an unknown hostname is `desktop`, which is the safe way round: a new machine gets too much rather than a shell with nothing in it.
+
+### Headless devices
+
+`setup/device.<device>.sh` is sourced by `apply.sh` and holds the knobs that aren't a package list. Only a device that differs from the graphical default needs one, and only `server` has one today:
+
+```bash
+GRAPHICAL=0
+STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
+```
+
+`GRAPHICAL=0` drops `packages.graphical.txt` from the install and skips every step in `apply.sh` that assumes a session: `enable_services`, `xdg-user-dirs-update`, seeding a matugen palette, and creating `~/.mydotfiles`. Each of those is a hard failure and not a cosmetic one on a machine without the packages — `matugen` isn't installed, and the `theme_pref=$(grep ... gtk-3.0/settings.ini)` above it would take `set -e` down on the missing file.
+
+`STOW_PATHS` is an allowlist: with it set, the merged tree is reduced to exactly those paths before it is rsynced into `.stow/`. It names what to *keep*, so a new directory under `home/` has to be opted in here before it reaches the VPS — the opposite default from a droplist, and the right one for a machine that should have less. The filter runs after the device overlay, so a `devices/server/` file still wins at a kept path; a device file at a dropped path is silently discarded, which is why an unmatched entry warns.
+
+`.config/btop` is deliberately not kept: the only local change to it is `color_theme = "matugen"`, naming a theme the wallpaper pipeline generates and a headless host never will.
 
 ### Hyprland Config Structure
 
@@ -73,7 +98,7 @@ Customised Hyprland configs live in `home/.config/hypr/` and `devices/*/.config/
 
 `custom.lua` and `games.lua` are files ML4W never shipped; `hyprland.lua` opt-in loads `custom.lua` if present. Since it is loaded last, it remains the cheapest place to put a change that has to win.
 
-The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy, because both devices override them. They are kept as the documented shape of a per-device file: adding a third device means copying one, not inventing it.
+The base copies of `input.lua`, `monitors.lua` and `hypridle.conf` never deploy: the graphical devices override them and the server stows no `hypr` at all. They are kept as the documented shape of a per-device file: adding another graphical device means copying one, not inventing it.
 
 `gestures.lua` is laptop-only and lives only in `devices/laptop/`, so `hyprland.lua` guards its `require` the way it guards `custom.lua`.
 
@@ -195,6 +220,8 @@ Never rewrite the recorded base commit to "fix" a diff — it describes history,
 
 Zsh configs in `home/.config/zshrc/` are numbered for load order (`00-init`, `20-customization`, `25-aliases`). Init sets up NVM, PATH (cargo, go), and `EDITOR=code`. Aliases include eza-based ls/ll/lt, hyprlock, nmtui, and ML4W app shortcuts.
 
+`devices/server/.config/zshrc/26-server` is the one device layer in the numbering: it lands after `25-aliases` and undoes the parts of it that need a session, sets `EDITOR=nvim`, and puts `shutdown` back to the real command — on a VPS, an alias for `systemctl poweroff` is one typo away from the provider console.
+
 `.zshrc` sources those in order and then `~/.zshrc_custom`, which is the only supported place for machine-local, uncommitted shell config. It has to sit in `$HOME`: `~/.config/zshrc` is a stow symlink into `.stow/`, so anything added under it is destroyed by the `rsync --delete` in `apply.sh`.
 
 ## Devices
@@ -203,3 +230,4 @@ Zsh configs in `home/.config/zshrc/` are numbered for load order (`00-init`, `20
 |---------|----------|-------------|--------------------|------------------------|
 | Desktop | falcon   | QWERTY (us) | DP-5 3840x2160@144 | 10m / 11m / never      |
 | Laptop  | panda    | AZERTY (be) | eDP-1              | 10m / 15m / 30m        |
+| Server  | aardwolf | -           | headless VPS       | n/a                    |
