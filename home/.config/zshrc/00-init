@@ -10,8 +10,6 @@ export ZSH="$HOME/.oh-my-zsh"
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export PATH="$PATH:$HOME/.cargo/bin"
-export PNPM_HOME="$HOME/.local/share/pnpm"
-export PATH="$PNPM_HOME:$PATH"
 
 # ssh-agent runs as a systemd user unit, which exports no path of its own, so
 # the socket has to be named here. Only when it is actually there: a session
