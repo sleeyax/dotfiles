@@ -14,7 +14,8 @@ Upstream's own `version.json` reports 2.12.3 at that tag; the tag is authoritati
 │   ├── laptop/         # panda-specific (AZERTY, gestures)
 │   └── server/         # aardwolf-specific (headless VPS)
 ├── setup/
-│   ├── packages.txt            # Packages installed everywhere
+│   ├── packages.txt            # Packages installed everywhere, by name on Arch
+│   ├── packages.apt.txt        # ...the same list, by name on Ubuntu
 │   ├── packages.graphical.txt  # ...plus these, on machines with a session
 │   ├── packages.desktop.txt    # ...plus these, on falcon only
 │   └── device.server.sh        # Per-device knobs for aardwolf
@@ -23,20 +24,25 @@ Upstream's own `version.json` reports 2.12.3 at that tag; the tag is authoritati
 
 `home/` is deployed as-is, then `devices/$DEVICE/` is overlaid on top of it, so a device file always wins over the base file at the same path.
 
-Packages work differently: the lists are *added* to each other rather than overriding, so `setup/packages.txt` is the floor every machine gets and each further list only adds. `setup/packages.graphical.txt` covers everything that needs a display; `setup/packages.$DEVICE.txt` covers what one machine alone should have.
+Packages work differently: the lists are *added* to each other rather than overriding, so the base list is the floor every machine gets and each further list only adds. `setup/packages.graphical.txt` covers everything that needs a display; `setup/packages.$DEVICE.txt` covers what one machine alone should have.
+
+The base list is per package manager, since the names differ: `setup/packages.txt` on Arch, `setup/packages.apt.txt` on Ubuntu. A package added to one belongs in the other too.
 
 ### Headless devices
 
-aardwolf is a VPS with no display, so it takes `packages.txt` and nothing else, and `apply.sh` skips the steps that assume a session — enabling session services, `xdg-user-dirs-update`, seeding a matugen palette.
+aardwolf is a VPS with no display, and the one machine here running Ubuntu rather than Arch. It takes `packages.apt.txt` and nothing else, installed with `apt-get`, and `apply.sh` skips the steps that assume a session — enabling session services, `xdg-user-dirs-update`, seeding a matugen palette.
 
 It also stows almost none of `home/`, which is a Hyprland desktop and means nothing without one. `setup/device.server.sh` names the paths it *keeps* rather than the ones it drops, so a config directory added to `home/` later has to be opted in there before it reaches the VPS:
 
 ```bash
 GRAPHICAL=0
+PKG_MANAGER=apt
 STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
 ```
 
-A device with no such file is graphical and takes the whole tree.
+A device with no such file is graphical, on Arch, and takes the whole tree.
+
+oh-my-posh has no apt package, so the prompt on aardwolf is plain zsh until it's installed by hand; nothing else in the shell setup notices.
 
 ## Install
 
@@ -48,7 +54,7 @@ cd ~/dotfiles
 
 This will:
 
-1. Install everything in [setup/packages.txt](setup/packages.txt), plus whatever else your device's layers add
+1. Install everything in [setup/packages.txt](setup/packages.txt) (or [setup/packages.apt.txt](setup/packages.apt.txt) on Ubuntu), plus whatever else your device's layers add
 2. Merge the base tree with your device's configs and deploy them with stow
 
 Packages are installed when the list changes, so adding an entry is enough to get it installed on the next apply.
@@ -151,3 +157,5 @@ The Codex pill draws a ring per window the plan actually has — one on a Plus p
 | Desktop | falcon   | QWERTY (us) | DP-5 3840x2160@144 |
 | Laptop  | panda    | AZERTY (be) | eDP-1              |
 | Server  | aardwolf | -           | headless VPS       |
+
+falcon and panda run Arch; aardwolf runs Ubuntu 26.04 LTS.

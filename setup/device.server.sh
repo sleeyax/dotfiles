@@ -5,6 +5,10 @@
 
 GRAPHICAL=0
 
+# The only machine here that isn't Arch. Package names don't carry across, so
+# this also picks setup/packages.apt.txt over setup/packages.txt as the base list.
+PKG_MANAGER=apt
+
 # A graphical device takes all of home/; a headless one names what it keeps,
 # because almost none of that tree means anything without a session. Naming the
 # keepers rather than the drops means a new config directory added to home/ has

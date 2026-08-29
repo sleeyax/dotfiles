@@ -8,15 +8,8 @@ DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 BASE="$DOTFILES_DIR/home"
 STOW_DIR="$DOTFILES_DIR/.stow"
 
-PACKAGES_FILE="$DOTFILES_DIR/setup/packages.txt"
 STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/sleeyax-dotfiles"
 PACKAGES_STAMP="$STATE_DIR/packages.sha256"
-
-# Check for pacman (we only support Arch-based distro for now)
-if ! command -v pacman &>/dev/null; then
-  echo "Error: pacman not found"
-  exit 1
-fi
 
 # Determine device (manual override or auto-detect)
 if [ -f "$DOTFILES_DIR/device" ]; then
@@ -34,14 +27,28 @@ fi
 
 # Per-device knobs. Only a device that isn't a graphical workstation needs a file; the defaults below are what the others want.
 # Like the package lists, they live in setup/ rather than devices/, because everything under devices/ is copied into the stow tree verbatim and would land in $HOME.
-GRAPHICAL=1   # 0 drops the graphical package list and every step below that assumes a session
-STOW_PATHS=() # non-empty means stow only these paths out of the merged tree
+GRAPHICAL=1        # 0 drops the graphical package list and every step below that assumes a session
+PKG_MANAGER=pacman # the distro's package manager, which also picks which base list can name packages it knows
+STOW_PATHS=()      # non-empty means stow only these paths out of the merged tree
 DEVICE_CONF="$DOTFILES_DIR/setup/device.$DEVICE.sh"
 if [ -f "$DEVICE_CONF" ]; then
   source "$DEVICE_CONF"
 fi
 
-# The graphical and device lists are both additive: a device without either installs exactly the global list.
+# Package names don't survive a change of distro, so the base list belongs to the package manager rather than to the fleet.
+case "$PKG_MANAGER" in
+  pacman) PACKAGES_FILE="$DOTFILES_DIR/setup/packages.txt";     PKG_BINARY=pacman ;;
+  apt)    PACKAGES_FILE="$DOTFILES_DIR/setup/packages.apt.txt"; PKG_BINARY=apt-get ;;
+  *) echo "Error: unknown PKG_MANAGER '$PKG_MANAGER'"; exit 1 ;;
+esac
+
+# Fail here rather than after the tree has already been rsynced and stowed.
+if ! command -v "$PKG_BINARY" &>/dev/null; then
+  echo "Error: $PKG_BINARY not found"
+  exit 1
+fi
+
+# The graphical and device lists are both additive: a device without either installs exactly the base list.
 PACKAGES_FILES=("$PACKAGES_FILE")
 if [ "$GRAPHICAL" == "1" ]; then
   PACKAGES_FILES+=("$DOTFILES_DIR/setup/packages.graphical.txt")
@@ -54,7 +61,7 @@ packages_hash() {
   cat "${PACKAGES_FILES[@]}" | sha256sum | cut -d' ' -f1
 }
 
-install_dependencies() {
+install_pacman_packages() {
   if command -v yay &>/dev/null; then
     AUR_HELPER=yay
   elif command -v paru &>/dev/null; then
@@ -74,8 +81,22 @@ install_dependencies() {
   fi
 
   echo "Installing packages with $AUR_HELPER..."
-  mapfile -t PKGS < <(sed 's/#.*//' "${PACKAGES_FILES[@]}" | grep -vE '^\s*$' | tr -d '[:blank:]')
   "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
+}
+
+install_apt_packages() {
+  echo "Installing packages with apt..."
+  sudo apt-get update
+  sudo apt-get install -y "${PKGS[@]}"
+}
+
+install_dependencies() {
+  mapfile -t PKGS < <(sed 's/#.*//' "${PACKAGES_FILES[@]}" | grep -vE '^\s*$' | tr -d '[:blank:]')
+
+  case "$PKG_MANAGER" in
+    pacman) install_pacman_packages ;;
+    apt)    install_apt_packages ;;
+  esac
 
   # xdg-user-dirs ships with the session; a headless device has neither the
   # package nor anything that would read ~/Desktop.

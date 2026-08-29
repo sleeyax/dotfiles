@@ -37,19 +37,30 @@ There is no "common" layer: shared customisations are edits to `home/` itself. A
 
 ### Packages
 
-The lists are one package per line with `#` comments, grouped by subsystem, and `apply.sh` installs them with `yay`/`paru`. Every list is *appended* to the ones before it rather than overriding them — unlike the config tree, where a device file replaces the base file at the same path.
+The lists are one package per line with `#` comments, grouped by subsystem. Every list is *appended* to the ones before it rather than overriding them — unlike the config tree, where a device file replaces the base file at the same path.
 
-| List | Installed on |
-| ---- | ------------ |
-| `setup/packages.txt` | every machine, headless included |
-| `setup/packages.graphical.txt` | every machine with `GRAPHICAL=1`, i.e. falcon and panda |
-| `setup/packages.<device>.txt` | that device only |
+| List | Installed on | With |
+| ---- | ------------ | ---- |
+| `setup/packages.txt` | every Arch machine | `yay`/`paru` |
+| `setup/packages.apt.txt` | every apt machine, i.e. aardwolf | `apt-get` |
+| `setup/packages.graphical.txt` | every machine with `GRAPHICAL=1`, i.e. falcon and panda | `yay`/`paru` |
+| `setup/packages.<device>.txt` | that device only | the device's manager |
 
-The split between the first two is the load-bearing one, and the question for a new package is which side of it the package falls on: anything that opens a window, draws on one, themes one or talks to a session daemon goes in `packages.graphical.txt`. `packages.<device>.txt` is for the narrower case of one machine wanting something the others shouldn't have; the default is the widest list the package works on.
+The first two are the same list under two sets of names, and `PKG_MANAGER` (see **Package managers** below) picks which one a device reads; only one is ever in play. The split from `packages.graphical.txt` is the load-bearing one, and the question for a new package is which side of it the package falls on: anything that opens a window, draws on one, themes one or talks to a session daemon goes in `packages.graphical.txt`. `packages.<device>.txt` is for the narrower case of one machine wanting something the others shouldn't have; the default is the widest list the package works on.
 
 They live in `setup/` and not `devices/<device>/` because `apply.sh` copies everything under `devices/<device>/` into the stow tree verbatim; a package list there would be symlinked into `$HOME`.
 
 Whether to install is decided by hashing the lists in play into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to any of them therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless. The hash covers only the lists that device uses, so an edit to `packages.graphical.txt` doesn't churn the VPS.
+
+### Package managers
+
+`PKG_MANAGER` is a `setup/device.<device>.sh` knob defaulting to `pacman`, and `apply.sh` maps it to both a base list and the command that installs it. The check that the binary exists runs right after the device knobs are sourced rather than at the end, so a machine whose manager isn't there fails before anything has been rsynced or stowed.
+
+Only aardwolf sets `apt`. Ubuntu is hard-coded for it rather than detected, because a second Ubuntu machine is not on the horizon and detection would be a guess dressed as a fact.
+
+Adding a package to `packages.txt` therefore means adding it to `packages.apt.txt` too, or deciding it doesn't belong on a headless box. `packages.apt.txt` names in its header the three entries that have no counterpart — `pacman-contrib`, `libsecret`, `oh-my-posh-bin` — so the divergence is recorded in one place rather than rediscovered.
+
+The last of those is the one with a consequence outside the list: `.config/ohmyposh` is still stowed on aardwolf, but oh-my-posh ships no apt package, so the prompt block in `home/.config/zshrc/20-customization` runs `oh-my-posh init` only when the binary is on `PATH`. Installing it there by hand is enough to light the prompt up; nothing else needs changing.
 
 ### Services
 
@@ -71,6 +82,7 @@ The race is won on most boots and lost on a slow one, which makes it look like a
 
 ```bash
 GRAPHICAL=0
+PKG_MANAGER=apt
 STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
 ```
 
