@@ -83,7 +83,7 @@ The race is won on most boots and lost on a slow one, which makes it look like a
 ```bash
 GRAPHICAL=0
 PKG_MANAGER=apt
-STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
+STOW_PATHS=(.zshrc .config/zshrc .config/ohmyposh)
 ```
 
 `GRAPHICAL=0` drops `packages.graphical.txt` from the install and skips every step in `apply.sh` that assumes a session: `enable_services`, `xdg-user-dirs-update`, seeding a matugen palette, and creating `~/.mydotfiles`. Each of those is a hard failure and not a cosmetic one on a machine without the packages — `matugen` isn't installed, and the `theme_pref=$(grep ... gtk-3.0/settings.ini)` above it would take `set -e` down on the missing file.
@@ -91,6 +91,8 @@ STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
 `STOW_PATHS` is an allowlist: with it set, the merged tree is reduced to exactly those paths before it is rsynced into `.stow/`. It names what to *keep*, so a new directory under `home/` has to be opted in here before it reaches the VPS — the opposite default from a droplist, and the right one for a machine that should have less. The filter runs after the device overlay, so a `devices/server/` file still wins at a kept path; a device file at a dropped path is silently discarded, which is why an unmatched entry warns.
 
 `.config/btop` is deliberately not kept: the only local change to it is `color_theme = "matugen"`, naming a theme the wallpaper pipeline generates and a headless host never will.
+
+`.bashrc` is not kept either, and it is the one path where the distro's copy beats ours. `home/.bashrc` is an Arch skeleton — two colour aliases, a `PS1`, and a `PATH` line `00-init` already sets for zsh — while Ubuntu ships a fuller one that fnm, cargo, pnpm and the `paseo.env` block have all appended to. Keeping it would trade live machine-local config for a worse file, and `stow` refuses the overwrite in any case, since a real file at a stow target is a conflict rather than something to adopt. bash is only aardwolf's login shell until `chsh` points at zsh; the zsh side is stowed in full.
 
 ### Hyprland Config Structure
 
