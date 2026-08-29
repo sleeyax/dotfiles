@@ -12,7 +12,18 @@ export PATH="$HOME/go/bin:$PATH"
 export PATH="$PATH:$HOME/.cargo/bin"
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME:$PATH"
-export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+
+# ssh-agent runs as a systemd user unit, which exports no path of its own, so
+# the socket has to be named here. Only when it is actually there: a session
+# that reaches this file without the unit running would otherwise be pointed at
+# a socket that doesn't exist, and on a machine with no XDG_RUNTIME_DIR at all
+# the export expands to a bare /ssh-agent.socket. Either way the cost is the
+# same, and it is paid on the VPS rather than the desktops: SSH hands a
+# forwarded agent to a remote session in this same variable, and overwriting it
+# loses every key for the rest of the session.
+if [ -S "$XDG_RUNTIME_DIR/ssh-agent.socket" ]; then
+  export SSH_AUTH_SOCK="$XDG_RUNTIME_DIR/ssh-agent.socket"
+fi
 
 # -----------------------------------------------------
 # Node Version Manager (fnm preferred, nvm fallback)
