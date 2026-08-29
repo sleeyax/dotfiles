@@ -60,7 +60,17 @@ Only aardwolf sets `apt`. Ubuntu is hard-coded for it rather than detected, beca
 
 Adding a package to `packages.txt` therefore means adding it to `packages.apt.txt` too, or deciding it doesn't belong on a headless box. `packages.apt.txt` names in its header the three entries that have no counterpart — `pacman-contrib`, `libsecret`, `oh-my-posh-bin` — so the divergence is recorded in one place rather than rediscovered.
 
-The last of those is the one with a consequence outside the list: `.config/ohmyposh` is still stowed on aardwolf, but oh-my-posh ships no apt package, so the prompt block in `home/.config/zshrc/20-customization` runs `oh-my-posh init` only when the binary is on `PATH`. Installing it there by hand is enough to light the prompt up; nothing else needs changing.
+The last of those is the one with a consequence outside the list: `.config/ohmyposh` is still stowed on aardwolf, but oh-my-posh ships no apt package, so the prompt block in `home/.config/zshrc/20-customization` runs `oh-my-posh init` only when the binary is on `PATH`. `install_oh_my_posh` in `apply.sh` puts it there — see **Unpackaged dependencies** below.
+
+### Unpackaged dependencies
+
+Two things the shell config needs aren't packages on either distro, so no list can name them and `apply.sh` installs them itself, between the packages and the services.
+
+`install_oh_my_zsh` clones oh-my-zsh, then clones the three plugins `20-customization` names that oh-my-zsh doesn't bundle: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`. Cloning rather than running upstream's installer is deliberate — that installer moves `~/.zshrc` aside and writes its own, and ours is a stow symlink. A missing plugin is only a warning per new shell, which is easy to stop seeing, so the check covers each one rather than just the `~/.oh-my-zsh` directory.
+
+`install_oh_my_posh` fetches the release binary to `~/.local/bin`, and only on an apt device. Arch has `oh-my-posh-bin` in `packages.txt`, so a missing binary there means that install failed — worth seeing, rather than papering over with a download that then shadows the package. It tests `~/.local/bin/oh-my-posh` as well as `PATH`, because `apply.sh` runs under bash and it's `00-init` that puts that directory on `PATH`, for zsh. Being a download and not a package, it never updates itself: deleting the binary and re-applying is how it moves forward.
+
+Both run on every apply rather than behind the package stamp, since each costs a test and nothing else once satisfied — the same arrangement as `enable_services`, and what lets a half-provisioned machine heal itself. Neither is gated on `GRAPHICAL`: the prompt and the plugins are wanted on all three devices.
 
 ### Services
 

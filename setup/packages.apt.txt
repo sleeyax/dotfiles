@@ -7,10 +7,11 @@
 # apt machine: packages.graphical.txt names Arch packages throughout, and only a
 # GRAPHICAL=1 device ever reads it.
 #
-# Three entries of packages.txt have no line here, and all three are things a
-# headless Ubuntu box has no use for: pacman-contrib is Arch's own, libsecret
-# backs a desktop keyring, and oh-my-posh ships no apt package at all — see the
-# prompt block in home/.config/zshrc/20-customization.
+# Three entries of packages.txt have no line here. Two are things a headless
+# Ubuntu box has no use for: pacman-contrib is Arch's own, and libsecret backs a
+# desktop keyring. The third, oh-my-posh, is wanted here and simply has no apt
+# package, so install_oh_my_posh in scripts/apply.sh fetches the release binary
+# instead — see the prompt block in home/.config/zshrc/20-customization.
 
 # --- Base tooling ---
 git

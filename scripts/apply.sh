@@ -126,6 +126,80 @@ else
   echo "(Run with --force to reinstall)"
 fi
 
+# Not everything the configs need is a package. Both checks below cost a test and
+# nothing else on a machine that already has the thing, so they run on every
+# apply rather than behind the package stamp above — the same arrangement as
+# enable_services, and what makes a half-provisioned machine heal itself.
+
+OMZ_DIR="$HOME/.oh-my-zsh" # must match the ZSH export in .config/zshrc/00-init
+
+# None of these is an Arch or Ubuntu package, so no list above can name them.
+OMZ_PLUGINS=(
+  "zsh-autosuggestions      https://github.com/zsh-users/zsh-autosuggestions.git"
+  "zsh-syntax-highlighting  https://github.com/zsh-users/zsh-syntax-highlighting.git"
+  "fast-syntax-highlighting https://github.com/zdharma-continuum/fast-syntax-highlighting.git"
+)
+
+install_oh_my_zsh() {
+  local entry name url dest
+
+  # Upstream's installer is a curl|sh that also moves ~/.zshrc aside to write its
+  # own. Ours is a stow symlink, so the clone the installer wraps is the part we want.
+  if [ ! -d "$OMZ_DIR" ]; then
+    echo "Installing oh-my-zsh..."
+    git clone --depth=1 https://github.com/ohmyzsh/ohmyzsh.git "$OMZ_DIR"
+  fi
+
+  # 20-customization names these in plugins=(), and oh-my-zsh bundles none of
+  # them. A missing one only warns, once per new shell, which is easy to stop seeing.
+  for entry in "${OMZ_PLUGINS[@]}"; do
+    read -r name url <<< "$entry"
+    dest="$OMZ_DIR/custom/plugins/$name"
+    if [ -d "$dest" ]; then
+      continue
+    fi
+    echo "Installing oh-my-zsh plugin: $name"
+    git clone --depth=1 "$url" "$dest"
+  done
+}
+
+POSH_BIN="$HOME/.local/bin/oh-my-posh" # on PATH via the .local/bin export in 00-init
+
+install_oh_my_posh() {
+  local arch
+
+  # packages.txt carries oh-my-posh-bin from the AUR, so a missing binary on an
+  # Arch device means that install failed — worth seeing, rather than papering
+  # over with a download that then shadows the package. apt has nothing at all,
+  # which is why the prompt block in 00-init is guarded on the binary.
+  if [ "$PKG_MANAGER" != "apt" ]; then
+    return 0
+  fi
+  # Testing the install path as well as PATH, because apply.sh runs under bash
+  # and it is 00-init that puts ~/.local/bin on PATH, for zsh.
+  if command -v oh-my-posh &>/dev/null || [ -x "$POSH_BIN" ]; then
+    return 0
+  fi
+
+  case "$(uname -m)" in
+    x86_64)  arch=amd64 ;;
+    aarch64) arch=arm64 ;;
+    *) echo "Notice: no oh-my-posh release for $(uname -m); the prompt stays off"; return 0 ;;
+  esac
+
+  # Fetching the release binary is the whole install; upstream's script only
+  # picks the asset and drops it on PATH. Unlike a package it never updates
+  # itself, so re-running with the binary removed is how it moves forward.
+  echo "Installing oh-my-posh..."
+  mkdir -p "$(dirname "$POSH_BIN")"
+  curl -fsSL -o "$POSH_BIN" \
+    "https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-$arch"
+  chmod +x "$POSH_BIN"
+}
+
+install_oh_my_zsh
+install_oh_my_posh
+
 # power-profiles-daemon ships D-Bus activated, so it only starts once a client asks for it, and waybar is that client.
 # Its power-profiles module segfaults when the activation lands in the window where the greeter session's bus connections are still going away.
 # Enabling the unit means the name is already taken by the time the bar starts.
