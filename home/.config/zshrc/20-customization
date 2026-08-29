@@ -24,8 +24,12 @@ plugins=(
     dirhistory
 )
 
-# Set-up oh-my-zsh
-source $ZSH/oh-my-zsh.sh
+# Set-up oh-my-zsh. No package list carries it — there is no apt package, and
+# three of the plugins above are clones rather than packages either — so it is a
+# hand-installed dependency and a fully applied machine can still be without it.
+if [ -f "$ZSH/oh-my-zsh.sh" ]; then
+  source "$ZSH/oh-my-zsh.sh"
+fi
 
 # -----------------------------------------------------
 # Set-up FZF key bindings (CTRL R for fuzzy history finder)
