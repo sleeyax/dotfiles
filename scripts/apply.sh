@@ -175,9 +175,24 @@ install_oh_my_posh() {
   if [ "$PKG_MANAGER" != "apt" ]; then
     return 0
   fi
-  # Testing the install path as well as PATH, because apply.sh runs under bash
-  # and it is 00-init that puts ~/.local/bin on PATH, for zsh.
-  if command -v oh-my-posh &>/dev/null || [ -x "$POSH_BIN" ]; then
+  # A copy on PATH that isn't the one we drop belongs to whatever put it there,
+  # and isn't this function's to upgrade or replace. Testing the install path
+  # separately because apply.sh runs under bash, and it is 00-init that puts
+  # ~/.local/bin on PATH, for zsh.
+  if [ ! -x "$POSH_BIN" ] && command -v oh-my-posh &>/dev/null; then
+    return 0
+  fi
+
+  # Being a download rather than a package, nothing in an upgrade of the system
+  # will ever move this forward, so the apply that would have skipped it is the
+  # one chance to. `upgrade` prints nothing and exits 0 when it is already
+  # current, which is the settled case and the only network an apply spends
+  # here; a machine that can't reach GitHub keeps what it has rather than
+  # failing the apply over a prompt.
+  if [ -x "$POSH_BIN" ]; then
+    if ! "$POSH_BIN" upgrade; then
+      echo "Notice: could not check for an oh-my-posh update; keeping the installed version"
+    fi
     return 0
   fi
 
@@ -188,8 +203,8 @@ install_oh_my_posh() {
   esac
 
   # Fetching the release binary is the whole install; upstream's script only
-  # picks the asset and drops it on PATH. Unlike a package it never updates
-  # itself, so re-running with the binary removed is how it moves forward.
+  # picks the asset and drops it on PATH. From here on `upgrade` above keeps it
+  # current, so this branch is the first apply on a machine and nothing after.
   echo "Installing oh-my-posh..."
   mkdir -p "$(dirname "$POSH_BIN")"
   curl -fsSL -o "$POSH_BIN" \
