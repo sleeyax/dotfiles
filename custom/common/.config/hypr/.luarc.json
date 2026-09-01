@@ -1,8 +1,0 @@
-{
-  "workspace": {
-    "library": ["/usr/share/hypr/stubs"]
-  },
-  "diagnostics": {
-    "globals": ["hl", "load_variant", "activate_gamemode", "inverse_primary"]
-  }
-}

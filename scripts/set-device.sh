@@ -11,8 +11,8 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-if [ ! -d "$DOTFILES_DIR/custom/devices/$1" ]; then
-  echo "Error: Device '$1' not found in custom/devices/"
+if [ ! -d "$DOTFILES_DIR/devices/$1" ]; then
+  echo "Error: Device '$1' not found in devices/"
   exit 1
 fi
 

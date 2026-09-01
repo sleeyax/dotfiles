@@ -1,0 +1,534 @@
+/* -----------------------------------------------------
+ * General
+ * ----------------------------------------------------- */
+
+ * {
+    font-family: "Fira Sans Semibold", "Font Awesome 7 Free", "Font Awesome 7 Brands", "Font Awesome 6 Free", "Font Awesome 6 Brands", FontAwesome, "Material Icons", Roboto, Helvetica, Arial, sans-serif;
+    border: none;
+    border-radius: 0px;
+}
+
+window#waybar {
+    background-color: rgba(0,0,0,0.2);
+    background: transparent;
+    transition-property: background-color;
+    transition-duration: .5s;
+}
+
+.modules-left {
+    margin:6px 0px 6px 8px;
+}
+
+.modules-right {
+    margin:6px 8px 6px 0px;
+}
+
+.modules-center {
+    margin:6px 0px 6px 0px;
+}
+
+/* -----------------------------------------------------
+ * Workspaces
+ * ----------------------------------------------------- */
+
+#workspaces {
+    margin: 0px 7px 0px 0px;
+    min-width: 210px;
+}
+
+#workspaces button {
+    padding: 0px 6px;
+    margin: 3px 3px;
+    border-radius: 8px;
+    color: @on_surface;
+    background-color: @background;
+    transition: all 0.3s ease-in-out;
+    border: 2px solid @primary;
+}
+
+#workspaces button.active {
+    color: @on_primary;
+    background: @primary;
+    border-radius: 12px;
+    transition: all 0.3s ease-in-out;
+    border-color: @primary;
+    min-width: 30px;
+}
+
+#workspaces button:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-radius: 15px;
+    border-color: @primary;
+    box-shadow: none;
+}
+
+/* -----------------------------------------------------
+ * Tooltips
+ * ----------------------------------------------------- */
+
+tooltip {
+    border-radius: 10px;
+    background-color: @surface;
+    border: 2px solid @border_color;
+    padding: 5px;
+    margin: 0px;
+}
+
+tooltip label {
+    color: @on_surface;
+}
+
+/* -----------------------------------------------------
+ * Window
+ * ----------------------------------------------------- */
+
+#window {
+    margin: 3px 15px 3px 0px;
+    padding: 2px 10px 0px 10px;
+    border-radius: 8px;
+    color:@icon_color;
+    font-size:16px;
+    font-weight:normal;
+}
+
+window#waybar.empty #window {
+    background-color:transparent;
+}
+
+/* -----------------------------------------------------
+ * Taskbar
+ * ----------------------------------------------------- */
+
+#taskbar {
+    background: @primary;
+    margin: 3px 15px 3px 0px;
+    padding:0px;
+    border-radius: 8px;
+    font-weight: normal;
+    font-style: normal;
+    opacity:1.0;
+    border: 2px solid @border_color;
+}
+
+#taskbar button {
+    margin:0;
+    border-radius: 8px;
+    padding: 0px 5px 0px 5px;
+}
+
+#taskbar button:hover {
+    background: alpha(#ffffff,0.1);
+    box-shadow: none;
+}
+
+#taskbar.empty {
+    background:transparent;
+    border:0;
+    padding:0;
+    margin:0;
+}
+
+/* -----------------------------------------------------
+ * Modules
+ * ----------------------------------------------------- */
+
+.modules-left > widget:first-child > #workspaces {
+    margin-left: 0;
+}
+
+.modules-right > widget:last-child > #workspaces {
+    margin-right: 0;
+}
+
+/* -----------------------------------------------------
+ * Custom Quicklinks
+ * ----------------------------------------------------- */
+
+#custom-cliphist,
+#custom-system,
+#custom-hyprsunset,
+#custom-hypridle,
+#custom-tools,
+#custom-quicklink_chromium,
+#custom-quicklink_edge,
+#custom-quicklink_firefox,
+#custom-quicklink_browser,
+#custom-quicklink_filemanager,
+#custom-quicklink_email,
+#custom-quicklink_thunderbird {
+    margin-right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    color: @icon_color;
+}
+
+#custom-tools {
+    margin-right:12px;
+}
+
+#custom-hypridle.active {
+    color: @icon_color;
+}
+
+#custom-hypridle.notactive {
+    color: @error;
+}
+
+/* -----------------------------------------------------
+ * Idle Inhibitor
+ * ----------------------------------------------------- */
+
+#idle_inhibitor {
+    margin-right: 15px;
+    font-size: 22px;
+    font-weight: bold;
+    opacity: 1.0;
+    color: @icon_color;
+    transition: all 0.3s ease-out;    
+}
+
+#idle_inhibitor.activated {
+    margin-right: 15px;
+    font-size: 20px;
+    font-weight: bold;
+    opacity: 1.0;
+    color: @error;
+}
+
+/* -----------------------------------------------------
+ * App Launcher
+ * ----------------------------------------------------- */
+
+#custom-appmenu {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 3px 10px 3px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#custom-appmenu:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+/* -----------------------------------------------------
+ * Custom Now Playing
+ * ----------------------------------------------------- */
+
+/* -----------------------------------------------------
+ * Custom Notification
+ * ----------------------------------------------------- */
+
+ #custom-notification {
+    margin: 0px 11px 0px 0px;
+    padding: 0px;
+    font-size: 24px;
+    font-family: "Material Icons";
+    color: @icon_color;
+}
+
+/* -----------------------------------------------------
+ * Custom Exit
+ * ----------------------------------------------------- */
+
+#custom-exit {
+    margin: 0px 14px 0px 0px;
+    padding: 0px;
+    font-size: 20px;
+    color: @icon_color;
+}
+
+/* -----------------------------------------------------
+ * Custom Updates
+ * ----------------------------------------------------- */
+
+#custom-updates {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+/* Scoped to .normal so the critical tier keeps its colour under the pointer. */
+#custom-updates.normal:hover {
+    color: @on_surface;
+    background-color: @primary_container;
+    border-color: @primary;
+}
+
+#custom-updates.critical {
+    background-color: @error;
+    color: @on_error;
+}
+
+/* -----------------------------------------------------
+ * Coding Agent Usage
+ * ----------------------------------------------------- */
+
+/* A vendor mark and then a ring per window, layered over an empty label. They are declared in the
+   generated rings.css that default/style.css @imports, since the ring url() changes with the
+   percentage. The label holds only spaces, because a hit region follows text and not padding —
+   reserving this width with padding would leave the images and the tooltip unhoverable. */
+#custom-claude-usage,
+#custom-codex-usage {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 0px 0px 0px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;
+}
+
+/* The label is all spaces, but their advance is what positions everything: the font has to be the
+   monospace one the scripts' spacer counts assume, and the `*` rule at the top of this file would
+   otherwise reach the inner label directly and override it. */
+#custom-claude-usage,
+#custom-claude-usage label,
+#custom-codex-usage,
+#custom-codex-usage label {
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
+}
+
+/* background-color, not the background shorthand: the shorthand resets background-image and takes
+   the discs with it. */
+#custom-claude-usage:hover,
+#custom-codex-usage:hover {
+    color: @on_surface;
+    background-color: @primary_container;
+    border-color: @primary;
+}
+
+#custom-claude-usage.warn,
+#custom-codex-usage.warn {
+    color: @tertiary;
+}
+
+#custom-claude-usage.crit,
+#custom-codex-usage.crit {
+    color: @error;
+    border-color: @error;
+}
+
+/* -----------------------------------------------------
+ * Hardware Group
+ * ----------------------------------------------------- */
+
+#disk,#memory,#cpu,#language {
+    margin: 0px;
+    padding: 0px;
+    font-size: 16px;
+    color: @icon_color;
+}
+
+#language {
+    margin-right:10px;
+}
+
+/* -----------------------------------------------------
+ * Power Profiles Daemon
+ * ----------------------------------------------------- */
+
+#power-profiles-daemon {
+    margin: 0px 13px 0px 0px;
+    padding: 0px;
+    font-size: 16px;
+    color: @icon_color;
+}
+
+/* -----------------------------------------------------
+ * Clock
+ * ----------------------------------------------------- */
+
+#clock {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 1px 10px 0px 10px;
+    margin: 3px 0px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#clock:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+/* -----------------------------------------------------
+ * Backlight
+ * ----------------------------------------------------- */
+
+#backlight {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#backlight:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+/* -----------------------------------------------------
+ * Pulseaudio
+ * ----------------------------------------------------- */
+
+#pulseaudio {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    opacity: 1.0;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#pulseaudio:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+#pulseaudio.muted {
+    background-color: @on_primary_fixed;
+    color: @on_surface;
+}
+
+/* -----------------------------------------------------
+ * Network
+ * ----------------------------------------------------- */
+
+#network {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#network.ethernet:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+#network.wifi:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+#network.ethernet {
+    background-color: @background;
+    color: @on_surface;
+}
+
+#network.wifi {
+    background-color: @background;
+    color: @on_surface;
+}
+
+/* -----------------------------------------------------
+ * Bluetooth
+ * ----------------------------------------------------- */
+
+#bluetooth, #bluetooth.on, #bluetooth.connected {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;    
+}
+
+#bluetooth:hover {
+    color: @on_surface;
+    background: @primary_container;
+    border-color: @primary;
+}
+
+#bluetooth.off {
+    background-color: transparent;
+    padding: 0px;
+    margin: 0px;
+}
+
+/* -----------------------------------------------------
+ * Battery
+ * ----------------------------------------------------- */
+
+#battery {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 15px 0px 10px;
+    margin: 3px 15px 3px 0px;
+    opacity: 1.0;
+    border: 2px solid @border_color;
+}
+
+#battery.charging, #battery.plugged {
+    color: @on_surface;
+    background-color: @background;
+}
+
+@keyframes blink {
+    to {
+        background-color: @background;
+        color: @on_surface;
+    }
+}
+
+#battery.critical:not(.charging) {
+    background-color: @error;
+    color: @on_error;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+/* -----------------------------------------------------
+ * Tray
+ * ----------------------------------------------------- */
+
+#tray {
+    padding: 0px 15px 0px 0px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}

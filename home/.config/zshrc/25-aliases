@@ -1,0 +1,27 @@
+# -----------------------------------------------------
+# ALIASES
+# -----------------------------------------------------
+
+# -----------------------------------------------------
+# General
+# -----------------------------------------------------
+alias c='clear'
+alias cls='clear'
+alias ls='eza -a --icons=always'
+alias ll='eza -al --icons=always'
+alias lt='eza -a --tree --level=1 --icons=always'
+alias shutdown='systemctl poweroff'
+alias wifi='nmtui'
+alias filemanager='~/.config/ml4w/settings/filemanager'
+alias lock='hyprlock'
+alias system='~/.config/ml4w/settings/systemmonitor'
+
+# -----------------------------------------------------
+# System
+# -----------------------------------------------------
+alias update-grub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
+
+# -----------------------------------------------------
+# Other
+# -----------------------------------------------------
+alias nx='npx nx'
