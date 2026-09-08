@@ -6,28 +6,10 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd("~/.config/ml4w/settings/termina
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("~/.config/ml4w/settings/browser.sh"), { description = "Open the browser" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("~/.config/ml4w/settings/filemanager"), { description = "Open the filemanager" })
 
--- fr keyboard layout setup
-local is_fr = false
-local f = io.open(os.getenv("HOME") .. "/.config/hypr/input.lua", "r")
-if f then
-    local content = f:read("*all")
-    if content:match('kb_layout%s*=%s*"fr"') and not content:match('kb_variant%s*=%s*"us"') then
-        is_fr = true
-    end
-    f:close()
-end
-
-local fr_keys = {
-    "ampersand", "eacute", "quotedbl", "apostrophe", "parenleft",
-    "minus", "egrave", "underscore", "ccedilla", "agrave"
-}
-
--- Move active window to a workspace with mainMod + SHIFT + [0-9]
+-- Workspaces are bound to the number row by keycode, not by symbol.
+-- The digits are unshifted on QWERTY but shifted on AZERTY, so a symbolic bind would only reach half of the workspaces on the laptop.
 for i = 1, 10 do
-    local key = i % 10 -- 10 maps to key 0
-    if is_fr then
-        key = fr_keys[i]
-    end
+    local key = "code:" .. (9 + i) -- evdev keycodes 10..19, the number row 1..9 then 0
     hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}), { description = "Focus workspace " .. i })
     hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
 end
