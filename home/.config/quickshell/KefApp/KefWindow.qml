@@ -34,6 +34,22 @@ PanelWindow {
     property bool shown: false
     visible: shown
 
+    property string currentTab: "queue"
+
+    readonly property var tabs: [
+        { id: "queue", label: "Queue", icon: "queue_music" }
+    ]
+
+    readonly property var sources: [
+        { id: "wifi", label: "Wi-Fi", icon: "wifi" },
+        { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" },
+        { id: "tv", label: "TV", icon: "tv" },
+        { id: "optical", label: "Optical", icon: "settings_input_component" },
+        { id: "coaxial", label: "Coaxial", icon: "settings_input_composite" },
+        { id: "analog", label: "Analog", icon: "settings_input_svideo" },
+        { id: "usb", label: "USB", icon: "usb" }
+    ]
+
     onIsOpenChanged: {
         if (isOpen) {
             shown = true;
@@ -52,71 +68,6 @@ PanelWindow {
         onActivated: KefService.panelOpen = false
     }
 
-    readonly property var sources: [
-        { id: "wifi", label: "Wi-Fi", icon: "wifi" },
-        { id: "bluetooth", label: "Bluetooth", icon: "bluetooth" },
-        { id: "tv", label: "TV", icon: "tv" },
-        { id: "optical", label: "Optical", icon: "settings_input_component" },
-        { id: "coaxial", label: "Coaxial", icon: "settings_input_composite" },
-        { id: "analog", label: "Analog", icon: "settings_input_svideo" },
-        { id: "usb", label: "USB", icon: "usb" }
-    ]
-
-    function formatTime(ms) {
-        const total = Math.max(0, Math.floor(ms / 1000));
-        const h = Math.floor(total / 3600);
-        const m = Math.floor(total / 60) % 60;
-        const s = String(total % 60).padStart(2, "0");
-        return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
-    }
-
-    component Label: Text {
-        color: Theme.on_surface
-        font.family: Theme.fontFamily
-        font.pixelSize: 13
-        elide: Text.ElideRight
-    }
-
-    component PillButton: Rectangle {
-        id: pill
-        property string icon: ""
-        property string text: ""
-        property bool selected: false
-        signal clicked()
-
-        implicitHeight: 30
-        implicitWidth: pillRow.implicitWidth + 24
-        radius: 15
-        color: selected ? Theme.primary : pillMouse.containsMouse ? Theme.surface_container_highest : Theme.surface_container_high
-
-        Row {
-            id: pillRow
-            anchors.centerIn: parent
-            spacing: 6
-
-            MaterialIcon {
-                name: pill.icon
-                size: 16
-                visible: pill.icon !== ""
-                color: pill.selected ? Theme.on_primary : Theme.on_surface
-                anchors.verticalCenter: parent.verticalCenter
-            }
-            Label {
-                text: pill.text
-                color: pill.selected ? Theme.on_primary : Theme.on_surface
-                anchors.verticalCenter: parent.verticalCenter
-            }
-        }
-
-        MouseArea {
-            id: pillMouse
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: pill.clicked()
-        }
-    }
-
     Item {
         id: frame
         anchors.fill: parent
@@ -130,7 +81,6 @@ PanelWindow {
         }
         Behavior on opacity {
             NumberAnimation {
-                id: fade
                 duration: 220
                 easing.type: Easing.OutCubic
                 onRunningChanged: {
@@ -164,6 +114,15 @@ PanelWindow {
                 return;
             }
             event.accepted = true;
+        }
+
+        // Clicking empty space hands keyboard focus back from a text field to the panel shortcuts.
+        MouseArea {
+            anchors.fill: parent
+            onPressed: mouse => {
+                frame.forceActiveFocus();
+                mouse.accepted = false;
+            }
         }
 
         RectangularShadow {
@@ -213,13 +172,13 @@ PanelWindow {
                     Layout.fillWidth: true
                     spacing: 0
 
-                    Label {
+                    KefLabel {
                         Layout.fillWidth: true
                         text: KefService.speakerName || "KEF"
                         font.pixelSize: 16
                         font.bold: true
                     }
-                    Label {
+                    KefLabel {
                         Layout.fillWidth: true
                         visible: KefService.speakerIp !== ""
                         text: `${KefService.speakerModel} · ${KefService.speakerIp}`
@@ -257,7 +216,7 @@ PanelWindow {
                     size: 40
                     color: KefService.backendFailed ? Theme.error : Theme.on_surface_variant
                 }
-                Label {
+                KefLabel {
                     Layout.alignment: Qt.AlignHCenter
                     text: KefService.backendFailed ? `kefw2ui did not answer on port ${KefService.port}` : "Starting kefw2ui…"
                     color: Theme.on_surface_variant
@@ -286,7 +245,7 @@ PanelWindow {
                     filled: true
                     onClicked: KefService.setPower(true)
                 }
-                Label {
+                KefLabel {
                     Layout.alignment: Qt.AlignHCenter
                     text: "Speaker is in standby"
                     color: Theme.on_surface_variant
@@ -303,52 +262,12 @@ PanelWindow {
                     Layout.fillWidth: true
                     spacing: 16
 
-                    Item {
+                    Artwork {
                         implicitWidth: 132
                         implicitHeight: 132
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: 10
-                            color: Theme.surface_container_high
-                            visible: art.status !== Image.Ready
-
-                            MaterialIcon {
-                                anchors.centerIn: parent
-                                name: "album"
-                                size: 56
-                                color: Theme.on_surface_variant
-                            }
-                        }
-
-                        Image {
-                            id: art
-                            anchors.fill: parent
-                            source: KefService.iconUrl
-                            sourceSize.width: 264
-                            sourceSize.height: 264
-                            fillMode: Image.PreserveAspectCrop
-                            asynchronous: true
-                            visible: false
-                        }
-
-                        Rectangle {
-                            id: artMask
-                            anchors.fill: parent
-                            radius: 10
-                            visible: false
-                            layer.enabled: true
-                        }
-
-                        MultiEffect {
-                            anchors.fill: parent
-                            source: art
-                            visible: art.status === Image.Ready
-                            maskEnabled: true
-                            maskSource: artMask
-                            maskThresholdMin: 0.5
-                            maskSpreadAtMin: 1.0
-                        }
+                        radius: 10
+                        fallbackIcon: "album"
+                        source: KefService.iconUrl
                     }
 
                     ColumnLayout {
@@ -356,7 +275,7 @@ PanelWindow {
                         Layout.alignment: Qt.AlignVCenter
                         spacing: 4
 
-                        Label {
+                        KefLabel {
                             Layout.fillWidth: true
                             text: KefService.title || "Nothing playing"
                             font.pixelSize: 17
@@ -364,13 +283,13 @@ PanelWindow {
                             wrapMode: Text.WordWrap
                             maximumLineCount: 3
                         }
-                        Label {
+                        KefLabel {
                             Layout.fillWidth: true
                             visible: text !== ""
                             text: KefService.artist
                             color: Theme.primary
                         }
-                        Label {
+                        KefLabel {
                             Layout.fillWidth: true
                             visible: text !== ""
                             text: KefService.album
@@ -384,7 +303,7 @@ PanelWindow {
                             radius: 4
                             color: Theme.error_container
 
-                            Label {
+                            KefLabel {
                                 id: liveText
                                 anchors.centerIn: parent
                                 text: "LIVE"
@@ -411,14 +330,14 @@ PanelWindow {
                     }
                     RowLayout {
                         Layout.fillWidth: true
-                        Label {
-                            text: root.formatTime(progress.value)
+                        KefLabel {
+                            text: KefService.formatTime(progress.value)
                             color: Theme.on_surface_variant
                             font.pixelSize: 11
                         }
                         Item { Layout.fillWidth: true }
-                        Label {
-                            text: root.formatTime(KefService.duration)
+                        KefLabel {
+                            text: KefService.formatTime(KefService.duration)
                             color: Theme.on_surface_variant
                             font.pixelSize: 11
                         }
@@ -478,7 +397,7 @@ PanelWindow {
                         externalValue: KefService.volume
                         onCommitted: value => KefService.setVolume(value)
                     }
-                    Label {
+                    KefLabel {
                         Layout.preferredWidth: 32
                         horizontalAlignment: Text.AlignRight
                         text: Math.round(volume.value)
@@ -501,6 +420,37 @@ PanelWindow {
                             onClicked: KefService.setSource(modelData.id)
                         }
                     }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: 1
+                    color: Theme.outline_variant
+                }
+
+                Row {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Repeater {
+                        model: root.tabs
+
+                        PillButton {
+                            required property var modelData
+                            icon: modelData.icon
+                            text: modelData.label
+                            selected: root.currentTab === modelData.id
+                            onClicked: root.currentTab = modelData.id
+                        }
+                    }
+                }
+
+                StackLayout {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 320
+                    currentIndex: root.tabs.findIndex(tab => tab.id === root.currentTab)
+
+                    QueueView {}
                 }
             }
         }

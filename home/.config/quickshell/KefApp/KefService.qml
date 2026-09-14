@@ -42,15 +42,27 @@ Singleton {
     property bool shuffle: false
     property string repeatMode: "off"
 
-    signal queueUpdated()
+    property var queueTracks: []
+    property int queueIndex: -1
+
+    // Set whenever the panel opens, so the queue and play mode are fetched once a fresh /api/player has confirmed the speaker is awake.
+    property bool awakeStateStale: true
+
     signal playlistsUpdated()
     signal reindexUpdated(var data)
-    signal stateRefreshed()
 
     function resolveUrl(url) {
         if (!url)
             return "";
         return url.startsWith("/") ? baseUrl + url : url;
+    }
+
+    function formatTime(ms) {
+        const total = Math.max(0, Math.floor(ms / 1000));
+        const h = Math.floor(total / 3600);
+        const m = Math.floor(total / 60) % 60;
+        const s = String(total % 60).padStart(2, "0");
+        return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
     }
 
     function request(method, path, body, callback) {
@@ -216,7 +228,7 @@ Singleton {
                 refreshState();
             break;
         case "queue":
-            queueUpdated();
+            refreshQueue();
             break;
         case "playMode":
             refreshPlayMode();
@@ -285,12 +297,16 @@ Singleton {
         get("/api/player", (ok, json) => {
             if (!ok || !json)
                 return;
-            const wasStandby = standby;
             applyPlayer(json);
-            if (panelOpen && wasStandby !== standby && !standby)
-                refreshPlayMode();
-            stateRefreshed();
+            if (panelOpen && !standby && awakeStateStale)
+                refreshAwakeState();
         });
+    }
+
+    function refreshAwakeState() {
+        awakeStateStale = false;
+        refreshPlayMode();
+        refreshQueue();
     }
 
     // Unlike /api/player, the queue endpoints query the speaker directly and would wake it from standby.
@@ -316,6 +332,32 @@ Singleton {
         const next = { off: "all", all: "one", one: "off" }[repeatMode] || "off";
         repeatMode = next;
         post("/api/queue/mode", { repeat: next }, applyPlayMode);
+    }
+
+    function refreshQueue() {
+        if (standby)
+            return;
+        get("/api/queue", (ok, json) => {
+            if (!ok || !json)
+                return;
+            queueTracks = json.tracks || [];
+            queueIndex = json.currentIndex;
+        });
+    }
+
+    // The server resolves indices against a queue it re-reads, so every change is followed by a refresh rather than patched locally.
+    function playQueueItem(index) { post("/api/queue/play", { index: index }, refreshQueue); }
+    function removeQueueItem(index) { post("/api/queue/remove", { indices: [index] }, refreshQueue); }
+    function clearQueue() { post("/api/queue/clear", {}, refreshQueue); }
+
+    function moveQueueItem(from, to) {
+        if (to < 0 || to >= queueTracks.length)
+            return;
+        post("/api/queue/move", { from: from, to: to }, refreshQueue);
+    }
+
+    function saveQueueAsPlaylist(name, callback) {
+        post("/api/playlists/save-queue", { name: name }, (ok, json) => callback(ok, json && json.error));
     }
 
     // --- Commands ---
@@ -400,8 +442,21 @@ Singleton {
     onPanelOpenChanged: {
         if (!panelOpen)
             return;
-        ensureBackend();
+        awakeStateStale = true;
         if (backendUp)
-            refreshPlayMode();
+            refreshPlayer();
+        else
+            ensureBackend();
+    }
+
+    onStandbyChanged: {
+        if (panelOpen && !standby && source !== "")
+            refreshAwakeState();
+    }
+
+    // The current queue index only moves with the track.
+    onTitleChanged: {
+        if (panelOpen)
+            refreshQueue();
     }
 }
