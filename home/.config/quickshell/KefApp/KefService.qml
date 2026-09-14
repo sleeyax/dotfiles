@@ -599,5 +599,20 @@ Singleton {
     onTitleChanged: {
         if (panelOpen)
             refreshQueue();
+        barRefresh.restart();
     }
+
+    // Brings the waybar pill (signal 4) up to date between its own polls; the delay lets the speaker apply a command before the pill reads it back.
+    Timer {
+        id: barRefresh
+        interval: 500
+        onTriggered: Quickshell.execDetached(["pkill", "-RTMIN+4", "-x", "waybar"])
+    }
+
+    onVolumeChanged: barRefresh.restart()
+    onMutedChanged: barRefresh.restart()
+    onSourceChanged: barRefresh.restart()
+    onPowerStatusChanged: barRefresh.restart()
+    onPlayStateChanged: barRefresh.restart()
+    onBackendUpChanged: barRefresh.restart()
 }
