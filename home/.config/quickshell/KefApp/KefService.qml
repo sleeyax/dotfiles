@@ -528,6 +528,15 @@ Singleton {
         post("/api/player/source", { source: s });
     }
 
+    // The backend announces a switch only on the event stream, which may carry nothing else, so the new speaker's state is read back explicitly.
+    function switchSpeaker(ip, callback) {
+        post("/api/speaker", { ip: ip }, ok => {
+            if (ok)
+                refreshState();
+            callback(ok);
+        });
+    }
+
     function setPower(on) {
         post("/api/player/power", { powerOn: on }, (ok, json) => {
             if (ok && json)

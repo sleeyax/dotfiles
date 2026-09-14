@@ -39,7 +39,9 @@ PanelWindow {
     readonly property var tabs: [
         { id: "queue", label: "Queue", icon: "queue_music" },
         { id: "browse", label: "Browse", icon: "library_music" },
-        { id: "playlists", label: "Playlists", icon: "featured_play_list" }
+        { id: "playlists", label: "Playlists", icon: "featured_play_list" },
+        // Icon only: four labelled tabs are wider than the panel.
+        { id: "settings", label: "", icon: "settings" }
     ]
 
     function searchMedia(query) {
@@ -474,6 +476,7 @@ PanelWindow {
                         id: browseView
                     }
                     PlaylistsView {}
+                    SettingsView {}
                 }
             }
         }
