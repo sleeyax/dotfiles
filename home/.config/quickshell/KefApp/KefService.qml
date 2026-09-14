@@ -120,7 +120,8 @@ Singleton {
 
     Process {
         id: backendProcess
-        command: ["kefw2ui", "-bind", "127.0.0.1", "-port", String(root.port), "-no-discovery"]
+        // Quickshell does not take its children down when it is sent SIGTERM, which is how ml4w-autostart restarts it, so the kernel does instead.
+        command: ["setpriv", "--pdeathsig", "TERM", "kefw2ui", "-bind", "127.0.0.1", "-port", String(root.port), "-no-discovery"]
         onRunningChanged: {
             if (!running && root.backendUp) {
                 root.backendUp = false;
