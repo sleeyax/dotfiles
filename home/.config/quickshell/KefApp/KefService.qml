@@ -39,8 +39,10 @@ Singleton {
     readonly property bool isLive: live || audioType === "audioBroadcast"
     readonly property string iconUrl: resolveUrl(icon)
 
+    property bool shuffle: false
+    property string repeatMode: "off"
+
     signal queueUpdated()
-    signal playModeUpdated(string mode)
     signal playlistsUpdated()
     signal reindexUpdated(var data)
     signal stateRefreshed()
@@ -217,7 +219,7 @@ Singleton {
             queueUpdated();
             break;
         case "playMode":
-            playModeUpdated(d.mode || "");
+            refreshPlayMode();
             break;
         case "playlists":
             playlistsUpdated();
@@ -283,9 +285,37 @@ Singleton {
         get("/api/player", (ok, json) => {
             if (!ok || !json)
                 return;
+            const wasStandby = standby;
             applyPlayer(json);
+            if (panelOpen && wasStandby !== standby && !standby)
+                refreshPlayMode();
             stateRefreshed();
         });
+    }
+
+    // Unlike /api/player, the queue endpoints query the speaker directly and would wake it from standby.
+    function refreshPlayMode() {
+        if (standby)
+            return;
+        get("/api/queue/mode", applyPlayMode);
+    }
+
+    function applyPlayMode(ok, json) {
+        if (!ok || !json)
+            return;
+        shuffle = json.shuffle;
+        repeatMode = json.repeat;
+    }
+
+    function setShuffle(on) {
+        shuffle = on;
+        post("/api/queue/mode", { shuffle: on }, applyPlayMode);
+    }
+
+    function cycleRepeat() {
+        const next = { off: "all", all: "one", one: "off" }[repeatMode] || "off";
+        repeatMode = next;
+        post("/api/queue/mode", { repeat: next }, applyPlayMode);
     }
 
     // --- Commands ---
@@ -367,5 +397,11 @@ Singleton {
         }
     }
 
-    onPanelOpenChanged: if (panelOpen) ensureBackend()
+    onPanelOpenChanged: {
+        if (!panelOpen)
+            return;
+        ensureBackend();
+        if (backendUp)
+            refreshPlayMode();
+    }
 }

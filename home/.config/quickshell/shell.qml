@@ -24,4 +24,5 @@ ShellRoot {
     PowerWindow {}
     CalendarWindow {}
     WallpaperWindow {}
+    KefWindow {}
 }
