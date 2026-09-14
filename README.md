@@ -128,6 +128,16 @@ The Codex pill draws a ring per window the plan actually has — one on a Plus p
 - It reports the account, not the machine, so sessions on the web, the other device or in the cloud move the rings too. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
 - Both endpoints are the ones the agents themselves get these numbers from, and neither vendor documents them. When one fails the last numbers stay on the bar and the tooltip's age line is what gives it away; run the script with `fetch` by hand to see why.
 
+## KEF speaker
+
+A Quickshell panel for the KEF speaker on falcon, built on the [kefw2ui](https://github.com/hilli/kefw2ui) backend. `SUPER+CTRL+A`, or a click on the speaker pill in waybar, opens it under the bar: what is playing with seeking and transport, volume, the inputs and power, and tabs for the queue, radio, podcast and media browsing, playlists, and settings. On the pill, a middle click plays or pauses, a right click mutes, and scrolling changes the volume.
+
+[KefService.qml](home/.config/quickshell/KefApp/KefService.qml) starts `kefw2ui` the first time anything asks for the speaker and keeps it until Quickshell exits. It listens on `127.0.0.1:18080` only, so the web UI is not reachable from the network. The pill reads that backend but never starts it, so it shows a dimmed speaker until the panel or a pill action has been used once.
+
+kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, because the speaker refuses the GET request it registers with. Until that is fixed upstream, the panel polls every two seconds while it is open and the pill every ten, so a change made elsewhere, such as with the remote, shows up after that delay.
+
+`kefw2ui-bin` is in the desktop package list only. On a machine without it the pill hides itself.
+
 ## Devices
 
 | Device  | Hostname | Keyboard    | Monitor            |
