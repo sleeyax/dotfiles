@@ -37,8 +37,14 @@ PanelWindow {
     property string currentTab: "queue"
 
     readonly property var tabs: [
-        { id: "queue", label: "Queue", icon: "queue_music" }
+        { id: "queue", label: "Queue", icon: "queue_music" },
+        { id: "browse", label: "Browse", icon: "library_music" }
     ]
+
+    function searchMedia(query) {
+        currentTab = "browse";
+        browseView.openSearch("upnp", query);
+    }
 
     readonly property var sources: [
         { id: "wifi", label: "Wi-Fi", icon: "wifi" },
@@ -288,12 +294,24 @@ PanelWindow {
                             visible: text !== ""
                             text: KefService.artist
                             color: Theme.primary
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.searchMedia(`artist:"${KefService.artist}"`)
+                            }
                         }
                         KefLabel {
                             Layout.fillWidth: true
                             visible: text !== ""
                             text: KefService.album
                             color: Theme.on_surface_variant
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.searchMedia(`album:"${KefService.album}"`)
+                            }
                         }
                         Rectangle {
                             visible: KefService.isLive
@@ -447,10 +465,13 @@ PanelWindow {
 
                 StackLayout {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 320
+                    Layout.preferredHeight: 380
                     currentIndex: root.tabs.findIndex(tab => tab.id === root.currentTab)
 
                     QueueView {}
+                    BrowseView {
+                        id: browseView
+                    }
                 }
             }
         }

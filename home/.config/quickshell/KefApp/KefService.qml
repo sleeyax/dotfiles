@@ -360,6 +360,53 @@ Singleton {
         post("/api/playlists/save-queue", { name: name }, (ok, json) => callback(ok, json && json.error));
     }
 
+    // --- Browsing ---
+
+    function browse(source, path, query, callback) {
+        let url = `/api/browse/${source}`;
+        if (query)
+            url += "?q=" + encodeURIComponent(query);
+        else if (path)
+            url += "?path=" + encodeURIComponent(path);
+        get(url, callback);
+    }
+
+    // The server needs mediaData to queue a radio or podcast item without a lookup of its own.
+    function browseBody(source, item) {
+        return {
+            source: source,
+            path: item.path,
+            type: item.type,
+            title: item.title,
+            icon: item.icon,
+            id: item.id,
+            artist: item.artist,
+            album: item.album,
+            audioType: item.audioType,
+            mediaData: item.mediaData,
+            containerPath: item.containerPath
+        };
+    }
+
+    function playBrowseItem(source, item) {
+        post("/api/browse/play", browseBody(source, item), ok => {
+            if (ok)
+                playerRefresh.restart();
+        });
+    }
+
+    function queueBrowseItem(source, item, callback) {
+        post("/api/browse/queue", browseBody(source, item), (ok, json) => {
+            if (ok)
+                refreshQueue();
+            callback(ok, json);
+        });
+    }
+
+    function favoriteBrowseItem(source, item, add, callback) {
+        post("/api/browse/favorite", { source: source, path: item.path, id: item.id, title: item.title, add: add }, callback);
+    }
+
     // --- Commands ---
 
     function playPause() { post("/api/player/play"); }
