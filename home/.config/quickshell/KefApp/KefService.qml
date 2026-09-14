@@ -48,7 +48,8 @@ Singleton {
     // Set whenever the panel opens, so the queue and play mode are fetched once a fresh /api/player has confirmed the speaker is awake.
     property bool awakeStateStale: true
 
-    signal playlistsUpdated()
+    property var playlists: []
+
     signal reindexUpdated(var data)
 
     function resolveUrl(url) {
@@ -234,7 +235,7 @@ Singleton {
             refreshPlayMode();
             break;
         case "playlists":
-            playlistsUpdated();
+            refreshPlaylists();
             break;
         case "reindex":
             reindexUpdated(d);
@@ -405,6 +406,89 @@ Singleton {
 
     function favoriteBrowseItem(source, item, add, callback) {
         post("/api/browse/favorite", { source: source, path: item.path, id: item.id, title: item.title, add: add }, callback);
+    }
+
+    // --- Playlists ---
+
+    // Playlists are files kept by the backend, so unlike the queue they can be read while the speaker is in standby.
+    function refreshPlaylists() {
+        get("/api/playlists", (ok, json) => {
+            if (ok && json)
+                playlists = json.playlists || [];
+        });
+    }
+
+    function getPlaylist(id, callback) {
+        get(`/api/playlists/${encodeURIComponent(id)}`, callback);
+    }
+
+    function createPlaylist(name, tracks, callback) {
+        post("/api/playlists", { name: name, tracks: tracks }, (ok, json) => {
+            if (ok)
+                refreshPlaylists();
+            callback(ok, json);
+        });
+    }
+
+    function updatePlaylist(id, playlist, callback) {
+        request("PUT", `/api/playlists/${encodeURIComponent(id)}`, playlist, (ok, json) => {
+            if (ok)
+                refreshPlaylists();
+            callback(ok, json);
+        });
+    }
+
+    function deletePlaylist(id, callback) {
+        request("DELETE", `/api/playlists/${encodeURIComponent(id)}`, null, ok => {
+            if (ok)
+                refreshPlaylists();
+            callback(ok);
+        });
+    }
+
+    function loadPlaylist(id, append, callback) {
+        post(`/api/playlists/load/${encodeURIComponent(id)}`, { append: append }, (ok, json) => {
+            if (ok) {
+                refreshQueue();
+                playerRefresh.restart();
+            }
+            callback(ok, json);
+        });
+    }
+
+    // A track with a uri plays without the speaker looking its path up first, and a browse item only carries that uri inside mediaData.
+    function trackFromBrowseItem(item) {
+        const media = item.mediaData || {};
+        const resource = (media.resources || [])[0] || {};
+        const meta = media.metaData || {};
+        return {
+            title: item.title,
+            artist: item.artist,
+            album: item.album,
+            duration: item.duration || resource.duration,
+            icon: item.icon,
+            path: item.path,
+            id: item.id,
+            type: item.type,
+            uri: resource.uri,
+            mimeType: resource.mimeType,
+            serviceId: meta.serviceID
+        };
+    }
+
+    function addTrackToPlaylist(id, track, callback) {
+        getPlaylist(id, (ok, json) => {
+            if (!ok || !json) {
+                callback(false);
+                return;
+            }
+            const playlist = json.playlist;
+            updatePlaylist(id, {
+                name: playlist.name,
+                description: playlist.description || "",
+                tracks: (playlist.tracks || []).concat([track])
+            }, updated => callback(updated));
+        });
     }
 
     // --- Commands ---

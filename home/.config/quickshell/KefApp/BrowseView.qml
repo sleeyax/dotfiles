@@ -106,6 +106,11 @@ ColumnLayout {
     function isPlayable(item) { return item.type === "audio" || item.playable === true || isStation(item); }
     function canQueue(item) { return isPlayable(item) && !isStation(item); }
 
+    function pickPlaylist(item) {
+        playlistPicker.track = KefService.trackFromBrowseItem(item);
+        playlistPicker.open();
+    }
+
     // The server only keeps favorites for live stations and podcast shows, which are the feed containers.
     function canFavorite(item) {
         if (source === "radio")
@@ -154,6 +159,13 @@ ColumnLayout {
         id: noticeTimer
         interval: 3000
         onTriggered: view.notice = ""
+    }
+
+    PlaylistPicker {
+        id: playlistPicker
+        x: (view.width - width) / 2
+        y: 80
+        onFinished: message => view.showNotice(message)
     }
 
     Row {
@@ -279,6 +291,13 @@ ColumnLayout {
                             icon: view.inFavorites ? "heart_broken" : "favorite_border"
                             size: 30
                             onClicked: view.favorite(row.item)
+                        }
+                        IconButton {
+                            // The server rejects containers as playlist tracks, which includes radio stations.
+                            visible: hover.hovered && row.item.type === "audio"
+                            icon: "library_add"
+                            size: 30
+                            onClicked: view.pickPlaylist(row.item)
                         }
                         IconButton {
                             visible: hover.hovered && view.canQueue(row.item)

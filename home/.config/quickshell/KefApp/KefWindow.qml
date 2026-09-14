@@ -38,7 +38,8 @@ PanelWindow {
 
     readonly property var tabs: [
         { id: "queue", label: "Queue", icon: "queue_music" },
-        { id: "browse", label: "Browse", icon: "library_music" }
+        { id: "browse", label: "Browse", icon: "library_music" },
+        { id: "playlists", label: "Playlists", icon: "featured_play_list" }
     ]
 
     function searchMedia(query) {
@@ -472,6 +473,7 @@ PanelWindow {
                     BrowseView {
                         id: browseView
                     }
+                    PlaylistsView {}
                 }
             }
         }
