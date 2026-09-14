@@ -118,10 +118,12 @@ Singleton {
         refreshState();
     }
 
+    // Quickshell does not take its children down when it is sent SIGTERM, which is how ml4w-autostart restarts it, so the kernel does instead.
+    readonly property var dieWithShell: ["setpriv", "--pdeathsig", "TERM"]
+
     Process {
         id: backendProcess
-        // Quickshell does not take its children down when it is sent SIGTERM, which is how ml4w-autostart restarts it, so the kernel does instead.
-        command: ["setpriv", "--pdeathsig", "TERM", "kefw2ui", "-bind", "127.0.0.1", "-port", String(root.port), "-no-discovery"]
+        command: root.dieWithShell.concat(["kefw2ui", "-bind", "127.0.0.1", "-port", String(root.port), "-no-discovery"])
         onRunningChanged: {
             if (!running && root.backendUp) {
                 root.backendUp = false;
@@ -153,7 +155,8 @@ Singleton {
 
     Process {
         id: events
-        command: ["curl", "-sN", root.baseUrl + "/events"]
+        // An orphaned stream would hold the backend's graceful shutdown open until its timeout.
+        command: root.dieWithShell.concat(["curl", "-sN", root.baseUrl + "/events"])
         stdout: SplitParser {
             onRead: line => root.handleLine(line)
         }
