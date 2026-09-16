@@ -149,6 +149,8 @@ Five things follow, and they are the price of the exact fill:
 **Lifecycle.** `KefService` starts `kefw2ui -bind 127.0.0.1 -port 18080` on first use and reuses whatever already answers on that port.
 The backend and its `curl` event stream both run under `setpriv --pdeathsig TERM`, because Quickshell leaves its children running when it gets SIGTERM, which is how `ml4w-autostart` restarts it.
 `waybar/scripts/kef.sh` reads the backend and never starts it.
+It runs once and then only on signal 4, which `KefService` fires on every change it sees, so the pill is as fresh as the last time the panel was open and no fresher.
+An `interval` here would ask the speaker all day, and the backend cannot tell that it has gone into standby by itself without its events, so a timer risks keeping it awake.
 
 **No speaker events on falcon.** kefw2ui 0.0.3 registers the speaker's event queue with a GET, which firmware V26120 answers with 501; the same fields as a JSON POST work, so the fix belongs in go-kef-w2's `registerQueue`.
 Until it ships, `/events` carries only the connect snapshot plus what the backend broadcasts itself (`playlists`, `reindex`), and `KefService` polls `/api/player` while the panel is open.

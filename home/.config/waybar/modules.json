@@ -101,7 +101,8 @@
     // The tooltip carries track titles, which are arbitrary text.
     "escape": true,
     "exec": "~/.config/waybar/scripts/kef.sh",
-    "interval": 10,
+    // Once and then only on signal 4, never on a timer — see **KEF panel** in AGENTS.md.
+    "interval": "once",
     "signal": 4,
     "hide-empty-text": true,
     "tooltip": true,

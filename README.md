@@ -134,7 +134,7 @@ A Quickshell panel for the KEF speaker on falcon, built on the [kefw2ui](https:/
 
 [KefService.qml](home/.config/quickshell/KefApp/KefService.qml) starts `kefw2ui` the first time anything asks for the speaker and keeps it until Quickshell exits. It listens on `127.0.0.1:18080` only, so the web UI is not reachable from the network. The pill reads that backend but never starts it, so it shows a dimmed speaker until the panel or a pill action has been used once.
 
-kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, because the speaker refuses the GET request it registers with. Until that is fixed upstream, the panel polls every two seconds while it is open and the pill every ten, so a change made elsewhere, such as with the remote, shows up after that delay.
+kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, because the speaker refuses the GET request it registers with. Until that is fixed upstream, the panel asks the speaker every two seconds while it is open and the pill follows along, so a change made elsewhere, such as with the remote, shows up next time the panel is open. Neither asks on a timer with the panel closed, because the backend cannot tell that the speaker went into standby by itself and a timer would risk keeping it awake.
 
 `kefw2ui-bin` is in the desktop package list only. On a machine without it the pill hides itself.
 
