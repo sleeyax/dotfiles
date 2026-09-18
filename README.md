@@ -36,7 +36,8 @@ This will:
 2. Merge the base tree with your device's configs and deploy them with stow
 
 Packages are installed when the list changes, so adding an entry is enough to get it installed on the next apply.
-Use `./scripts/apply.sh --force` to reinstall regardless.
+Only missing packages are installed; an apply never upgrades what is already there, so pending updates stay yours to apply with `pacman -Syu`.
+Use `./scripts/apply.sh --force` to hand the whole list to the AUR helper regardless.
 
 ### Local shell config
 

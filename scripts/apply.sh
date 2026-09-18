@@ -62,9 +62,20 @@ install_dependencies() {
     echo "Notice: 'swww' resolves to '$swww_provider'; installing awww will replace it."
   fi
 
-  echo "Installing packages with $AUR_HELPER..."
   mapfile -t PKGS < <(sed 's/#.*//' "${PACKAGES_FILES[@]}" | grep -vE '^\s*$' | tr -d '[:blank:]')
-  "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
+
+  # An apply installs what is missing and upgrades nothing, since --needed still pulls a newer version for an already-installed package.
+  # pacman -T asks the narrower question the list means -- which of these is not already provided -- and honours Provides, so awww counts as swww.
+  if [ "$FORCE" != "1" ]; then
+    mapfile -t PKGS < <(pacman -T "${PKGS[@]}")
+  fi
+
+  if [ ${#PKGS[@]} -eq 0 ]; then
+    echo "All packages already installed, skipping..."
+  else
+    echo "Installing ${#PKGS[@]} package(s) with $AUR_HELPER..."
+    "$AUR_HELPER" -S --needed --noconfirm "${PKGS[@]}"
+  fi
 
   xdg-user-dirs-update
 

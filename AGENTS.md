@@ -41,6 +41,8 @@ It lives in `setup/` and not `devices/<device>/` because `apply.sh` copies every
 
 Whether to install is decided by hashing both lists into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to either therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless.
 
+An apply only installs what is missing: the list is filtered through `pacman -T` first, so an entry whose installed version is out of date is left alone rather than upgraded. Keeping the system current is a separate `pacman -Syu`. `--force` skips the filter and hands the whole list to the helper, which does upgrade.
+
 ### Services
 
 Installing a package is not the same as enabling its unit, and `apply.sh` enables the handful that have to be running before the session rather than on demand.
