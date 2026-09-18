@@ -321,6 +321,7 @@ Singleton {
         awakeStateStale = false;
         refreshPlayMode();
         refreshQueue();
+        refreshRadioHistory();
     }
 
     // Unlike /api/player, the queue endpoints query the speaker directly and would wake it from standby.
@@ -419,6 +420,41 @@ Singleton {
 
     function favoriteBrowseItem(source, item, add, callback) {
         post("/api/browse/favorite", { source: source, path: item.path, id: item.id, title: item.title, add: add }, callback);
+    }
+
+    // --- Radio history ---
+
+    // The stations airable recorded for the account, newest first, so the panel can start one again in a click.
+    property var radioHistory: []
+    readonly property int radioHistoryLimit: 5
+
+    // Its path carries the account id, so it is browsed for once instead of built.
+    property string radioHistoryDir: ""
+
+    // Browsing queries the speaker, so this is part of the awake state rather than of opening the panel.
+    function refreshRadioHistory() {
+        if (standby)
+            return;
+        if (radioHistoryDir !== "") {
+            loadRadioHistory();
+            return;
+        }
+        browse("radio", "", "", (ok, json) => {
+            if (!ok || !json)
+                return;
+            const dir = (json.items || []).find(item => item.id && item.id.endsWith("/directory/history"));
+            if (!dir)
+                return;
+            radioHistoryDir = dir.path;
+            loadRadioHistory();
+        });
+    }
+
+    function loadRadioHistory() {
+        browse("radio", radioHistoryDir, "", (ok, json) => {
+            if (ok && json)
+                radioHistory = (json.items || []).slice(0, radioHistoryLimit);
+        });
     }
 
     // --- Playlists ---

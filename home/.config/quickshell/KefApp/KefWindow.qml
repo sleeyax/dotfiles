@@ -443,6 +443,64 @@ PanelWindow {
                     }
                 }
 
+                RowLayout {
+                    Layout.fillWidth: true
+                    visible: KefService.radioHistory.length > 0
+                    spacing: 8
+
+                    Repeater {
+                        model: KefService.radioHistory
+
+                        Rectangle {
+                            id: station
+
+                            required property var modelData
+
+                            Layout.preferredWidth: 74
+                            Layout.preferredHeight: 80
+                            radius: 8
+                            color: stationHover.hovered ? Theme.surface_container_high : "transparent"
+
+                            HoverHandler {
+                                id: stationHover
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: KefService.playBrowseItem("radio", station.modelData)
+                            }
+
+                            ColumnLayout {
+                                anchors.fill: parent
+                                anchors.margins: 6
+                                spacing: 4
+
+                                Artwork {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    implicitWidth: 50
+                                    implicitHeight: 50
+                                    radius: 8
+                                    fallbackIcon: "radio"
+                                    source: KefService.resolveUrl(station.modelData.icon)
+                                }
+                                KefLabel {
+                                    Layout.fillWidth: true
+                                    horizontalAlignment: Text.AlignHCenter
+                                    text: station.modelData.title
+                                    font.pixelSize: 10
+                                    color: Theme.on_surface_variant
+                                }
+                            }
+                        }
+                    }
+
+                    // Keeps the tiles at their own width instead of dividing the row between however many stations there are.
+                    Item {
+                        Layout.fillWidth: true
+                    }
+                }
+
                 Rectangle {
                     Layout.fillWidth: true
                     implicitHeight: 1
