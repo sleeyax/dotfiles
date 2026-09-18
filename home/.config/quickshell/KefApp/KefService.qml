@@ -273,7 +273,12 @@ Singleton {
         interval: 2000
         repeat: true
         running: root.backendUp && !root.speakerConnected && root.panelOpen
-        onTriggered: root.refreshPlayer()
+        onTriggered: {
+            root.refreshPlayer();
+            // /api/player reports the source but not the speaker's status, and the panel stays on the standby screen until both agree.
+            if (root.standby)
+                root.refreshSpeaker();
+        }
     }
 
     // The speaker reports playTime irregularly, so the position advances locally between reports.
@@ -286,6 +291,11 @@ Singleton {
 
     // Both endpoints answer from cache while the speaker is in standby instead of waking it.
     function refreshState() {
+        refreshSpeaker();
+        refreshPlayer();
+    }
+
+    function refreshSpeaker() {
         get("/api/speaker", (ok, json) => {
             if (!ok || !json || !json.active)
                 return;
@@ -295,7 +305,6 @@ Singleton {
             speakerModel = a.model || "";
             powerStatus = a.status || powerStatus;
         });
-        refreshPlayer();
     }
 
     function refreshPlayer() {
@@ -541,12 +550,15 @@ Singleton {
         });
     }
 
+    // The response reports the state the command asked for.
+    // A speaker woken from standby takes seconds to report itself on, so its status is left to the poll above rather than read back here, where it would still say standby and hold the panel on the standby screen until the next command.
     function setPower(on) {
         post("/api/player/power", { powerOn: on }, (ok, json) => {
-            if (ok && json)
+            if (!ok)
+                return;
+            if (json)
                 powerStatus = json.status;
-            if (ok && on)
-                refreshState();
+            playerRefresh.restart();
         });
     }
 
