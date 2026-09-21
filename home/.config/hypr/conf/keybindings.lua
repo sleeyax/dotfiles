@@ -99,7 +99,11 @@ hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot g
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("kooha"),
     { description = "Record the screen" })
 
-hl.bind("SUPER + K", hl.dsp.exec_cmd("paseo"),
+-- free up SUPER + K for Paseo; the earlier bind wins a duplicate, so swapsplit has to go before the rebind
+hl.unbind("SUPER + K")
+
+-- the GUI is not in PATH: `paseo` is the CLI, which prints a pairing QR and exits.
+hl.bind("SUPER + K", hl.dsp.exec_cmd("/opt/Paseo/Paseo"),
     { description = "Launch Paseo" })
 
 hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
