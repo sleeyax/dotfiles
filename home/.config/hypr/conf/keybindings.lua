@@ -99,8 +99,8 @@ hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot g
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("kooha"),
     { description = "Record the screen" })
 
-hl.bind("SUPER + K", hl.dsp.exec_cmd("code"),
-    { description = "Launch Visual Studio Code" })
+hl.bind("SUPER + K", hl.dsp.exec_cmd("paseo"),
+    { description = "Launch Paseo" })
 
 hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
     { description = "Toggle voice transcription" })
