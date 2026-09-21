@@ -41,6 +41,8 @@ It lives in `setup/` and not `devices/<device>/` because `apply.sh` copies every
 
 Whether to install is decided by hashing both lists into `$XDG_STATE_HOME/sleeyax-dotfiles/packages.sha256`. Adding a package to either therefore installs it on the next apply, with no flag needed; `--force` reinstalls regardless.
 
+An apply only installs what is missing: the list is filtered through `pacman -T` first, so an entry whose installed version is out of date is left alone rather than upgraded. Keeping the system current is a separate `pacman -Syu`. `--force` skips the filter and hands the whole list to the helper, which does upgrade.
+
 ### Services
 
 Installing a package is not the same as enabling its unit, and `apply.sh` enables the handful that have to be running before the session rather than on demand.
@@ -96,6 +98,7 @@ A theme's `config` only picks which modules appear and in what order.
 | 1 | `custom/updates` | `ml4w/settings/install-updates.sh` |
 | 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh fetch` |
 | 3 | `custom/codex-usage` | `waybar/scripts/codex-usage.sh fetch` |
+| 4 | `custom/kef` | `quickshell/KefApp/KefService.qml`, on any change the pill shows |
 
 `SIGUSR2` is different in kind, and nothing fires it.
 Waybar answers it by tearing every bar down and rebuilding it, which frees the modules while their async DBus calls are still in flight; `power-profiles-daemon` then segfaults when its reply lands on the freed object, and `launch.sh` backgrounds waybar under no supervision, so the bar simply stays gone.
@@ -139,6 +142,31 @@ Five things follow, and they are the price of the exact fill:
 `home/.claude/` holds `statusline.sh` and nothing else — no `settings.json`, no credentials, no agents.
 `apply.sh` runs `mkdir -p "$HOME/.claude"` *before* stowing for the folding reason above: without it, stow would make `~/.claude` a symlink into `.stow/` and Claude Code's own state would land there.
 (The `mkdir -p "$HOME/.mydotfiles"` further down is the same idea but runs after stow, since nothing is stowed into it.)
+
+### KEF panel
+
+`home/.config/quickshell/KefApp/` is a Quickshell client for [kefw2ui](https://github.com/hilli/kefw2ui), whose `server/server.go` is the API contract.
+`KefService.qml` owns the backend and the speaker state; the window, the tab views, the `kef` IPC target and the waybar pill all go through it.
+
+**Lifecycle.** `KefService` starts `kefw2ui -bind 127.0.0.1 -port 18080` on first use and reuses whatever already answers on that port.
+The backend and its `curl` event stream both run under `setpriv --pdeathsig TERM`, because Quickshell leaves its children running when it gets SIGTERM, which is how `ml4w-autostart` restarts it.
+`waybar/scripts/kef.sh` reads the backend and never starts it.
+It runs once and then only on signal 4, which `KefService` fires on every change it sees, so the pill is as fresh as the last time the panel was open and no fresher.
+An `interval` here would ask the speaker all day, and the backend cannot tell that it has gone into standby by itself without its events, so a timer risks keeping it awake.
+
+**No speaker events on falcon.** kefw2ui 0.0.3 registers the speaker's event queue with a GET, which firmware V26120 answers with 501; the same fields as a JSON POST work, so the fix belongs in go-kef-w2's `registerQueue`.
+Until it ships, `/events` carries only the connect snapshot plus what the backend broadcasts itself (`playlists`, `reindex`), and `KefService` polls `/api/player` while the panel is open.
+The polling keys off `speakerHealth`, so it stops once a fixed backend connects.
+
+**Standby.** Only `/api/player` and `/api/speaker` answer from cache while the speaker sleeps; every other endpoint queries the speaker and wakes it.
+The queue, play mode, browse and settings therefore load only after a fresh `/api/player` shows the speaker awake (`awakeStateStale`).
+Playlists are backend files and safe to read at any time.
+
+**Playlists.** `PUT /api/playlists/<id>` overwrites the description whenever it is left out, so every save sends the whole playlist.
+
+**Testing.** Run the repo tree as its own instance with `qs -p home/.config/quickshell`, and drive it with `qs -p home/.config/quickshell ipc call kef …`; `status` returns the parsed state.
+That instance reloads whenever a file under its config dir changes, and a reload stops the backend it started.
+The panel's `HyprlandFocusGrab` closes it on any click outside, so take a screenshot within a few seconds of `open`.
 
 ### Colors
 

@@ -36,7 +36,8 @@ This will:
 2. Merge the base tree with your device's configs and deploy them with stow
 
 Packages are installed when the list changes, so adding an entry is enough to get it installed on the next apply.
-Use `./scripts/apply.sh --force` to reinstall regardless.
+Only missing packages are installed; an apply never upgrades what is already there, so pending updates stay yours to apply with `pacman -Syu`.
+Use `./scripts/apply.sh --force` to hand the whole list to the AUR helper regardless.
 
 ### Local shell config
 
@@ -127,6 +128,16 @@ The Codex pill draws a ring per window the plan actually has — one on a Plus p
 - A pill hides itself until its first fetch lands, and stays hidden on a plan that has no rate limits to report.
 - It reports the account, not the machine, so sessions on the web, the other device or in the cloud move the rings too. A window whose reset time has passed reads 0% again, so the display is right after a rollover even if no session has run since.
 - Both endpoints are the ones the agents themselves get these numbers from, and neither vendor documents them. When one fails the last numbers stay on the bar and the tooltip's age line is what gives it away; run the script with `fetch` by hand to see why.
+
+## KEF speaker
+
+A Quickshell panel for the KEF speaker on falcon, built on the [kefw2ui](https://github.com/hilli/kefw2ui) backend. `SUPER+CTRL+A`, or a click on the speaker pill in waybar, opens it under the bar: what is playing with seeking and transport, volume, the inputs and power, and tabs for the queue, radio, podcast and media browsing, playlists, and settings. On the pill, a middle click plays or pauses, a right click mutes, and scrolling changes the volume.
+
+[KefService.qml](home/.config/quickshell/KefApp/KefService.qml) starts `kefw2ui` the first time anything asks for the speaker and keeps it until Quickshell exits. It listens on `127.0.0.1:18080` only, so the web UI is not reachable from the network. The pill reads that backend but never starts it, so it shows a dimmed speaker until the panel or a pill action has been used once.
+
+kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, because the speaker refuses the GET request it registers with. Until that is fixed upstream, the panel asks the speaker every two seconds while it is open and the pill follows along, so a change made elsewhere, such as with the remote, shows up next time the panel is open. Neither asks on a timer with the panel closed, because the backend cannot tell that the speaker went into standby by itself and a timer would risk keeping it awake.
+
+`kefw2ui-bin` is in the desktop package list only. On a machine without it the pill hides itself.
 
 ## Devices
 
