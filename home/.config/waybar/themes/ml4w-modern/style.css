@@ -322,6 +322,36 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
+ * KEF speaker
+ * ----------------------------------------------------- */
+
+#custom-kef {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;
+}
+
+#custom-kef:hover {
+    color: @on_surface;
+    background-color: @primary_container;
+    border-color: @primary;
+}
+
+#custom-kef.muted {
+    background-color: @on_primary_fixed;
+}
+
+#custom-kef.offline,
+#custom-kef.standby {
+    color: @outline;
+}
+
+/* -----------------------------------------------------
  * Hardware Group
  * ----------------------------------------------------- */
 

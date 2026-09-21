@@ -10,3 +10,7 @@ telegram-desktop
 # --- Gaming ---
 # games.lua rules match steam_app_* windows.
 steam
+
+# --- KEF speaker ---
+# The Quickshell KEF panel starts this backend on demand; the speaker only sits on falcon's network.
+kefw2ui-bin

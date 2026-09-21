@@ -28,6 +28,7 @@
         "custom/updates",
         "custom/claude-usage",
         "custom/codex-usage",
+        "custom/kef",
         "pulseaudio",
         "bluetooth",
         "network",

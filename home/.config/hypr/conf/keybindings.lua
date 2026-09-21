@@ -6,28 +6,10 @@ hl.bind(mainMod .. " + RETURN", hl.dsp.exec_cmd("~/.config/ml4w/settings/termina
 hl.bind(mainMod .. " + B", hl.dsp.exec_cmd("~/.config/ml4w/settings/browser.sh"), { description = "Open the browser" })
 hl.bind(mainMod .. " + E", hl.dsp.exec_cmd("~/.config/ml4w/settings/filemanager"), { description = "Open the filemanager" })
 
--- fr keyboard layout setup
-local is_fr = false
-local f = io.open(os.getenv("HOME") .. "/.config/hypr/input.lua", "r")
-if f then
-    local content = f:read("*all")
-    if content:match('kb_layout%s*=%s*"fr"') and not content:match('kb_variant%s*=%s*"us"') then
-        is_fr = true
-    end
-    f:close()
-end
-
-local fr_keys = {
-    "ampersand", "eacute", "quotedbl", "apostrophe", "parenleft",
-    "minus", "egrave", "underscore", "ccedilla", "agrave"
-}
-
--- Move active window to a workspace with mainMod + SHIFT + [0-9]
+-- Workspaces are bound to the number row by keycode, not by symbol.
+-- The digits are unshifted on QWERTY but shifted on AZERTY, so a symbolic bind would only reach half of the workspaces on the laptop.
 for i = 1, 10 do
-    local key = i % 10 -- 10 maps to key 0
-    if is_fr then
-        key = fr_keys[i]
-    end
+    local key = "code:" .. (9 + i) -- evdev keycodes 10..19, the number row 1..9 then 0
     hl.bind(mainMod .. " + " .. key,             hl.dsp.focus({ workspace = i}), { description = "Focus workspace " .. i })
     hl.bind(mainMod .. " + SHIFT + " .. key,     hl.dsp.window.move({ workspace = i }), { description = "Move window to workspace " .. i })
 end
@@ -71,6 +53,7 @@ hl.bind(mainMod .. " + CTRL + K", hl.dsp.exec_cmd("~/.config/hypr/scripts/keybin
 hl.bind(mainMod .. " + V", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-cliphist"), { description = "Open clipboard manager" })
 hl.bind(mainMod .. " + SHIFT + M", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle-theme"), { description = "Toggle between light and dark mode" })
 hl.bind(mainMod .. " + CTRL + C", hl.dsp.exec_cmd("qs ipc call calendar toggle"), { description = "Open ML4W Calendar widget" })
+hl.bind(mainMod .. " + CTRL + A", hl.dsp.exec_cmd("qs ipc call kef toggle"), { description = "Open KEF speaker panel" })
 hl.bind(mainMod .. " + CTRL + L", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-power -l"), { description = "Lock Screen" })
 hl.bind(mainMod .. " + SHIFT + H", hl.dsp.exec_cmd("~/.config/ml4w/scripts/ml4w-toggle-hyprsunset"), { description = "Toggle Hyprsunset" })
 hl.bind(mainMod .. " + Tab", hl.dsp.exec_cmd("qs -p ~/.config/quickshell/overview ipc call overview toggle"), { description = "Open Select Window Menu" })
@@ -116,8 +99,8 @@ hl.bind("SUPER + SHIFT + S", hl.dsp.exec_cmd("QT_SCALE_FACTOR=0.8335 flameshot g
 hl.bind("SUPER + SHIFT + R", hl.dsp.exec_cmd("kooha"),
     { description = "Record the screen" })
 
-hl.bind("SUPER + K", hl.dsp.exec_cmd("code"),
-    { description = "Launch Visual Studio Code" })
+hl.bind("SUPER + K", hl.dsp.exec_cmd("paseo"),
+    { description = "Launch Paseo" })
 
 hl.bind("SUPER + O", hl.dsp.exec_cmd("handy --toggle-transcription"),
     { description = "Toggle voice transcription" })
