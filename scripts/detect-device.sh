@@ -4,5 +4,6 @@
 case $(hostname) in
   panda) echo "laptop" ;;
   falcon) echo "desktop" ;;
+  aardwolf) echo "server" ;;
   *) echo "desktop" ;;  # fallback
 esac
