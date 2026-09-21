@@ -37,12 +37,14 @@ It also stows almost none of `home/`, which is a Hyprland desktop and means noth
 ```bash
 GRAPHICAL=0
 PKG_MANAGER=apt
-STOW_PATHS=(.bashrc .zshrc .config/zshrc .config/ohmyposh)
+STOW_PATHS=(.zshrc .config/zshrc .config/ohmyposh)
 ```
 
 A device with no such file is graphical, on Arch, and takes the whole tree.
 
-oh-my-posh has no apt package, so the prompt on aardwolf is plain zsh until it's installed by hand; nothing else in the shell setup notices.
+`.bashrc` is not on that list, and it is the one path where the distro's own copy is worth more than ours: Ubuntu ships a fuller one, and every installer that has touched the box has appended to it.
+
+oh-my-posh has no apt package, where Arch takes it from the AUR, so `apply.sh` fetches its release binary into `~/.local/bin` here instead. Nothing in a system upgrade will ever move a downloaded binary forward, so every apply asks it to upgrade itself; that is the only network a settled apply spends, and a box that can't reach GitHub keeps the version it has and says so.
 
 ## Install
 
@@ -65,6 +67,8 @@ Use `./scripts/apply.sh --force` to hand the whole list to the AUR helper regard
 
 The zsh setup lives in [home/.config/zshrc/](home/.config/zshrc/) and is the same on both graphical machines; the server adds a `26-server` on top that drops the aliases pointing at a session it doesn't have.
 For anything you don't want committed, put it in `~/.zshrc_custom`; it is sourced last, so it overrides everything in the repo.
+
+oh-my-zsh is packaged on neither distro, so `apply.sh` clones it, along with the plugins `20-customization` names that oh-my-zsh doesn't bundle. A missing one is only a warning per new shell, so this runs on every apply and a half-provisioned machine heals itself.
 
 Don't add files under `~/.config/zshrc/` directly — that path is a stow symlink into the generated tree, and the next `apply.sh` deletes anything the repo didn't put there.
 

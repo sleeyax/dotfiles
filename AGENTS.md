@@ -66,7 +66,7 @@ The last of those is the one with a consequence outside the list: `.config/ohmyp
 
 ### Unpackaged dependencies
 
-Two things the shell config needs aren't packages on either distro, so no list can name them and `apply.sh` installs them itself, between the packages and the services.
+Two things the shell config needs can't be had from a list on every distro — oh-my-zsh is packaged on neither, and oh-my-posh only on Arch — so `apply.sh` installs them itself, between the packages and the services.
 
 `install_oh_my_zsh` clones oh-my-zsh, then clones the three plugins `20-customization` names that oh-my-zsh doesn't bundle: `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fast-syntax-highlighting`. Cloning rather than running upstream's installer is deliberate — that installer moves `~/.zshrc` aside and writes its own, and ours is a stow symlink. A missing plugin is only a warning per new shell, which is easy to stop seeing, so the check covers each one rather than just the `~/.oh-my-zsh` directory.
 
