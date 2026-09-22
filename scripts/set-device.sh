@@ -1,13 +1,14 @@
 #!/bin/bash
 # Manual device switch
-# Usage: ./set-device.sh laptop|desktop
+# Usage: ./set-device.sh <device>
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(dirname "$SCRIPT_DIR")"
 
 if [ -z "$1" ]; then
   echo "Usage: $0 <device>"
-  echo "Available devices: laptop, desktop"
+  # Listed from devices/ so a new device needs no edit here.
+  echo "Available devices: $(cd "$DOTFILES_DIR/devices" && echo */ | tr -d '/' )"
   exit 1
 fi
 

@@ -1,6 +1,9 @@
 # Packages installed by scripts/apply.sh, via yay or paru.
 # One package per line; '#' starts a comment.
 # Grouped by subsystem so dropping a subsystem is deleting a labelled block.
+#
+# This is what every machine gets, headless ones included.
+# Anything that wants a display belongs in packages.graphical.txt instead.
 
 # --- Base tooling ---
 git
@@ -13,105 +16,11 @@ unzip
 jq
 inotify-tools
 pacman-contrib
-libnotify
 libsecret
 
-# --- Hyprland session ---
-hyprland
-uwsm
-hypridle
-hyprlock
-hyprsunset
-hyprshutdown
-xdg-desktop-portal-hyprland
-xdg-desktop-portal-gtk
-xdg-user-dirs
-polkit-gnome
-nwg-displays
-# /etc/sddm.conf selects the silent theme; that file is outside the stow tree and stays unmanaged.
-sddm
-sddm-silent-theme
-
-# --- Bar, launcher, notifications, dock ---
-# waybar-git, not waybar: it Provides waybar but also Conflicts with it, so listing the repo package makes the transaction unresolvable.
-waybar-git
-rofi
-swaync
-quickshell
-
-# Qt runtime. qt6-svg and qt6-wayland are quickshell's; the other two are for Qt apps generally.
-qt5-wayland
-qt6-wayland
-qt6-svg
-qt6-multimedia-ffmpeg
-
-# --- Wallpaper and theming ---
-# awww Provides/Replaces swww, so pacman swaps it out on its own.
-awww
-matugen
-# waypaper is launched by hand, not by any config here; its config.ini drives the theming pipeline through ml4w-wallpaper.
-waypaper
-nwg-look
-gnome-themes-extra
-# imagemagick: ml4w-wallpaper shells out to `magick` for the blurred and square variants.
-imagemagick
-qt6ct
-breeze
-bibata-cursor-theme-bin
-# Colloid is what both gtk-3.0 and gtk-4.0 settings.ini name as the icon theme.
-colloid-icon-theme-git
-
-# --- Fonts ---
-otf-font-awesome
-ttf-firacode-nerd
-ttf-jetbrains-mono-nerd
-ttf-fira-sans
-ttf-material-icons
-
-# --- Screenshot and screen recording ---
-# flameshot-git, not flameshot: the repo package Conflicts with it, so listing both makes the transaction unresolvable.
-flameshot-git
-kooha
-
-# --- Clipboard ---
-wl-clipboard
-cliphist
-
-# --- Audio, network, bluetooth, power ---
-pavucontrol
-network-manager-applet
-nm-connection-editor
-blueman
-power-profiles-daemon
-brightnessctl
-# playerctl backs the XF86Audio{Next,Prev,Play,Pause} binds in conf/keybindings.lua.
-playerctl
-
-# --- Storage and file management ---
-udisks2
-udiskie
-gvfs
-gvfs-mtp
-nautilus
-# nautilus-python runs .local/share/nautilus-python/extensions/copy-path.py.
-nautilus-python
-tumbler
-loupe
-
-# --- Applications ---
-kitty
-firefox
-vlc
-gnome-calculator
-gnome-text-editor
+# --- Editors ---
 vim
 neovim
-visual-studio-code-bin
-# megasync-bin is autostarted twice by custom.lua so it lands in the tray.
-megasync-bin
-# wtype is what lets handy type its transcript into Wayland windows; without it enigo falls back to X11 and only XWayland clients see the keystrokes.
-handy-bin
-wtype
 
 # --- Shell and prompt ---
 zsh
@@ -124,6 +33,4 @@ btop
 
 # --- Python and build ---
 python-pip
-python-gobject
-python-screeninfo
 cargo

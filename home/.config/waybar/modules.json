@@ -94,6 +94,24 @@
     "on-scroll-up": "true",
     "on-scroll-down": "true"
   },
+  // KEF speaker, read from the kefw2ui backend that the Quickshell panel starts on demand.
+  "custom/kef": {
+    "format": "{}",
+    "return-type": "json",
+    // The tooltip carries track titles, which are arbitrary text.
+    "escape": true,
+    "exec": "~/.config/waybar/scripts/kef.sh",
+    // Once and then only on signal 4, never on a timer — see **KEF panel** in AGENTS.md.
+    "interval": "once",
+    "signal": 4,
+    "hide-empty-text": true,
+    "tooltip": true,
+    "on-click": "qs ipc call kef toggle",
+    "on-click-middle": "qs ipc call kef playPause",
+    "on-click-right": "qs ipc call kef toggleMute",
+    "on-scroll-up": "qs ipc call kef volumeUp",
+    "on-scroll-down": "qs ipc call kef volumeDown"
+  },
   // Rofi Application Launcher
   "custom/appmenu": {
     // START APPS LABEL
