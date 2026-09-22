@@ -110,7 +110,7 @@ Anything wanting a whole-bar refresh does the same; a module that only needs its
 
 `claude-usage.sh fetch` is the module's only source: it reads the OAuth token out of `$CLAUDE_CONFIG_DIR/.credentials.json` (`~/.claude` when that is unset) and asks `GET /api/oauth/usage`, which is where Claude Code itself gets these percentages.
 Asking is the only way to have the numbers.
-The `statusLine` command is the one place Claude Code hands `rate_limits` to a script, and a statusline only renders in the terminal client, so a session driven through the SDK (like T3 Code) yields none — which is why `home/.claude/statusline.sh` prints a readout and feeds nothing.
+The `statusLine` command is the one place Claude Code hands `rate_limits` to a script, and a statusline only renders in the terminal client, so a session driven through the SDK (like T3 Code) yields none — which is why the statusline, kept in the promptfiles repo, prints a readout and feeds nothing.
 
 Nothing else a session leaves behind carries a percentage either: the SDK's `rate_limit_event`, the `anthropic-ratelimit-unified-*` response headers and the CLI's startup `quota_check` all report a status and a reset time, while the transcripts under `~/.claude/projects/` and the `claude_code.*` OTel metrics report tokens.
 `~/.claude.json` holds a `cachedUsageUtilization` snapshot of the right shape, but no SDK session refreshes it, which is the same gap again.
@@ -135,10 +135,6 @@ Five things follow, and they are the price of the exact fill:
 - **Those imports are absolute, and the tracked copy is a placeholder.** Waybar resolves an `@import` against its own config directories rather than against the importing file, and only watches what it resolves. The tracked stylesheet carries `$XDG_CACHE_HOME`, which `apply.sh` expands while staging — the same arrangement as `bookmarks` under **Preserved files**, and unusable as-is if `home/` is stowed by hand. `launch.sh` runs both scripts before starting the bar, because waybar builds its watch list once from the imports that resolved at parse time.
 - **The text holds the space open, not the padding.** A label's hit region follows its text, so anything sitting over CSS padding is unhoverable — with padding, only the glyph the module used to draw took hover, and the tooltip came with it. Neither module has horizontal padding at all: the script emits one non-breaking space per 9.6px at `font-size: 16px`, enough to cover the mark and its rings, and the images are painted over them at pixel offsets. The spaces are non-breaking because Pango may drop ordinary ones at an edge, and the `font-family` rule below is load-bearing for the same reason — their advance is the whole layout. Changing the font or its size means re-measuring the offsets.
 - Anything hover-related on these modules must set `background-color`, never the `background` shorthand: the shorthand resets `background-image` and the rings vanish on hover.
-
-`home/.claude/` holds `statusline.sh` and nothing else — no `settings.json`, no credentials, no agents.
-`apply.sh` runs `mkdir -p "$HOME/.claude"` *before* stowing for the folding reason above: without it, stow would make `~/.claude` a symlink into `.stow/` and Claude Code's own state would land there.
-(The `mkdir -p "$HOME/.mydotfiles"` further down is the same idea but runs after stow, since nothing is stowed into it.)
 
 ### Colors
 
