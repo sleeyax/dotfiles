@@ -32,6 +32,7 @@
         "pulseaudio",
         "bluetooth",
         "network",
+        "custom/vpn",
         "battery",
         "group/hardware",
         "group/tools",

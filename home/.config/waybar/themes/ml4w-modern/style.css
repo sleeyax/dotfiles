@@ -484,6 +484,37 @@ window#waybar.empty #window {
 }
 
 /* -----------------------------------------------------
+ * VPN
+ * ----------------------------------------------------- */
+
+#custom-vpn {
+    background-color: @background;
+    font-size: 16px;
+    color: @on_surface;
+    border-radius: 8px;
+    padding: 2px 10px 0px 10px;
+    margin: 3px 10px 3px 0px;
+    border: 2px solid @border_color;
+    transition: all 0.3s ease-out;
+}
+
+/* The `*` stack falls back to a Nerd Font whose icons are wider than their advance, so a lone icon spills into the right padding; the Propo variant's advance fits the icon. */
+#custom-vpn label {
+    font-family: "Fira Sans Semibold", "FiraCode Nerd Font Propo", sans-serif;
+}
+
+#custom-vpn:hover {
+    color: @on_surface;
+    background-color: @primary_container;
+    border-color: @primary;
+}
+
+#custom-vpn.disconnected,
+#custom-vpn.pending {
+    color: @outline;
+}
+
+/* -----------------------------------------------------
  * Bluetooth
  * ----------------------------------------------------- */
 
