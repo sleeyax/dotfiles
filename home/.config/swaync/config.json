@@ -37,7 +37,6 @@
   },
   "widgets": [
     "dnd",
-    "buttons-grid",
     "title",
     "notifications"
   ],
@@ -59,35 +58,6 @@
     },
     "volume": {
       "label": ""
-    },
-    "buttons-grid": {
-      "actions": [
-        {
-          "label": "",
-          "type": "toggle",
-          "active": true,
-          "command": "sh -c '[[ $SWAYNC_TOGGLE_STATE == true ]] && nmcli radio wifi on || nmcli radio wifi off'",
-          "update-command": "sh -c '[[ $(nmcli r wifi) == \"enabled\" ]] && echo true || echo false'"
-        },
-        {
-          "label": "",
-          "type": "toggle",
-          "active": true,
-          "command": "rfkill toggle bluetooth",
-          "update-command": ""
-        },
-        {
-          "label": "󰕾",
-          "type": "toggle",
-          "active": true,
-          "command": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
-          "update-command": ""
-        },
-        {
-          "label": "",
-          "command": "hyprlock"
-        }
-      ]
     }
   }
 }
