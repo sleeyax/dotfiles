@@ -261,6 +261,18 @@
     "on-click": "~/.config/ml4w/settings/networkmanager.sh",
     "on-click-right": "~/.config/ml4w/scripts/ml4w-toggle-nmapplet toggle",
   },
+  "custom/vpn": {
+    "format": "{}",
+    "return-type": "json",
+    // Connection names are arbitrary text.
+    "escape": true,
+    // Prints a line per NetworkManager change rather than on a timer.
+    "exec": "~/.config/waybar/scripts/vpn.sh",
+    "restart-interval": 5,
+    "hide-empty-text": true,
+    "tooltip": true,
+    "on-click": "~/.config/waybar/scripts/vpn.sh toggle",
+  },
   // Battery
   "battery": {
     "interval": 1,
