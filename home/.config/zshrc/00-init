@@ -7,6 +7,9 @@
 # -----------------------------------------------------
 export EDITOR="code --wait"
 export ZSH="$HOME/.oh-my-zsh"
+# Nested shells inherit PATH and re-run these prepends, so keep only the first occurrence of each entry.
+# Both halves of the tie need -U: the `export PATH=...` assignments below bypass uniqueness set on `path` alone.
+typeset -U PATH path
 export PATH="$HOME/.local/bin:$PATH"
 export PATH="$HOME/go/bin:$PATH"
 export PATH="$PATH:$HOME/.cargo/bin"
