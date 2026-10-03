@@ -34,3 +34,6 @@ btop
 # --- Python and build ---
 python-pip
 cargo
+
+# --- Kubernetes ---
+kubie

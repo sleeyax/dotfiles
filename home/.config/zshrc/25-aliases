@@ -22,6 +22,12 @@ alias system='~/.config/ml4w/settings/systemmonitor'
 alias update-grub='sudo grub-mkconfig -o /boot/grub/grub.cfg'
 
 # -----------------------------------------------------
+# Kubernetes
+# -----------------------------------------------------
+alias kubectx='kubie ctx'
+alias kubens='kubie ns'
+
+# -----------------------------------------------------
 # Other
 # -----------------------------------------------------
 alias nx='npx nx'
