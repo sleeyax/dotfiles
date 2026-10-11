@@ -76,6 +76,9 @@
 ! **/Service Worker/CacheStorage
 ! **/Crashpad
 
+# The Storage Box's WebDAV mount: a cache, plus the main account's password, which can wipe the whole box
+! **/.davfs2
+
 # Browser profiles
 ! **/.config/discord
 ! **/.config/vesktop
@@ -178,7 +181,6 @@
 ! **/.local/share/NuGet
 ! **/.local/share/stremio-streaming-server/stremio-cache
 ! **/.lldb/module_cache
-! **/.davfs2/cache
 ! **/.kube/cache
 ! **/.codex/.tmp
 
