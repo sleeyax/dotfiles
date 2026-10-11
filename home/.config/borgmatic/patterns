@@ -51,6 +51,7 @@
 ! **/RE/projects/android/**/*.java
 ! **/RE/projects/android/**/*.apk
 ! **/RE/projects/android/**/*.ipa
+! **/RE/projects/ios/**/*.ipa
 ! **/*apk.cache
 ! **/teams-for-linux
 ! **/Discord
