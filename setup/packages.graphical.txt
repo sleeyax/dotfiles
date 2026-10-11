@@ -86,6 +86,17 @@ nautilus-python
 tumbler
 loupe
 
+# --- Backups ---
+# Here and not in the base list because the passphrase lives in the session keyring.
+borg
+borgmatic
+# python-llfuse is what `borgmatic mount` needs to browse an archive as a folder.
+python-llfuse
+# gnome-keyring holds the passphrase that config.yaml's secret-tool lookup reads.
+gnome-keyring
+# openssh is how borg reaches the Storage Box; borg only lists it as optional.
+openssh
+
 # --- Applications ---
 kitty
 firefox

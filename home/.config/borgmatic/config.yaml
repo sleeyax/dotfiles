@@ -1,0 +1,54 @@
+# Backs up $HOME to this machine's borg repository on the Hetzner Storage Box.
+# The guide is docs/backups.md; the rationale is under Backups in AGENTS.md.
+
+source_directories:
+    - "~"
+one_file_system: true
+
+# BACKUP_REPOSITORY and BACKUP_PASSCOMMAND point a run at a throwaway repository, so the real config can be tested without the Storage Box or the keyring.
+repositories:
+    - path: ${BACKUP_REPOSITORY:-ssh://storagebox/./borg}
+      label: storagebox
+      encryption: repokey
+
+# Hetzner's own default for `borg` is 1.2, and the server side has to match the 1.4 client.
+remote_path: borg-1.4
+
+encryption_passcommand: ${BACKUP_PASSCOMMAND:-secret-tool lookup service borgmatic repository storagebox}
+
+patterns_from:
+    - ~/.config/borgmatic/patterns
+exclude_caches: true
+exclude_if_present:
+    - .nobackup
+
+# A file the user can't read, such as a Docker container's database volume inside a project, can't be backed up by a user's run anyway, and would otherwise fail every one.
+borg_exit_codes:
+    - code: 105
+      treat_as: warning
+
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 6
+
+checks:
+    - name: repository
+      frequency: 2 weeks
+    - name: archives
+      frequency: 2 weeks
+    - name: spot
+      frequency: 1 month
+      count_tolerance_percentage: 10
+      data_sample_percentage: 1
+      data_tolerance_percentage: 0.5
+
+retries: 3
+retry_wait: 300
+
+commands:
+    # A rebuilt machine reads what to reinstall out of the archive it is restoring.
+    - before: action
+      when:
+          - create
+      run:
+          - d="\${XDG_STATE_HOME:-$HOME/.local/state}/backup" && mkdir -p "$d" && pacman -Qqe > "$d/packages.txt"
