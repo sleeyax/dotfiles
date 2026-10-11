@@ -46,6 +46,7 @@
 ! ~/.vscode
 ! **/.local/bin
 ! **/.local/share/JetBrains
+! **/.local/share/Google/AndroidStudio*
 ! **/.local/share/pnpm
 ! **/RE/projects/android/**/*.java
 ! **/*apk.cache
@@ -87,6 +88,8 @@
 ! **/.config/spotify
 ! **/.config/Electron
 ! **/.config/JetBrains
+! **/.config/dolphin_anty/browser
+! **/.BurpSuite
 
 # Firefox/Thunderbird: drop the regenerable bulk, keep bookmarks, logins and local mail
 ! **/.mozilla/firefox/*/cache2
@@ -109,6 +112,7 @@
 ! **/.keras
 ! **/stanza_resources
 ! **/scikit_learn_data
+! **/.paseo/models
 
 # Toolchains and package caches
 ! **/.bun
@@ -135,6 +139,8 @@
 ! **/.vpython-root
 ! **/.vpython_cipd_cache
 ! **/.templateengine
+! **/.cklib
+! **/.local/share/pyppeteer
 
 # VMs, containers, games
 ! **/.wine
@@ -166,6 +172,12 @@
 ! **/.local/share/RefSrcSymbols
 ! **/.local/share/SymbolSourceSymbols
 ! **/.local/share/stalefiles
+! **/.local/share/NuGet
+! **/.local/share/stremio-streaming-server/stremio-cache
+! **/.lldb/module_cache
+! **/.davfs2/cache
+! **/.kube/cache
+! **/.codex/.tmp
 
 # Project build output
 ! **/.next
@@ -179,6 +191,14 @@
 ! **/.pytest_cache
 ! **/.ruff_cache
 ! **/.tox
+! **/.nx/cache
+! **/.pnpm-store
+! **/.wrangler/tmp
+! **/.tmp
+! **/bin/Debug
+! **/bin/Release
+! **/obj/Debug
+! **/obj/Release
 
 # Crash logs and editor temp files
 ! **/hs_err_pid*.log

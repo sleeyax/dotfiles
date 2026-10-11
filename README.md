@@ -169,7 +169,7 @@ kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, becau
 ## Backups
 
 falcon and panda back up their home directory to a Hetzner Storage Box with [borgmatic](https://torsion.org/borgmatic/), encrypted on the machine before it leaves.
-Both machines share one config, [config.yaml](home/.config/borgmatic/config.yaml), and one list of what to leave out, [patterns](home/.config/borgmatic/patterns), which is the old rsync exclusion list in borg's syntax.
+Both machines share one config, [config.yaml](home/.config/borgmatic/config.yaml), and one list of what to leave out, [patterns](home/.config/borgmatic/patterns), which started as the old rsync exclusion list.
 A folder containing a `.nobackup` file is left out too.
 
 Run `borgmatic --verbosity 1 --stats` to back up by hand.

@@ -284,7 +284,7 @@ Both workstations have SHA hardware acceleration, so the blake2 variant buys not
 The passphrase is read with `secret-tool lookup service borgmatic repository storagebox`; that attribute pair is the contract with whatever stores it, so changing it strands every machine already set up.
 
 **What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
-`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header.
+`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.
 The price of `!` over `-` is that no `+` can re-include anything beneath an excluded folder, so a broad name like `**/build` or `**/Downloads` takes every folder of that name in `$HOME`.
 
 `MEGAsync` is the one entry dropped in translation: MEGA propagates a deletion or corruption to every device, so it isn't a backup by itself.
