@@ -268,7 +268,7 @@ Never rewrite the recorded base commit to "fix" a diff — it describes history,
 
 ### Backups
 
-falcon and panda back `$HOME` up to a Hetzner Storage Box with borgmatic driving borg; there is no backup script of our own.
+falcon and panda back `$HOME` up to a Hetzner Storage Box with borgmatic driving borg; the only script of our own is `scripts/setup-backups.sh`, which provisions a machine once.
 The user-facing guide is [docs/backups.md](docs/backups.md), written for someone new to borg, and it is where a change in behaviour gets explained.
 
 `home/.config/borgmatic/config.yaml` is one config for both workstations, so nothing in it may be machine-specific.
@@ -282,6 +282,16 @@ aardwolf is out of scope: its `STOW_PATHS` never picks up `.config/borgmatic`, a
 **Encryption.** `repokey`: AES-256 with HMAC-SHA256, the key stored in the repository under the passphrase.
 Both workstations have SHA hardware acceleration, so the blake2 variant buys nothing.
 The passphrase is read with `secret-tool lookup service borgmatic repository storagebox`; that attribute pair is the contract with whatever stores it, so changing it strands every machine already set up.
+
+**Setting a machine up.** `scripts/setup-backups.sh` creates the machine's sub-account, key, `storagebox` alias, keyring passphrase and repository, and is run by hand with `HCLOUD_TOKEN` in the environment.
+hcloud stays out of the package lists because nothing after setup needs it, and the token never goes through `hcloud context`, which would save it to disk.
+Each step decides it is done by observing the result rather than keeping a record: the sub-account by name, the key by whether ssh gets past authentication (any exit but 255), the passphrase by a keyring search, the repository by `repo-info`.
+Showing the passphrase and key export is the one step with no observable result, so it alone leaves a marker in `$XDG_STATE_HOME/backup/`, holding the repository ID so a recreated repository is shown again.
+
+The script uploads `authorized_keys` itself rather than using Hetzner's `install-ssh-key`, which also adds an RFC4716 copy that port 22 honours without the forced command.
+`--restrict-to-repository ./borg` is relative because where the sub-account's chroot puts its home is Hetzner's business; borg resolves both it and the client's `/./borg` against the login directory.
+That `borg-1.4 serve` exists as a forced command on Hetzner is inferred, not documented, which is why the script checks the server version through the restricted key on every run.
+Locally, a user-level `sshd` with `cd <dir> &&` in front of the forced command stands in for the chroot and exercises the restricted line with real borg; the password upload can only be tried against the real box.
 
 **What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
 `home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.

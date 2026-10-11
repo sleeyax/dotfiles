@@ -172,7 +172,7 @@ falcon and panda back up their home directory to a Hetzner Storage Box with [bor
 Both machines share one config, [config.yaml](home/.config/borgmatic/config.yaml), and one list of what to leave out, [patterns](home/.config/borgmatic/patterns), which started as the old rsync exclusion list.
 A folder containing a `.nobackup` file is left out too.
 
-Run `borgmatic --verbosity 1 --stats` to back up by hand.
+Set a machine up once with `./scripts/setup-backups.sh`, following the guide's one-time setup, then run `borgmatic --verbosity 1 --progress --stats` to back up by hand.
 [docs/backups.md](docs/backups.md) explains what the setup does and why, in plain terms, and is where setup, monitoring and restoring are documented.
 
 ## Devices
