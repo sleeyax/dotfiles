@@ -110,8 +110,93 @@ borgmatic create --dry-run --list
 
 ## One-time setup
 
-Not written yet.
-Setting a machine up against the Storage Box comes with the setup script.
+Each machine is set up once, by running [`scripts/setup-backups.sh`](../scripts/setup-backups.sh) from the dotfiles folder.
+It prepares both ends: an account for this machine on the Storage Box, and the key, passphrase and repository on the machine.
+Every step first checks whether it is already done and skips itself if so, so if the script stops halfway, fix what it complained about and run it again.
+
+### 1. Before you start
+
+The machine needs the dotfiles applied (`./scripts/apply.sh`), which installs borg and borgmatic and puts the config in place.
+
+The script talks to Hetzner with `hcloud`, Hetzner's command-line tool.
+You only need it while setting a machine up, so it isn't installed with everything else:
+
+```bash
+sudo pacman -S hcloud
+```
+
+### 2. Create an API token
+
+The script needs permission to manage your Storage Box, which it gets from an *API token*: a long password for Hetzner's API.
+A token can also delete the box's snapshots, so you create one just for the setup and delete it straight after.
+
+1. Open the [Hetzner Console](https://console.hetzner.com/) and open the project your Storage Box is in.
+2. Go to **Security** in the left-hand menu, then the **API tokens** tab.
+3. Click **Generate API token**, describe it as something like `backup setup falcon`, choose **Read & Write**, and generate it.
+4. Copy the token. The Console shows it only this once, which is fine: you only need it for the next few minutes.
+
+### 3. Run the script
+
+Hand the token to the script through an environment variable, typed in without echoing.
+That keeps it out of your shell history and off the disk:
+
+```bash
+read -rs HCLOUD_TOKEN && export HCLOUD_TOKEN   # paste the token, press Enter
+./scripts/setup-backups.sh
+```
+
+Here is what it does, in order:
+
+1. **Finds the Storage Box** in the token's project.
+2. **Creates a sub-account** named after the machine (`falcon`, `panda`), whose home is the folder `backups/<machine>` on the box. A sub-account is a separate login that can only see its own folder, so this machine can't reach the other machine's backups or anything else on the box. It can be reached over SSH from outside Hetzner, and nothing else: Samba and WebDAV are off.
+3. **Generates an SSH key** at `~/.ssh/storagebox`. It has no passphrase, because backups run unattended.
+4. **Adds a `storagebox` host to `~/.ssh/config`**, pointing at the sub-account. This is the name borgmatic's config uses. It also makes SSH notice a dead connection within about three minutes, instead of a backup hanging all night.
+5. **Installs the key on the Storage Box**, restricted so that all it can do is run borg 1.4 on this machine's repository: no browsing files, no other folders. To upload it, the script gives the sub-account a random password, uses it once, then changes it to another random password that it throws away. From then on, the key is the only way in.
+6. **Stores a new passphrase in your GNOME keyring**, where borgmatic finds it on every run.
+7. **Creates the repository**, encrypted with that passphrase.
+8. **Checks the restriction works**: the Storage Box must answer with borg 1.4 for this key, and must refuse to open a file browsing (SFTP) session with it.
+9. **Shows you the passphrase and the key export.** See the next step.
+
+### 4. Store the passphrase and the key
+
+Near the end, the script prints two things and waits for you:
+
+- **The passphrase.** Save it in KeePassXC.
+- **The key export**, a block of text starting `BORG PAPER KEY v1`. Print it, and keep the paper somewhere safe.
+
+The repository can only be opened with both: the key is locked with the passphrase.
+The copies on this machine (the keyring, and the key stored inside the repository) are the everyday ones.
+KeePassXC and the paper are the ones you restore from when this machine is gone, or the repository's key is damaged.
+
+Press Enter once both are stored.
+The script won't show them again on a rerun, but you can always get them back while this machine works:
+
+```bash
+secret-tool lookup service borgmatic repository storagebox   # the passphrase
+borgmatic key export --paper                                 # the key export
+```
+
+### 5. Delete the API token
+
+Back in the Hetzner Console, under **Security** → **API tokens**, delete the token you created.
+Nothing on the machine needs it again, and a leftover token could delete the box's snapshots.
+Then forget it in the terminal too:
+
+```bash
+unset HCLOUD_TOKEN
+```
+
+### 6. Make the first backup
+
+Run a first backup by hand, to see it work end to end:
+
+```bash
+borgmatic create --stats
+borgmatic repo-list
+```
+
+The first one uploads everything, so expect it to take hours: about 12 GB an hour on a 28 Mbps upload.
+It can be interrupted: the next run reuses whatever was already uploaded.
 
 ## Reading the waybar icon
 
