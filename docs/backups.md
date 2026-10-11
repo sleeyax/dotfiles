@@ -86,8 +86,10 @@ The waits grow from 5 to 10 to 15 minutes, so the last try starts about half an 
 Run every step of a backup — create an archive, prune, compact, and any check that is due:
 
 ```bash
-borgmatic --verbosity 1 --stats
+borgmatic --verbosity 1 --progress --stats
 ```
+
+`--verbosity 1` prints a line as each step starts, `--progress` keeps a live line updated while a step runs (how much has been read, compressed and deduplicated, and the current file), and `--stats` sums up the new archive at the end.
 
 Or only make an archive, listing each file as it goes in:
 
@@ -191,11 +193,12 @@ unset HCLOUD_TOKEN
 Run a first backup by hand, to see it work end to end:
 
 ```bash
-borgmatic create --stats
+borgmatic create --progress --stats
 borgmatic repo-list
 ```
 
 The first one uploads everything, so expect it to take hours: about 12 GB an hour on a 28 Mbps upload.
+For the first few minutes it prints nothing, while borgmatic checks which files the backup will include; the progress line appears once the upload starts.
 It can be interrupted: the next run reuses whatever was already uploaded.
 
 ## Reading the waybar icon
