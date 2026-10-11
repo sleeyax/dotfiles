@@ -38,6 +38,16 @@ check_alias() {
     die "$SSH_CONFIG gives $SSH_ALIAS the $1 $actual, not $2; fix the Host block that sets it and rerun"
 }
 
+# A new sub-account's hostname takes a few minutes to appear in DNS.
+wait_for_dns() {
+  local deadline=$((SECONDS + 600))
+  until getent hosts "$1" >/dev/null; do
+    [ "$SECONDS" -lt "$deadline" ] || die "$1 still doesn't resolve after 10 minutes; rerun the script later"
+    echo "    Waiting for $1 to appear in DNS..."
+    sleep 15
+  done
+}
+
 # Authentication failing is ssh's 255; anything else means the key got in and the forced command ran.
 key_installed() {
   local status=0
@@ -145,6 +155,7 @@ check_alias user "$sub_user"
 check_alias port 23
 
 step "Install the restricted key on the Storage Box"
+wait_for_dns "$sub_server"
 if key_installed; then
   skip
 else
