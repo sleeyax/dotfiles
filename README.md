@@ -19,7 +19,8 @@ Upstream's own `version.json` reports 2.12.3 at that tag; the tag is authoritati
 │   ├── packages.graphical.txt  # ...plus these, on machines with a session
 │   ├── packages.desktop.txt    # ...plus these, on falcon only
 │   └── device.server.sh        # Per-device knobs for aardwolf
-└── scripts/            # Apply/switch scripts
+├── scripts/            # Apply/switch scripts
+└── docs/               # Guides too long for this README
 ```
 
 `home/` is deployed as-is, then `devices/$DEVICE/` is overlaid on top of it, so a device file always wins over the base file at the same path.
@@ -164,6 +165,15 @@ A Quickshell panel for the KEF speaker on falcon, built on the [kefw2ui](https:/
 kefw2ui 0.0.3 cannot subscribe to the speaker's events on firmware V26120, because the speaker refuses the GET request it registers with. Until that is fixed upstream, the panel asks the speaker every two seconds while it is open and the pill follows along, so a change made elsewhere, such as with the remote, shows up next time the panel is open. Neither asks on a timer with the panel closed, because the backend cannot tell that the speaker went into standby by itself and a timer would risk keeping it awake.
 
 `kefw2ui-bin` is in the desktop package list only. On a machine without it the pill hides itself.
+
+## Backups
+
+falcon and panda back up their home directory to a Hetzner Storage Box with [borgmatic](https://torsion.org/borgmatic/), encrypted on the machine before it leaves.
+Both machines share one config, [config.yaml](home/.config/borgmatic/config.yaml), and one list of what to leave out, [patterns](home/.config/borgmatic/patterns), which started as the old rsync exclusion list.
+A folder containing a `.nobackup` file is left out too.
+
+Run `borgmatic --verbosity 1 --stats` to back up by hand.
+[docs/backups.md](docs/backups.md) explains what the setup does and why, in plain terms, and is where setup, monitoring and restoring are documented.
 
 ## Devices
 

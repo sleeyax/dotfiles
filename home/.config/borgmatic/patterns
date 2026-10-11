@@ -1,0 +1,215 @@
+# What borgmatic leaves out of $HOME: reproducible bulk, caches, and anything re-downloadable.
+# Borg patterns, see `borg help patterns`; borgmatic expands a leading ~ but nothing else, so ~ anchors an entry at $HOME.
+# `!` excludes without descending, so a huge excluded tree costs nothing to skip.
+# The default style is sh:, where `*` stops at a slash; a `**/` prefix is what lets a bare name match at any depth.
+# A trailing slash would keep the directory and drop only its contents, so none of these has one.
+# Folders holding a CACHEDIR.TAG or a .nobackup file are dropped by config.yaml, not here.
+
+! **/lost+found
+! **/node_modules
+! **/vendor
+! **/build
+! **/dist
+! **/target
+! **/venv
+! **/Downloads
+! **/chromium
+! **/depot_tools
+! **/qmk_firmware
+! **/HetznerStorageBox
+! **/dotfiles-backup-2025-07-23
+! **/Games
+! **/Android
+! **/Documents/VM
+! **/__handlers__
+! **/Steam
+! **/Trash
+! **/IdeaSnapshots
+! **/go/pkg
+! **/clang/crashreports
+! **/.stremio_service
+! **/.nvm
+! **/.rustup
+! **/.cargo
+! **/.gradle
+! **/.m2
+! **/.jdks
+! **/.npm
+! **/.android
+! **/.stremio-server
+! **/.steam
+! **/.cache
+! **/.nuget
+! **/.pub-cache
+! **/.var/app
+! **/.venv
+! ~/.vscode
+! **/.local/bin
+! **/.local/share/JetBrains
+! **/.local/share/Google/AndroidStudio*
+! **/.local/share/pnpm
+! **/RE/projects/android/**/*.java
+! **/RE/projects/android/**/*.apk
+! **/RE/projects/android/**/*.ipa
+! **/RE/projects/ios/**/*.ipa
+! **/*apk.cache
+! **/teams-for-linux
+! **/Discord
+! **/TelegramDesktop
+
+# MEGA syncs a deletion or corruption to every device, so MEGAsync is backed up; only its local trash isn't.
+! ~/MEGAsync/.debris
+
+# Electron/Chromium cache dirs, matched at any depth so one entry covers every app
+! **/Cache
+! **/Cache_Data
+! **/CachedData
+! **/CachedExtensionVSIXs
+! **/Code Cache
+! **/GPUCache
+! **/ShaderCache
+! **/GrShaderCache
+! **/DawnCache
+! **/DawnGraphiteCache
+! **/DawnWebGPUCache
+! **/component_crx_cache
+! **/Service Worker/CacheStorage
+! **/Crashpad
+
+# The Storage Box's WebDAV mount: a cache, plus the main account's password, which can wipe the whole box
+! **/.davfs2
+
+# Browser profiles
+! **/.config/discord
+! **/.config/vesktop
+! **/.config/BraveSoftware
+! **/.config/google-chrome
+! **/.config/google-chrome-for-testing
+! **/.config/microsoft-edge
+! **/.config/opera
+! **/.config/vivaldi
+! **/.config/chromium-linear
+! **/.config/net.imput.helium
+! **/.config/Slack
+! **/.config/spotify
+! **/.config/Electron
+! **/.config/JetBrains
+! **/.config/dolphin_anty/browser
+! **/.BurpSuite
+
+# Firefox/Thunderbird: drop the regenerable bulk, keep bookmarks, logins and local mail
+! **/.mozilla/firefox/*/cache2
+! **/.mozilla/firefox/*/storage/default
+! **/.mozilla/firefox/*/sessionstore-backups
+! **/.mozilla/firefox/*/minidumps
+! **/.mozilla/firefox/*/datareporting
+! **/.mozilla/firefox/Crash Reports
+! **/.mozilla/firefox/Pending Pings
+! **/.thunderbird/*/ImapMail
+! **/.thunderbird/*/global-messages-db.sqlite
+! **/.thunderbird/*/sessionstore-backups
+! **/.thunderbird/*/minidumps
+! **/.thunderbird/*/datareporting
+! **/.thunderbird/Crash Reports
+! **/.thunderbird/Pending Pings
+
+# Model weights and ML datasets, all re-downloadable
+! **/.ollama
+! **/.keras
+! **/stanza_resources
+! **/scikit_learn_data
+! **/.paseo/models
+
+# Toolchains and package caches
+! **/.bun
+! **/.yarn
+! **/.dotnet
+! **/.aspnet
+! **/.mono
+! **/.ServiceHub
+! **/.konan
+! **/.skiko
+! **/.java
+! **/.node-gyp
+! **/.electron
+! **/.electron-gyp
+! **/.expo
+! **/.dart
+! **/.dart-tool
+! **/.dartServer
+! **/.flutter
+! **/.oh-my-zsh
+! **/.yalc
+! **/.degit
+! **/.standard-v14-cache
+! **/.vpython-root
+! **/.vpython_cipd_cache
+! **/.templateengine
+! **/.cklib
+! **/.local/share/pyppeteer
+
+# VMs, containers, games
+! **/.wine
+! **/.minikube
+! **/.lima
+! **/.minecraft
+! **/.local/share/lutris
+! **/.local/share/PrismLauncher
+! **/.local/share/multimc
+! **/.local/share/osu
+! **/*.qcow2
+! **/*.vdi
+! **/*.vmdk
+! **/*.iso
+
+# Rebuildable indexes and runtime state
+! **/.local/share/baloo
+! **/.local/share/akonadi
+! **/.local/share/flatpak
+! **/.local/share/fnm
+! **/.local/share/uv
+! **/.local/share/virtualenv
+! **/.local/share/virtualenvs
+! **/.local/share/pypoetry
+! **/.local/share/webkitgtk
+! **/.local/share/webkitgtk-4.0
+! **/.local/share/webkitgtk-4.1
+! **/.local/share/Symbols
+! **/.local/share/RefSrcSymbols
+! **/.local/share/SymbolSourceSymbols
+! **/.local/share/stalefiles
+! **/.local/share/NuGet
+! **/.local/share/stremio-streaming-server/stremio-cache
+! **/.lldb/module_cache
+! **/.kube/cache
+! **/.codex/.tmp
+
+# Project build output
+! **/.next
+! **/.nuxt
+! **/.svelte-kit
+! **/.turbo
+! **/.angular
+! **/.parcel-cache
+! **/__pycache__
+! **/.mypy_cache
+! **/.pytest_cache
+! **/.ruff_cache
+! **/.tox
+! **/.seed-cache
+! **/fe-infinity/build-dev/cache
+! **/.nx/cache
+! **/.pnpm-store
+! **/.wrangler/tmp
+! **/.tmp
+! **/bin/Debug
+! **/bin/Release
+! **/obj/Debug
+! **/obj/Release
+
+# Crash logs and editor temp files
+! **/hs_err_pid*.log
+! **/java_error_in_*.log
+! **/.claude.json.tmp.*
+! **/.zcompdump-*
+! **/core.[0-9]*

@@ -266,6 +266,66 @@ Never rewrite the recorded base commit to "fix" a diff — it describes history,
 
 `scripts/install-webapp.py` installs a site as a Chromium web app in its own user-data directory; see **Web apps** in [README.md](README.md) for usage. It writes to `$HOME` only — nothing enters the stow tree, since the profiles hold live logins.
 
+### Backups
+
+falcon and panda back `$HOME` up to a Hetzner Storage Box with borgmatic driving borg; there is no backup script of our own.
+The user-facing guide is [docs/backups.md](docs/backups.md), written for someone new to borg, and it is where a change in behaviour gets explained.
+
+`home/.config/borgmatic/config.yaml` is one config for both workstations, so nothing in it may be machine-specific.
+The repository is `ssh://storagebox/./borg`, where `storagebox` is a host alias each machine's untracked `~/.ssh/config` resolves to its own Storage Box sub-account.
+That keeps the per-machine username out of the repo, and gives a manual `borg` or `ssh` the same name borgmatic uses.
+aardwolf is out of scope: its `STOW_PATHS` never picks up `.config/borgmatic`, and the packages are in `packages.graphical.txt`.
+
+**Borg 1.4 on both ends.** Hetzner serves borg 1.1, 1.2 and 1.4 and defaults to 1.2, and borg 2 is still in beta.
+`remote_path: borg-1.4` picks the server side; an `authorized_keys` forced command ignores the client's remote path, so one has to name `borg-1.4 serve` itself.
+
+**Encryption.** `repokey`: AES-256 with HMAC-SHA256, the key stored in the repository under the passphrase.
+Both workstations have SHA hardware acceleration, so the blake2 variant buys nothing.
+The passphrase is read with `secret-tool lookup service borgmatic repository storagebox`; that attribute pair is the contract with whatever stores it, so changing it strands every machine already set up.
+
+**What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
+`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.
+The price of `!` over `-` is that no `+` can re-include anything beneath an excluded folder, so a broad name like `**/build` or `**/Downloads` takes every folder of that name in `$HOME`.
+
+`MEGAsync` is the one entry dropped in translation: MEGA propagates a deletion or corruption to every device, so it isn't a backup by itself.
+Only its local trash, `MEGAsync/.debris`, stays out.
+`exclude_caches` and `exclude_if_present: .nobackup` are the ways to leave a folder out without editing the list.
+
+`borg_exit_codes` downgrades 105, a file borg can't read, from an error to a warning.
+falcon's `$HOME` holds Docker database volumes inside projects, owned by container UIDs; a user's run can never read them, and an error would fail every run over them.
+The price is that a file which turns unreadable later is skipped quietly too.
+
+A `before: action` hook on `create` writes `pacman -Qqe` to `$XDG_STATE_HOME/backup/packages.txt`, so every archive says what a rebuilt machine should reinstall.
+borgmatic interpolates `${VAR}` across the whole config at load time, hooks included, so a shell variable in a hook is written `\${VAR}` or without braces.
+YAML reads a bare `~` as null, which is why the source is quoted.
+
+**History and checks.** Keep 7 daily, 4 weekly and 6 monthly; every run prunes and compacts its own repository, so there is no append-only mode and no separate prune host.
+`repository` and `archives` checks run every 2 weeks and `spot` monthly; `data` reads back the whole repository and so is never scheduled.
+The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg dependency.
+`retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
+
+**Testing against a throwaway repository.** Two environment variables override the config without editing it, and unlike a CLI flag they can be handed to a systemd user unit with `systemctl --user set-environment`:
+
+| Variable | Replaces | Default |
+| -------- | -------- | ------- |
+| `BACKUP_REPOSITORY` | the repository path | `ssh://storagebox/./borg` |
+| `BACKUP_PASSCOMMAND` | the passphrase command | the `secret-tool` lookup above |
+
+```bash
+mkdir -p ~/borg-test && touch ~/borg-test/.nobackup
+export BACKUP_REPOSITORY=~/borg-test/repo BACKUP_PASSCOMMAND='echo test'
+borgmatic repo-create --encryption repokey
+borgmatic --retries 0 create --stats
+borgmatic list --archive latest
+```
+
+Put the test repository in a `.nobackup` folder, or the run backs up its own repository; that also exercises the marker.
+Never store a test passphrase under the real `secret-tool` attributes, where it would pass for the machine's real one.
+Pass `--retries 0` to anything expected to fail, or it sits out the full half hour of backoff.
+
+`borgmatic config validate` never interpolates environment variables, so it warns that `${BACKUP_REPOSITORY:-ssh://…}` is a deprecated scp-style path and shows it mangled.
+A real run resolves the variable first and says nothing; the warning is harmless.
+
 ### Shell Configuration
 
 Zsh configs in `home/.config/zshrc/` are numbered for load order (`00-init`, `20-customization`, `25-aliases`). Init sets up NVM, PATH (cargo, go), and `EDITOR=code`. Aliases include eza-based ls/ll/lt, hyprlock, nmtui, and ML4W app shortcuts.
