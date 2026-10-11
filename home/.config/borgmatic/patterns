@@ -49,6 +49,8 @@
 ! **/.local/share/Google/AndroidStudio*
 ! **/.local/share/pnpm
 ! **/RE/projects/android/**/*.java
+! **/RE/projects/android/**/*.apk
+! **/RE/projects/android/**/*.ipa
 ! **/*apk.cache
 ! **/teams-for-linux
 ! **/Discord
@@ -191,6 +193,8 @@
 ! **/.pytest_cache
 ! **/.ruff_cache
 ! **/.tox
+! **/.seed-cache
+! **/fe-infinity/build-dev/cache
 ! **/.nx/cache
 ! **/.pnpm-store
 ! **/.wrangler/tmp
