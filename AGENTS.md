@@ -338,12 +338,12 @@ hypridle tries once per idle period, so panda stays awake after a backup ends un
 The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defaults to yes and nothing in Hyprland takes the switch.
 Shutdown is deliberately not inhibited; the run reads `failed` and the next one reuses what was uploaded.
 
-The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling the timer writes `timers.target.wants/` beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
-`apply.sh` also runs `systemctl --user daemon-reload`, and never enables the timer: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every evening.
+The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling a unit writes a `*.target.wants/` link beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
+`apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every evening.
 systemd lists a symlinked unit file as `linked`, and `systemctl --user disable` deletes such a link along with the enable link; the next apply puts the unit file back, still disabled.
 
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
-Anything that shows backup health reads this file and at most the timer's schedule, so it never reaches the Storage Box or the keyring.
+Anything that shows backup health reads this file and at most the timer's schedule or whether it is enabled, so it never reaches the Storage Box or the keyring.
 `home/.config/borgmatic/status.sh` writes it from three hooks, replacing the whole file in one rename so a reader never sees half of one:
 
 | Field | Value |
@@ -372,6 +372,19 @@ A failure, or a kill while it runs, leaves the success recorded and the numbers 
 No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.
 A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
 The guide's **Reading the waybar icon** section is where a change to the states gets explained.
+
+**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than 7 days old, for backups that stopped without ever failing: a timer turned off, a machine never on at 19:00.
+It judges `last_success` alone, so a `failed` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
+A status file without `last_success`, or one jq can't parse, notifies too.
+Without a status file, it notifies only while `backup.timer` is enabled, which is what tells a set-up machine from one that was never set up.
+That also means a machine notifies at its first login after setup, before the first run has written the file.
+
+`backup-stale.timer` is `WantedBy=` and `PartOf=graphical-session.target`, so it starts with each login and fires a minute later, once swaync has taken the notification name; nothing D-Bus activates it.
+uwsm is what starts and stops that target, through `wayland-session@hyprland.desktop.target`, so the check depends on SDDM launching the uwsm Hyprland session rather than the plain one; `systemctl --user is-active graphical-session.target` tells which.
+It fires daily at 12:00 as well, which is `OnCalendar=` rather than `OnUnitActiveSec=1d` because a monotonic timer stops counting during suspend.
+`apply.sh` enables it on every graphical machine, unlike `backup.timer`, because it is silent on one that was never set up; a deliberate `disable` therefore lasts only until the next apply.
+It starts the timer only inside a session, since a check fired from an SSH apply would find no notification daemon and fail unreported.
+Test it by pointing `XDG_STATE_HOME` at a directory holding a handwritten `backup/status.json`; the guide's **When backups fail or go stale** section explains the notification.
 
 **Testing against a throwaway repository.** Two environment variables override the config without editing it, and unlike a CLI flag they can be handed to a systemd user unit with `systemctl --user set-environment`:
 

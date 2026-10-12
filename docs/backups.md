@@ -93,6 +93,7 @@ Suspending falcon by hand is refused too; in a terminal, `systemctl suspend` say
 A backup cut short by sleep or a shutdown isn't wasted: the next one reuses everything it had already uploaded.
 
 When a backup fails, after the retries described below, a desktop notification tells you so.
+When backups stop without failing, because the machine was never on at 19:00 or the timer was turned off, a notification tells you once the last good backup is more than a week old (see [When backups fail or go stale](#when-backups-fail-or-go-stale)).
 
 To see when the next backup is due, and when the last one started:
 
@@ -414,6 +415,35 @@ When the icon is red, the last backup failed.
 If it was a scheduled one, click the icon and read the last lines of the log; if you ran it by hand, its error is in the terminal you ran it in.
 Most failures are the network: the Storage Box couldn't be reached through all the retries.
 Run a backup by hand once you're back online; when it succeeds, the icon turns back to a tick.
+
+### The "No backup in N days" notification
+
+A minute after you log in, and every day at 12:00, the machine checks when a backup last succeeded.
+If that was more than 7 days ago, a notification says so, and it keeps saying so at every login and every noon until a backup succeeds.
+Like the waybar icon, it reads the status file and asks whether the timer is on, so the check never contacts the Storage Box.
+
+Where the icon turns amber after 3 days, the notification waits a week: a long weekend away is no reason to interrupt you, but a week without a backup is.
+A failed backup has a notification of its own the evening it fails; this one is for backups that stopped happening without anything failing.
+
+The notification comes in three kinds:
+
+- **No backup in N days**: the last backup that succeeded was N days ago. Work through the steps for an amber icon above.
+- **Never backed up**: this machine was set up, but no backup has succeeded on it yet. Right after setup, that is expected until the first one runs at 19:00; run one by hand to settle it now (see [step 6 of the setup](#6-make-the-first-backup)). Later, work through the steps for an amber icon above.
+- **Backup status unreadable**: `~/.local/state/backup/status.json` is damaged, so there is no telling when the last backup succeeded. Run a backup by hand; when it succeeds, it writes the file afresh.
+
+A machine that was never set up never gets the notification.
+
+To see when the check last ran and when it runs next:
+
+```bash
+systemctl --user list-timers backup-stale.timer
+```
+
+To silence it until the next `./scripts/apply.sh`, which turns it back on:
+
+```bash
+systemctl --user disable --now backup-stale.timer
+```
 
 ## Glossary
 
