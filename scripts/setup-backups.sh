@@ -1,5 +1,6 @@
 #!/bin/bash
 # Sets this machine up to back up to its own borg repository on the Hetzner Storage Box.
+# With --restore, it instead reconnects a machine that replaces a lost one to the backups that machine left, and leaves backups off.
 # The guide is docs/backups.md; the rationale is under Backups in AGENTS.md.
 # Every step must skip itself when it is already done, or be harmless to repeat, so a rerun after a failure picks up where it stopped.
 set -euo pipefail
@@ -14,6 +15,9 @@ REPOSITORY_PATH=./borg
 SECRET_ATTRIBUTES=(service borgmatic repository storagebox)
 # Holds the ID of the repository whose passphrase and key were last shown, so a recreated repository shows its own.
 SECRETS_SHOWN="${XDG_STATE_HOME:-$HOME/.local/state}/backup/setup-secrets-shown"
+# borg's exit codes for the two ways a repository can fail to open; borgmatic asks borg for these specific ones.
+REPOSITORY_MISSING=13
+PASSPHRASE_WRONG=52
 
 # Host key checking would otherwise ask on first contact, which the password upload's askpass would answer with the password.
 SSH_OPTS=(-o StrictHostKeyChecking=accept-new)
@@ -24,6 +28,8 @@ die() { echo "Error: $*" >&2; exit 1; }
 
 # Hetzner requires upper and lower case, a digit and a special character.
 random_password() { printf '%sAa1-' "$(openssl rand -hex 24)"; }
+
+random_passphrase() { openssl rand -base64 32 | tr -d '\n'; }
 
 ssh_option() { ssh -G "$SSH_ALIAS" | awk -v key="$1" '$1 == key && !found { print $2; found = 1 }'; }
 
@@ -54,6 +60,34 @@ key_installed() {
   ssh -n -o BatchMode=yes "${SSH_OPTS[@]}" "$SSH_ALIAS" true >/dev/null 2>&1 || status=$?
   [ "$status" -ne 255 ]
 }
+
+# Sets repository_status to borg's exit code, 0 when the passphrase opened the repository, and probe_output to what borgmatic printed.
+# borg looks for the repository before it tries the passphrase, so even a random one tells a missing repository from an existing one.
+# borgmatic exits 1 whatever went wrong, so borg's own code is read out of its log.
+probe_repository() {
+  if probe_output=$(SETUP_PASSPHRASE="$1" BACKUP_PASSCOMMAND='printenv SETUP_PASSPHRASE' borgmatic repo-list 2>&1); then
+    repository_status=0
+  else
+    repository_status=$(grep -oP 'returned non-zero exit status \K[0-9]+' <<<"$probe_output" | tail -n 1 || true)
+  fi
+}
+
+probe_stored_passphrase() {
+  local passphrase
+  passphrase=$(secret-tool lookup "${SECRET_ATTRIBUTES[@]}") || die "couldn't read the passphrase from the GNOME keyring; unlock it and rerun"
+  probe_repository "$passphrase"
+}
+
+repository_error() {
+  printf '%s\n' "$probe_output" >&2
+  die "couldn't open $HOST's repository; borgmatic's output is above"
+}
+
+case "$#:${1-}" in
+  0:) RESTORE=0 ;;
+  1:--restore) RESTORE=1 ;;
+  *) die "usage: $0 [--restore]" ;;
+esac
 
 if ! command -v hcloud &>/dev/null; then
   cat >&2 <<'EOF'
@@ -98,27 +132,33 @@ esac
 box=$(jq -r '.[0].id' <<<"$boxes")
 echo "    Using $(jq -r '.[0].name' <<<"$boxes") ($(jq -r '.[0].server' <<<"$boxes"))."
 
-step "Create the sub-account $HOST"
 subaccount() {
   hcloud storage-box subaccount list "$box" -o json | jq -c --arg name "$HOST" '.[] | select(.name == $name)'
 }
 sub=$(subaccount)
-if [ -n "$sub" ]; then
-  skip
+if [ "$RESTORE" = 1 ]; then
+  step "Find the sub-account $HOST"
+  [ -n "$sub" ] ||
+    die "the Storage Box has no sub-account named $HOST, so no backups to restore under this hostname; give this machine the lost one's hostname with 'sudo hostnamectl hostname <name>' and rerun"
 else
-  # The API documents no defaults for the access settings, so every one is spelled out.
-  # The password is never used: the key upload below sets its own.
-  hcloud storage-box subaccount create "$box" \
-    --name "$HOST" \
-    --home-directory "backups/$HOST" \
-    --password "$(random_password)" \
-    --enable-ssh=true \
-    --reachable-externally=true \
-    --enable-samba=false \
-    --enable-webdav=false \
-    --readonly=false >/dev/null
-  sub=$(subaccount)
-  [ -n "$sub" ] || die "the sub-account was created but doesn't show up in the list"
+  step "Create the sub-account $HOST"
+  if [ -n "$sub" ]; then
+    skip
+  else
+    # The API documents no defaults for the access settings, so every one is spelled out.
+    # The password is never used: the key upload below sets its own.
+    hcloud storage-box subaccount create "$box" \
+      --name "$HOST" \
+      --home-directory "backups/$HOST" \
+      --password "$(random_password)" \
+      --enable-ssh=true \
+      --reachable-externally=true \
+      --enable-samba=false \
+      --enable-webdav=false \
+      --readonly=false >/dev/null
+    sub=$(subaccount)
+    [ -n "$sub" ] || die "the sub-account was created but doesn't show up in the list"
+  fi
 fi
 sub_id=$(jq -r .id <<<"$sub")
 sub_user=$(jq -r .username <<<"$sub")
@@ -195,24 +235,65 @@ EOF
   key_installed || die "the Storage Box doesn't accept the key; the upload above failed"
 fi
 
-step "Store a borg passphrase in the keyring"
 # A lookup fails the same way for a missing item and an unreachable keyring, and storing over a real passphrase would strand the repository.
 stored=$(secret-tool search "${SECRET_ATTRIBUTES[@]}" 2>/dev/null) || die "couldn't reach the GNOME keyring; unlock it and rerun"
-if [ -n "$stored" ]; then
-  skip
+
+store_passphrase() {
+  printf '%s' "$1" | secret-tool store --label "borgmatic passphrase for $SSH_ALIAS" "${SECRET_ATTRIBUTES[@]}"
+}
+
+if [ "$RESTORE" = 1 ]; then
+  step "Store the passphrase from KeePassXC in the keyring"
+  if [ -n "$stored" ]; then probe_stored_passphrase; else probe_repository "$(random_passphrase)"; fi
+  case $repository_status in
+    0) skip ;;
+    "$REPOSITORY_MISSING")
+      die "the Storage Box holds no repository for $HOST, so there is nothing to restore; restore mode never creates one" ;;
+    "$PASSPHRASE_WRONG")
+      [ -z "$stored" ] || echo "    The keyring's passphrase doesn't open the repository, so it will be replaced."
+      while :; do
+        read -rsp "    Passphrase for $HOST's repository, from KeePassXC: " passphrase || die "no passphrase given"
+        echo
+        [ -n "$passphrase" ] || continue
+        probe_repository "$passphrase"
+        [ "$repository_status" = "$PASSPHRASE_WRONG" ] || break
+        echo "    That passphrase doesn't open the repository; try again."
+      done
+      [ "$repository_status" = 0 ] || repository_error
+      store_passphrase "$passphrase"
+      unset passphrase
+      ;;
+    *) repository_error ;;
+  esac
 else
-  openssl rand -base64 32 | tr -d '\n' |
-    secret-tool store --label "borgmatic passphrase for $SSH_ALIAS" "${SECRET_ATTRIBUTES[@]}"
+  step "Store a borg passphrase in the keyring"
+  if [ -n "$stored" ]; then
+    skip
+  else
+    passphrase=$(random_passphrase)
+    probe_repository "$passphrase"
+    case $repository_status in
+      "$REPOSITORY_MISSING") ;;
+      "$PASSPHRASE_WRONG")
+        die "the Storage Box already holds a repository for $HOST, so this machine replaces one; rerun with --restore to reconnect it with the passphrase from KeePassXC" ;;
+      *) repository_error ;;
+    esac
+    store_passphrase "$passphrase"
+    unset passphrase
+  fi
+
+  step "Create the repository"
+  probe_stored_passphrase
+  case $repository_status in
+    0) skip ;;
+    "$REPOSITORY_MISSING") borgmatic repo-create ;;
+    "$PASSPHRASE_WRONG")
+      die "the keyring's passphrase doesn't open $HOST's repository; if this machine replaces one, rerun with --restore" ;;
+    *) repository_error ;;
+  esac
 fi
 
 unset stored
-
-step "Create the repository"
-if borgmatic repo-info >/dev/null 2>&1; then
-  skip
-else
-  borgmatic repo-create
-fi
 
 step "Check the key reaches borg 1.4 and nothing else"
 versions=$(borgmatic borg version) || die "couldn't ask the Storage Box which borg it runs"
@@ -228,11 +309,14 @@ fi
 echo "    The key can't open an SFTP session."
 
 step "Save the passphrase and the key export"
-repository_id=$(borgmatic repo-info --json | jq -r '.[0].repository.id')
+repository_id=$(borgmatic repo-list --json | jq -r '.[0].repository.id')
 if [ "$(cat "$SECRETS_SHOWN" 2>/dev/null)" = "$repository_id" ]; then
   skip
 else
-  cat <<EOF
+  if [ "$RESTORE" = 1 ]; then
+    echo "    The passphrase is the one from KeePassXC and the key the one on paper, so there is nothing new to save."
+  else
+    cat <<EOF
 
 Without both of these, nobody can read the backups once this machine is gone, including you.
 
@@ -243,9 +327,10 @@ Passphrase, for KeePassXC:
 Key export, for paper:
 
 EOF
-  borgmatic key export --paper
-  echo
-  read -rp "Press Enter once the passphrase is in KeePassXC and the key is printed. "
+    borgmatic key export --paper
+    echo
+    read -rp "Press Enter once the passphrase is in KeePassXC and the key is printed. "
+  fi
   mkdir -p "$(dirname "$SECRETS_SHOWN")"
   echo "$repository_id" >"$SECRETS_SHOWN"
 fi
@@ -279,6 +364,24 @@ fi
 step "Reset the main account's password to one nobody knows"
 # Whether anyone still knows the password can't be observed, and replacing an unknown password with another changes nothing, so this never skips.
 hcloud storage-box reset-password "$box" --password "$(random_password)" >/dev/null
+
+if [ "$RESTORE" = 1 ]; then
+  # Until the files are back, a backup would archive a near-empty home and prune a real archive to make room for it.
+  step "Keep the evening backups off"
+  if systemctl --user is-enabled --quiet backup.timer; then
+    systemctl --user disable --now backup.timer
+  else
+    skip
+  fi
+
+  cat <<EOF
+
+Done. This machine can read $HOST's backups, and won't back up until you turn the evening backups back on.
+Delete the API token in the Hetzner Console now; nothing on this machine needs it again.
+Then restore your files: see Restoring a whole machine in docs/backups.md.
+EOF
+  exit 0
+fi
 
 # Last, so a machine whose setup stopped partway never fails a backup every evening.
 step "Back up every evening"
