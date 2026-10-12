@@ -53,7 +53,7 @@ commands:
       run:
           - d="\${XDG_STATE_HOME:-$HOME/.local/state}/backup" && mkdir -p "$d" && pacman -Qqe > "$d/packages.txt"
 
-    # Every run that makes an archive leaves its outcome in the status file, which is all the bar and the staleness check read.
+    # Every run that makes an archive leaves its outcome in the status file.
     - before: configuration
       when:
           - create

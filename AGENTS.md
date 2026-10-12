@@ -315,7 +315,7 @@ The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg depende
 `retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
 
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
-The waybar module and the staleness check read it and nothing else, so neither ever reaches the Storage Box or the keyring.
+Anything that shows backup health reads this file and nothing else, so it never reaches the Storage Box or the keyring.
 `home/.config/borgmatic/status.sh` writes it from three hooks, replacing the whole file in one rename so a reader never sees half of one:
 
 | Field | Value |
@@ -325,16 +325,17 @@ The waybar module and the staleness check read it and nothing else, so neither e
 | `added_bytes` | what the newest archive holds that no other archive does, measured at the end of that run |
 | `archives` | how many archives the repository held at the end of that run |
 
-Only `state` is always there: the other three are missing until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured.
+Only `state` is always there: the other three are missing until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured, or while it is still being measured.
 A reader shows either as unknown rather than failing.
 
 The hooks are `configuration`-level and filtered to `when: create`, so only a run that makes an archive writes the file, and `borgmatic repo-list` by hand never does.
 borgmatic retries inside that level, so a run reads `running` across its retries and `failed` only once the last one has failed.
 borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
 
-No hook is handed the run's statistics, so the success hook asks for them with one more borgmatic call, `info --archive latest` and `repo-list`, while the repository is still reachable.
-That is the only borg call behind the status file, and it belongs to the run rather than to a reader.
-It runs with `--retries 0`, and a failure records the success without the two numbers rather than failing a backup that worked.
+The two numbers cost the run one more borgmatic call, made by the success hook after it has recorded the success.
+That call is the only part of the status path that reaches the repository or the keyring, and it belongs to the run rather than to a reader.
+Nothing cheaper has the size: `info` on the newest archive downloads and decrypts its whole file list, which on a full `$HOME` can add minutes to a run.
+A failure, or a kill while it runs, leaves the success recorded and the numbers null, rather than failing a backup that worked.
 `added_bytes` is borg's deduplicated size of the newest archive, read after the prune: a chunk it shared only with a pruned archive counts as its own, so the figure can slightly overstate what the run uploaded.
 
 **Testing against a throwaway repository.** Two environment variables override the config without editing it, and unlike a CLI flag they can be handed to a systemd user unit with `systemctl --user set-environment`:
