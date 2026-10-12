@@ -1,0 +1,6 @@
+[Unit]
+Description=Notify when the last successful backup is more than a week old
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/borgmatic/notify-if-stale.sh

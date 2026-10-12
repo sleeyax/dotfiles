@@ -341,6 +341,16 @@ if [ "$HAS_USER_UNITS" == "1" ] && ! systemctl --user daemon-reload; then
   echo "Notice: could not reload the systemd user manager; run 'systemctl --user daemon-reload' to pick up unit changes"
 fi
 
+# Unlike backup.timer, which setup-backups.sh enables, the staleness check is silent on a machine that was never set up, so every graphical machine gets it.
+if [ "$GRAPHICAL" == "1" ] && [ "$HAS_USER_UNITS" == "1" ] && ! systemctl --user is-enabled --quiet backup-stale.timer 2>/dev/null; then
+  if ! systemctl --user enable backup-stale.timer; then
+    echo "Notice: could not enable the backup staleness check; run 'systemctl --user enable backup-stale.timer'"
+  # Outside a session, as over SSH, there is no notification daemon to reach, and the next login starts the timer anyway.
+  elif systemctl --user is-active --quiet graphical-session.target; then
+    systemctl --user start backup-stale.timer
+  fi
+fi
+
 # A machine that has never set a wallpaper has never run matugen, so it has no palette at all.
 # That is fatal rather than ugly: hypr/colors.lua is require()d and hyprlock.conf sources colors.conf.
 # Mirrors run_matugen in ml4w-wallpaper, including how it picks the mode.

@@ -1,0 +1,12 @@
+[Unit]
+Description=Check for stale backups at login and daily
+PartOf=graphical-session.target
+
+[Timer]
+# Leaves the session time to start its notification daemon, which nothing D-Bus activates.
+OnActiveSec=1min
+# A realtime timer that came due during suspend fires on resume, so a machine asleep at noon is told when it wakes.
+OnCalendar=*-*-* 12:00:00
+
+[Install]
+WantedBy=graphical-session.target
