@@ -52,3 +52,24 @@ commands:
           - create
       run:
           - d="\${XDG_STATE_HOME:-$HOME/.local/state}/backup" && mkdir -p "$d" && pacman -Qqe > "$d/packages.txt"
+
+    # Every run that makes an archive leaves its outcome in the status file, which is all the bar and the staleness check read.
+    - before: configuration
+      when:
+          - create
+      run:
+          - ~/.config/borgmatic/status.sh start
+    - after: configuration
+      when:
+          - create
+      states:
+          - finish
+      run:
+          - ~/.config/borgmatic/status.sh succeed {configuration_filename}
+    - after: configuration
+      when:
+          - create
+      states:
+          - fail
+      run:
+          - ~/.config/borgmatic/status.sh fail
