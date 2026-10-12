@@ -487,7 +487,8 @@ window#waybar.empty #window {
  * VPN
  * ----------------------------------------------------- */
 
-#custom-vpn {
+#custom-vpn,
+#custom-backup {
     background-color: @background;
     font-size: 16px;
     color: @on_surface;
@@ -499,11 +500,13 @@ window#waybar.empty #window {
 }
 
 /* The `*` stack falls back to a Nerd Font whose icons are wider than their advance, so a lone icon spills into the right padding; the Propo variant's advance fits the icon. */
-#custom-vpn label {
+#custom-vpn label,
+#custom-backup label {
     font-family: "Fira Sans Semibold", "FiraCode Nerd Font Propo", sans-serif;
 }
 
-#custom-vpn:hover {
+#custom-vpn:hover,
+#custom-backup:hover {
     color: @on_surface;
     background-color: @primary_container;
     border-color: @primary;
@@ -512,6 +515,24 @@ window#waybar.empty #window {
 #custom-vpn.disconnected,
 #custom-vpn.pending {
     color: @outline;
+}
+
+/* -----------------------------------------------------
+ * Backup
+ * ----------------------------------------------------- */
+
+#custom-backup.never {
+    color: @outline;
+}
+
+/* The Material palette has no warning role, so amber is fixed. */
+#custom-backup.stale {
+    color: #ffb300;
+}
+
+#custom-backup.failed {
+    color: @error;
+    border-color: @error;
 }
 
 /* -----------------------------------------------------

@@ -112,6 +112,18 @@
     "on-scroll-up": "qs ipc call kef volumeUp",
     "on-scroll-down": "qs ipc call kef volumeDown"
   },
+  // Backup health, read from the status file the backup hooks write.
+  "custom/backup": {
+    "format": "{}",
+    "return-type": "json",
+    "escape": true,
+    "exec": "~/.config/waybar/scripts/backup.sh",
+    // Signal 5 follows each run; see **Backups** in AGENTS.md for what the interval is for.
+    "interval": 60,
+    "signal": 5,
+    "tooltip": true,
+    "on-click": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e journalctl --user -u backup.service -e"
+  },
   // Rofi Application Launcher
   "custom/appmenu": {
     // START APPS LABEL

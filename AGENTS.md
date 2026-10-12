@@ -150,6 +150,7 @@ A theme's `config` only picks which modules appear and in what order.
 | 2 | `custom/claude-usage` | `waybar/scripts/claude-usage.sh fetch` |
 | 3 | `custom/codex-usage` | `waybar/scripts/codex-usage.sh fetch` |
 | 4 | `custom/kef` | `quickshell/KefApp/KefService.qml`, on any change the pill shows |
+| 5 | `custom/backup` | `borgmatic/status.sh`, on every write to the backup status file |
 
 `SIGUSR2` is different in kind, and nothing fires it.
 Waybar answers it by tearing every bar down and rebuilding it, which frees the modules while their async DBus calls are still in flight; `power-profiles-daemon` then segfaults when its reply lands on the freed object, and `launch.sh` backgrounds waybar under no supervision, so the bar simply stays gone.
@@ -342,7 +343,7 @@ The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `
 systemd lists a symlinked unit file as `linked`, and `systemctl --user disable` deletes such a link along with the enable link; the next apply puts the unit file back, still disabled.
 
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
-Anything that shows backup health reads this file and nothing else, so it never reaches the Storage Box or the keyring.
+Anything that shows backup health reads this file and at most the timer's schedule, so it never reaches the Storage Box or the keyring.
 `home/.config/borgmatic/status.sh` writes it from three hooks, replacing the whole file in one rename so a reader never sees half of one:
 
 | Field | Value |
@@ -364,6 +365,13 @@ That call is the only part of the status path that reaches the repository or the
 Nothing cheaper has the size: `info` on the newest archive downloads and decrypts its whole file list, which on a full `$HOME` can add minutes to a run.
 A failure, or a kill while it runs, leaves the success recorded and the numbers null, rather than failing a backup that worked.
 `added_bytes` is borg's deduplicated size of the newest archive, read after the prune: a chunk it shared only with a pruned archive counts as its own, so the figure can slightly overstate what the run uploaded.
+
+**The waybar pill.** `custom/backup` runs `waybar/scripts/backup.sh`, a reader of the status file that also asks systemd for the timer's next elapse.
+`status.sh` sends signal 5 after every write, so the pill follows a run as it starts and ends; the 60-second interval only ages the tooltip and lets `ok` turn `stale`.
+`running` and `failed` describe the newest run, so they win over the age of the last success.
+No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.
+A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
+The guide's **Reading the waybar icon** section is where a change to the states gets explained.
 
 **Testing against a throwaway repository.** Two environment variables override the config without editing it, and unlike a CLI flag they can be handed to a systemd user unit with `systemctl --user set-environment`:
 
@@ -387,7 +395,8 @@ Never store a test passphrase under the real `secret-tool` attributes, where it 
 Pass `--retries 0` to anything expected to fail, or it sits out the full half hour of backoff.
 
 To test a run through `backup.service` itself — the inhibitor, `OnFailure=`, what the journal shows — put a runtime drop-in in `$XDG_RUNTIME_DIR/systemd/user/backup.service.d/` that empties `ExecCondition=`, sets the variables above with `Environment=`, and repeats `ExecStart=` with `--retries 0`, then `daemon-reload`.
-A `BACKUP_PASSCOMMAND` that sleeps before exiting 1 holds the inhibitor long enough to try a suspend against it, and then fails the run.
+A `BACKUP_PASSCOMMAND` that sleeps holds a run open long enough to watch it: before exiting 1, to try a suspend against the inhibitor and then fail the run; before printing the passphrase, to watch the waybar pill read `running`.
+borgmatic splits the passcommand into words without a shell, so the sleep goes in a script of its own.
 Delete the drop-in and reload again afterwards.
 
 `borgmatic config validate` never interpolates environment variables, so it warns that `${BACKUP_REPOSITORY:-ssh://…}` is a deprecated scp-style path and shows it mangled.
