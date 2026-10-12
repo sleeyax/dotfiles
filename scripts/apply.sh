@@ -324,8 +324,22 @@ mkdir -p "$STOW_DIR"
 rsync -a --delete "$STOW_NEW/" "$STOW_DIR/"
 rm -rf "$STOW_NEW"
 
+# systemctl --user enable writes its links beside the unit files, so a folded directory would put them in the stow tree for the rsync above to wipe.
+# Stow never folds a directory that already exists.
+SYSTEMD_USER_DIR=.config/systemd/user
+HAS_USER_UNITS=0
+if [ -d "$STOW_DIR/dotfiles/$SYSTEMD_USER_DIR" ]; then
+  HAS_USER_UNITS=1
+  mkdir -p "$HOME/$SYSTEMD_USER_DIR"
+fi
+
 # Stow the combined dotfiles
 cd "$STOW_DIR" && stow -t "$HOME" --restow dotfiles
+
+# The user manager keeps the unit files it last loaded until told to reread them.
+if [ "$HAS_USER_UNITS" == "1" ] && ! systemctl --user daemon-reload; then
+  echo "Notice: could not reload the systemd user manager; run 'systemctl --user daemon-reload' to pick up unit changes"
+fi
 
 # A machine that has never set a wallpaper has never run matugen, so it has no palette at all.
 # That is fatal rather than ugly: hypr/colors.lua is require()d and hyprlock.conf sources colors.conf.

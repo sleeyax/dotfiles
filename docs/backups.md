@@ -76,6 +76,44 @@ borgmatic checks the repository after a run, but not every time:
 
 A full check, which reads back every byte, would download the whole repository, so it is never run on a schedule.
 
+### When backups run
+
+A backup starts every evening at 19:00, while you're at dinner, and at no other time.
+A *timer* starts it, so you don't have to remember to.
+
+- **The machine was off at 19:00:** that day is skipped. It isn't made up for when you turn the machine on, because a backup starting just as you sit down to work is what the schedule is there to avoid.
+- **The machine was asleep at 19:00:** the timer goes off as soon as you wake it, but the backup only starts if it is still before 19:10. Later than that, the day is skipped too.
+- **panda is on battery at 19:00:** the day is skipped, so a backup never drains the battery.
+- **A backup that started in time** runs until it is done, however late that is.
+
+While a backup runs, the machine doesn't go to sleep by itself: when panda's idle suspend comes due after 30 minutes, it is refused, and panda then stays awake until you next touch it and leave it idle for another 30 minutes.
+Closing panda's lid still puts it to sleep, because closing the lid means you are leaving.
+Suspending falcon by hand is refused too; in a terminal, `systemctl suspend` says the backup is in the way, and `systemctl suspend -i` suspends anyway, after asking for your password.
+A backup cut short by sleep or a shutdown isn't wasted: the next one reuses everything it had already uploaded.
+
+When a backup fails, after the retries described below, a desktop notification tells you so.
+
+To see when the next backup is due, and when the last one started:
+
+```bash
+systemctl --user list-timers backup.timer
+```
+
+To read what the scheduled backups printed, including why one failed:
+
+```bash
+journalctl --user -u backup.service
+```
+
+To stop the evening backups, and to start them again:
+
+```bash
+systemctl --user disable --now backup.timer
+./scripts/apply.sh && systemctl --user enable --now backup.timer   # from the dotfiles folder
+```
+
+Turning the timer off also removes its file from `~/.config/systemd/user`, which is why turning it back on goes through `./scripts/apply.sh` first.
+
 ### Surviving a bad connection
 
 A backup that fails, for instance because the router restarted, is retried three times.
@@ -175,6 +213,7 @@ Here is what it does, in order:
 7. **Creates the repository**, encrypted with that passphrase.
 8. **Checks the restriction works**: the Storage Box must answer with borg 1.4 for this key, and must refuse to open a file browsing (SFTP) session with it.
 9. **Shows you the passphrase and the key export.** See the next step.
+10. **Turns on the evening backups** (see [When backups run](#when-backups-run)). This is the very last step, so a machine whose setup stopped halfway doesn't fail a backup every evening.
 
 ### 4. Store the passphrase and the key
 
@@ -207,7 +246,8 @@ unset HCLOUD_TOKEN
 
 ### 6. Make the first backup
 
-Run a first backup by hand, to see it work end to end:
+The first backup happens on its own at 19:00 that evening.
+To see it work end to end straight away, run it by hand instead:
 
 ```bash
 borgmatic create --progress --stats
@@ -217,6 +257,7 @@ borgmatic repo-list
 The first one uploads everything, so expect it to take hours: about 12 GB an hour on a 28 Mbps upload.
 For the first few minutes it prints nothing, while borgmatic checks which files the backup will include; the progress line appears once the upload starts.
 It can be interrupted: the next run reuses whatever was already uploaded.
+If it is still running at 19:00, that evening's backup can't get at the repository until it finishes; should it still be running after the last retry, the evening's backup fails with a notification, which is harmless.
 
 ## Reading the waybar icon
 
@@ -257,3 +298,7 @@ A snapshot holds a repository, not your files directly: to use one, you restore 
 
 **Source**
 : What gets backed up: your home directory, minus what the patterns, `CACHEDIR.TAG` and `.nobackup` leave out.
+
+**Timer**
+: systemd's way of starting something on a schedule, like cron.
+`backup.timer` starts `backup.service`, which runs borgmatic, every evening at 19:00.

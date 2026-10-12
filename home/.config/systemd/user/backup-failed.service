@@ -1,0 +1,6 @@
+[Unit]
+Description=Notify that a backup failed
+
+[Service]
+Type=oneshot
+ExecStart=notify-send --urgency=critical --app-name=Backup --icon=dialog-error "Backup failed" "journalctl --user -u backup.service shows why."

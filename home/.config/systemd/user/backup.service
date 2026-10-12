@@ -1,0 +1,14 @@
+# Backs the home directory up to the Storage Box; backup.timer starts it every evening.
+# The guide is docs/backups.md; the rationale is under Backups in AGENTS.md.
+
+[Unit]
+Description=Back up the home directory to the Storage Box
+ConditionACPower=true
+OnFailure=backup-failed.service
+
+[Service]
+Type=oneshot
+ExecCondition=%h/.config/borgmatic/on-schedule.sh
+# Block mode refuses an unprivileged suspend for as long as the run lasts.
+# logind ignores inhibitors for the lid switch by default, so closing the lid still suspends.
+ExecStart=systemd-inhibit --what=sleep --mode=block --who=borgmatic "--why=Backing up to the Storage Box" borgmatic --verbosity -2 --syslog-verbosity 1

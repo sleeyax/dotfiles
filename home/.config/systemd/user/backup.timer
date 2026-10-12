@@ -1,0 +1,9 @@
+[Unit]
+Description=Back up the home directory every evening at 19:00
+
+[Timer]
+# Not Persistent: a day the machine was off at 19:00 is skipped rather than caught up at boot.
+OnCalendar=*-*-* 19:00:00
+
+[Install]
+WantedBy=timers.target

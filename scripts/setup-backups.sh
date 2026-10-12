@@ -76,7 +76,9 @@ fi
 for cmd in borgmatic secret-tool ssh ssh-keygen sftp jq openssl; do
   command -v "$cmd" &>/dev/null || die "$cmd not found; run ./scripts/apply.sh first"
 done
-[ -f "$HOME/.config/borgmatic/config.yaml" ] || die "no borgmatic config; run ./scripts/apply.sh first"
+for file in borgmatic/config.yaml systemd/user/backup.timer; do
+  [ -f "$HOME/.config/$file" ] || die "no ~/.config/$file; run ./scripts/apply.sh first"
+done
 
 hcloud() { command hcloud --no-experimental-warnings "$@"; }
 
@@ -248,8 +250,17 @@ EOF
   echo "$repository_id" >"$SECRETS_SHOWN"
 fi
 
+# Last, so a machine whose setup stopped partway never fails a backup every evening.
+step "Back up every evening"
+if systemctl --user is-enabled --quiet backup.timer; then
+  skip
+else
+  systemctl --user daemon-reload
+  systemctl --user enable --now backup.timer
+fi
+
 cat <<'EOF'
 
-Done. This machine can back up to the Storage Box.
+Done. This machine backs up to the Storage Box every evening at 19:00.
 Delete the API token in the Hetzner Console now; nothing on this machine needs it again.
 EOF
