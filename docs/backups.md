@@ -9,6 +9,7 @@ Words in *italics* the first time they appear are explained in the [glossary](#g
 - [One-time setup](#one-time-setup)
 - [Reading the waybar icon](#reading-the-waybar-icon)
 - [Restoring](#restoring)
+- [Using a snapshot](#using-a-snapshot)
 - [When backups fail or go stale](#when-backups-fail-or-go-stale)
 - [Glossary](#glossary)
 
@@ -119,6 +120,31 @@ Turning the timer off also removes its file from `~/.config/systemd/user`, which
 A backup that fails, for instance because the router restarted, is retried three times.
 The waits grow from 5 to 10 to 15 minutes, so the last try starts about half an hour after the first failure.
 
+### Snapshots, in case a machine is compromised
+
+Each machine's key can delete that machine's archives: it has to, because every run prunes the old ones.
+So malware on a machine could wipe that machine's backups through borg, and nothing on the machine could stop it.
+
+*Snapshots* are what it can't reach.
+Every Sunday at 00:00 UTC (01:00 or 02:00 in Brussels), Hetzner takes a read-only snapshot of the whole Storage Box, and keeps the last 10: about ten weeks, enough time to notice damage that crept in slowly.
+Snapshots are made and deleted only through Hetzner's API, which needs the token you delete straight after setup, so nothing on either machine can create, change or remove one.
+
+That is six or seven hours after Saturday's 19:00 backup started, so a snapshot normally catches both repositories at rest.
+Should a long backup still be running then, the snapshot is no worse for it: borg's repository survives being frozen mid-write the way it survives a power cut.
+
+A snapshot covers the whole box, including the main account's own files.
+It takes up space only for data deleted after it was taken, so a week in which little was pruned costs little of the 1 TB.
+[Using a snapshot](#using-a-snapshot) below explains how to look inside one and how to roll the box back to it.
+
+### The main account
+
+The Storage Box's main account can reach every folder on the box, both machines' repositories included.
+So the setup turns off its Samba and WebDAV access and changes its password to a random one that it throws away.
+After that, no file on either machine is a way into the whole box.
+
+To use the main account, reset its password in the Hetzner Console when you need it.
+Running the setup script again afterwards throws the password away again.
+
 ## Running a backup by hand
 
 Run every step of a backup — create an archive, prune, compact, and any check that is due:
@@ -213,7 +239,9 @@ Here is what it does, in order:
 7. **Creates the repository**, encrypted with that passphrase.
 8. **Checks the restriction works**: the Storage Box must answer with borg 1.4 for this key, and must refuse to open a file browsing (SFTP) session with it.
 9. **Shows you the passphrase and the key export.** See the next step.
-10. **Turns on the evening backups** (see [When backups run](#when-backups-run)). This is the very last step, so a machine whose setup stopped halfway doesn't fail a backup every evening.
+10. **Sets the snapshot plan**: every Sunday at 00:00 UTC, keeping 10 (see [Snapshots, in case a machine is compromised](#snapshots-in-case-a-machine-is-compromised)). The plan is the same for the whole box, so on the second machine this step finds it already set.
+11. **Locks the main account down** (see [The main account](#the-main-account)): turns off its Samba and WebDAV access, and resets its password to a random one that it throws away. There is no way to check whether anyone still knows the password, so the reset happens on every run.
+12. **Turns on the evening backups** (see [When backups run](#when-backups-run)). This is the very last step, so a machine whose setup stopped halfway doesn't fail a backup every evening.
 
 ### 4. Store the passphrase and the key
 
@@ -267,6 +295,90 @@ Not written yet.
 
 Not written yet.
 
+## Using a snapshot
+
+What snapshots are for is explained under [Snapshots, in case a machine is compromised](#snapshots-in-case-a-machine-is-compromised).
+Everything here needs an API token again, created as in [step 2 of the setup](#2-create-an-api-token) and deleted again when you are done.
+A **Read** token is enough to list snapshots; changing settings or rolling back needs **Read & Write**.
+
+```bash
+read -rs HCLOUD_TOKEN && export HCLOUD_TOKEN   # paste the token, press Enter
+hcloud storage-box list                        # the box's name, username and server
+hcloud storage-box snapshot list <box>         # every snapshot, with its name and age
+```
+
+The Hetzner Console shows the same list, in the Storage Box's **Snapshots** tab.
+
+### Looking inside a snapshot
+
+Only the main account can see snapshots, in a hidden `.zfs/snapshot` folder at the top of the box, and only once that folder is switched on.
+Switch it on, give the main account a password you choose, and connect with SFTP, using the username and server from `hcloud storage-box list`:
+
+```bash
+hcloud storage-box update-access-settings <box> --enable-zfs=true --enable-ssh=true
+read -rs password && hcloud storage-box reset-password <box> --password "$password"
+sftp -P 23 <username>@<server>
+```
+
+Inside SFTP, each snapshot is a folder holding the whole box as it was:
+
+```
+sftp> ls .zfs/snapshot
+sftp> ls .zfs/snapshot/<snapshot>/backups/falcon/borg
+sftp> get .zfs/snapshot/<snapshot>/<some file>
+```
+
+`get` copies a file from the snapshot to your machine, which is how to get back one of the main account's files from before it was deleted.
+A machine's `backups/<machine>/borg` folder in there is a whole repository, though, not your files: it shows borg's data files, and the only way to restore from it is to roll the box back (below).
+
+When you are done, lock the main account again by running `./scripts/setup-backups.sh` once more, which throws the password away.
+The snapshot folder can stay switched on: it is read-only, and only the main account sees it.
+
+### Rolling the box back
+
+A rollback replaces **everything** on the box with the snapshot: both machines' repositories and the main account's files.
+Whatever either machine backed up since the snapshot was taken is gone, and so, assume, are the snapshots newer than the one you roll back to.
+It is the last resort, for when a repository itself is gone or broken, for instance because malware deleted its archives.
+To get back a file you lost, restore it from an archive instead (see [Restoring](#restoring)).
+
+1. Do it well away from 19:00, and check on both machines that no backup is running: `systemctl --user status backup.service` must say `inactive`.
+2. Pick the snapshot from the list above and roll back to it:
+   ```bash
+   hcloud storage-box rollback-snapshot <box> --snapshot <snapshot>
+   ```
+3. Delete the token, as in [step 5 of the setup](#5-delete-the-api-token).
+
+Afterwards, borg on **each** machine refuses its own repository:
+
+```
+Cache, or information obtained from the security directory is newer than repository - this is either an attack or unsafe (multiple repos with same ID)
+```
+
+That is borg noticing that its repository went back in time, which is exactly what you just did.
+Tell borg it is expected by deleting what it remembers about the newer repository, on each machine.
+borg keeps that in a folder per repository, named after the repository's ID; find the one for the Storage Box:
+
+```bash
+grep -lx 'ssh://storagebox/./borg' ~/.config/borg/security/*/location | xargs stat -c '%y  %n' | sort
+```
+
+Each line is a time and a path, `~/.config/borg/security/<id>/location`, and there is normally just one.
+There are more if the repository was ever created again from scratch; the current one is then the last line, the one borg used most recently.
+Put that line's `<id>` in the commands below:
+
+```bash
+id=<id>
+rm ~/.config/borg/security/$id/manifest-timestamp
+rm -r ~/.cache/borg/$id
+borgmatic repo-list   # lists the archives the snapshot held
+```
+
+Leave the rest of that security folder alone: its `nonce` file is what stops borg from ever reusing an encryption counter the newer repository already used.
+Only do this after a rollback you did yourself.
+If the message appears without one, someone else replaced your repository with an older copy: delete nothing, and find out how.
+
+The next evening's backup carries on from the rolled-back repository; the first one after the rollback takes a little longer, while borg rebuilds the cache you deleted.
+
 ## When backups fail or go stale
 
 Not written yet.
@@ -294,7 +406,7 @@ A prune only forgets archives; the space they used is freed by the compact that 
 **Snapshot**
 : A frozen, read-only copy of the whole Storage Box, taken by Hetzner rather than by borg.
 No machine can create or delete one, so even malware that wipes a repository can't reach the snapshots of it.
-A snapshot holds a repository, not your files directly: to use one, you restore the repository from it and then restore files from the repository.
+A snapshot holds a repository, not your files directly: to use one, you roll the box back to it and then restore files from the repository (see [Using a snapshot](#using-a-snapshot)).
 
 **Source**
 : What gets backed up: your home directory, minus what the patterns, `CACHEDIR.TAG` and `.nobackup` leave out.

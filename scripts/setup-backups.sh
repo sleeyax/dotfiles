@@ -1,7 +1,7 @@
 #!/bin/bash
 # Sets this machine up to back up to its own borg repository on the Hetzner Storage Box.
 # The guide is docs/backups.md; the rationale is under Backups in AGENTS.md.
-# Every step must skip itself when it is already done, so a rerun after a failure picks up where it stopped.
+# Every step must skip itself when it is already done, or be harmless to repeat, so a rerun after a failure picks up where it stopped.
 set -euo pipefail
 umask 077
 
@@ -249,6 +249,36 @@ EOF
   mkdir -p "$(dirname "$SECRETS_SHOWN")"
   echo "$repository_id" >"$SECRETS_SHOWN"
 fi
+
+box_json() { hcloud storage-box describe "$box" -o json; }
+
+step "Snapshot the whole box every Sunday at 00:00 UTC, keeping 10"
+# hcloud prints Sunday as 0 where the API stores 7, so either counts.
+snapshot_plan_set() {
+  box_json | jq -e '.snapshot_plan // {} |
+    .max_snapshots == 10 and .hour == 0 and .minute == 0 and .day_of_month == null and
+    (.day_of_week | . != null and . % 7 == 0)' >/dev/null
+}
+if snapshot_plan_set; then
+  skip
+else
+  hcloud storage-box enable-snapshot-plan "$box" \
+    --day-of-week Sunday --hour 0 --minute 0 --max-snapshots 10 >/dev/null
+  snapshot_plan_set || die "the snapshot plan was set, but hcloud describes a different one"
+fi
+
+step "Turn off Samba and WebDAV on the main account"
+main_shares_off() { box_json | jq -e '.access_settings | (.samba_enabled or .webdav_enabled) | not' >/dev/null; }
+if main_shares_off; then
+  skip
+else
+  hcloud storage-box update-access-settings "$box" --enable-samba=false --enable-webdav=false >/dev/null
+  main_shares_off || die "the access settings were updated, but the main account still has Samba or WebDAV on"
+fi
+
+step "Reset the main account's password to one nobody knows"
+# Whether anyone still knows the password can't be observed, and replacing an unknown password with another changes nothing, so this never skips.
+hcloud storage-box reset-password "$box" --password "$(random_password)" >/dev/null
 
 # Last, so a machine whose setup stopped partway never fails a backup every evening.
 step "Back up every evening"
