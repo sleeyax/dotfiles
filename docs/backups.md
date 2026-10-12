@@ -110,6 +110,23 @@ To see what a backup *would* include, without making an archive:
 borgmatic create --dry-run --list
 ```
 
+Every backup that makes an archive, whether you started it or it ran on its own, records how it went in `~/.local/state/backup/status.json`:
+
+```json
+{
+  "state": "succeeded",
+  "last_success": 1791835000,
+  "added_bytes": 52428800,
+  "archives": 12
+}
+```
+
+`state` is `running` while a backup is going, then `succeeded` or `failed`.
+The other three describe the last backup that succeeded: when it ended (in seconds since 1970; `date -d @1791835000` turns that into a date), how much it added, and how many archives the repository then held.
+A failed backup leaves them as they were, so the file always says when you last had a good one.
+Right after a success, `added_bytes` and `archives` read `null` for a minute or so while they are measured, and stay `null` if measuring them failed.
+Anything that shows how your backups are doing reads this file, so it never has to contact the Storage Box.
+
 ## One-time setup
 
 Each machine is set up once, by running [`scripts/setup-backups.sh`](../scripts/setup-backups.sh) from the dotfiles folder.
