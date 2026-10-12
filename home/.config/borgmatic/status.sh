@@ -16,6 +16,8 @@ update() {
     tmp=$(mktemp "$STATUS.XXXXXX")
     jq "$@" <<<"$previous" >"$tmp"
     mv "$tmp" "$STATUS"
+    # A bar that isn't running, as on a run from a TTY, is no reason to fail the hook and with it the backup.
+    pkill -x -RTMIN+5 waybar || true
 }
 
 # The run's own hooks are told nothing about what it did, so the numbers have to be asked for once more.

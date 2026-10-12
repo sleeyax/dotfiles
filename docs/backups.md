@@ -289,7 +289,31 @@ If it is still running at 19:00, that evening's backup can't get at the reposito
 
 ## Reading the waybar icon
 
-Not written yet.
+A cloud icon in the bar, just right of the updates counter, shows how your backups are doing.
+It changes the moment a backup starts or ends, whether the timer started it or you did.
+It reads the status file described in [Running a backup by hand](#running-a-backup-by-hand), and asks the timer when the next backup is due, so looking at it never contacts the Storage Box.
+
+| Icon | Means | What to do |
+| ---- | ----- | ---------- |
+| Plain cloud with a tick | The last backup succeeded, less than 3 days ago. | Nothing. |
+| Cloud with an upward arrow | A backup is running now. | Nothing. A scheduled one keeps the machine from going to sleep by itself until it is done. |
+| Amber cloud with an exclamation mark | Stale: the last backup that succeeded was 3 or more days ago. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
+| Red cloud with an exclamation mark, red border | The last backup failed, after all its retries. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
+| Grey cloud, crossed out | Never backed up: no backup has succeeded on this machine yet. | If the tooltip says no backup is scheduled, set the machine up (see [One-time setup](#one-time-setup)). Otherwise the first one runs at 19:00. |
+
+Hover over the icon for the details:
+
+- **Last backup**: when the last successful backup ended, and how long ago that was.
+- **Added**: how much new data that backup stored, after deduplication. It reads `unknown` for a minute or so after a backup ends, while it is being measured.
+- **Archives**: how many archives the repository holds.
+- **Next backup**: when the timer will next start one. **No backup is scheduled** means the timer is off.
+
+Clicking the icon opens the backup log, the same as `journalctl --user -u backup.service`, at its end, where the latest backup is.
+Press `q` to close it.
+A backup you run by hand prints to your terminal instead, so it isn't in that log.
+
+The icon can be stuck on the upward arrow if a backup was cut off by a power cut, or killed without a chance to clean up.
+If `systemctl --user status backup.service` says `inactive` and no `borgmatic` is running, that is what happened; the next backup puts the icon right.
 
 ## Restoring
 
@@ -381,7 +405,15 @@ The next evening's backup carries on from the rolled-back repository; the first 
 
 ## When backups fail or go stale
 
-Not written yet.
+When the [waybar icon](#reading-the-waybar-icon) is amber, a backup hasn't run in a while, or each one has been skipped:
+
+1. Hover over the icon. If it says **No backup is scheduled**, turn the evening backups back on (see [When backups run](#when-backups-run)).
+2. Otherwise the machine was probably off, asleep or on battery at 19:00 for a few evenings, and each of those days was skipped. Run a backup by hand: `borgmatic --verbosity 1 --progress --stats`.
+
+When the icon is red, the last backup failed.
+If it was a scheduled one, click the icon and read the last lines of the log; if you ran it by hand, its error is in the terminal you ran it in.
+Most failures are the network: the Storage Box couldn't be reached through all the retries.
+Run a backup by hand once you're back online; when it succeeds, the icon turns back to a tick.
 
 ## Glossary
 
