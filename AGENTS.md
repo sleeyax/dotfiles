@@ -314,6 +314,25 @@ YAML reads a bare `~` as null, which is why the source is quoted.
 The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg dependency.
 `retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
 
+**Scheduling.** A backup runs at 19:00, during dinner, and never while the machine could be in use; every choice here serves that.
+`backup.timer` starts `backup.service` daily at 19:00 local time and is not `Persistent`, so a day the machine was off is skipped rather than caught up at boot.
+A timer whose elapse passed during suspend fires on resume all the same, so the service's `ExecCondition=` runs `borgmatic/on-schedule.sh`, which lets a run start only until 19:10.
+It judges the `HH:MM` it is given, the current time when given none, and that argument is how it is tested: `on-schedule.sh 19:09` exits 0, `on-schedule.sh 19:11` exits 1.
+`ExecCondition=` reads exit 1 as a skip and 255 as a failure, and a condition is checked once, at start, so a run that started in time is never stopped by it.
+
+`ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery.
+A skip by either condition leaves the unit inactive rather than failed, so `OnFailure=backup-failed.service`, a `notify-send`, fires only for a run that started and failed.
+
+borgmatic runs under `systemd-inhibit --what=sleep --mode=block`.
+Block mode refuses an unprivileged suspend outright: hypridle's `systemctl suspend` on panda gets "Operation denied due to active block inhibitor", and a manual one on falcon is refused until forced with `systemctl suspend -i` and an admin password.
+hypridle tries once per idle period, so panda stays awake after a backup ends until it next goes idle.
+The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defaults to yes and nothing in Hyprland takes the switch.
+Shutdown is deliberately not inhibited; the run reads `failed` and the next one reuses what was uploaded.
+
+The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling the timer writes `timers.target.wants/` beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
+`apply.sh` also runs `systemctl --user daemon-reload`, and never enables the timer: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every evening.
+systemd lists a symlinked unit file as `linked`, and `systemctl --user disable` deletes such a link along with the enable link; the next apply puts the unit file back, still disabled.
+
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
 Anything that shows backup health reads this file and nothing else, so it never reaches the Storage Box or the keyring.
 `home/.config/borgmatic/status.sh` writes it from three hooks, replacing the whole file in one rename so a reader never sees half of one:
@@ -358,6 +377,10 @@ Put the test repository in a `.nobackup` folder, or the run backs up its own rep
 `--source-directories '["/some/dir"]'` swaps `~` for a small tree, for a test that needs a run to finish in seconds.
 Never store a test passphrase under the real `secret-tool` attributes, where it would pass for the machine's real one.
 Pass `--retries 0` to anything expected to fail, or it sits out the full half hour of backoff.
+
+To test a run through `backup.service` itself — the inhibitor, `OnFailure=`, what the journal shows — put a runtime drop-in in `$XDG_RUNTIME_DIR/systemd/user/backup.service.d/` that empties `ExecCondition=`, sets the variables above with `Environment=`, and repeats `ExecStart=` with `--retries 0`, then `daemon-reload`.
+A `BACKUP_PASSCOMMAND` that sleeps before exiting 1 holds the inhibitor long enough to try a suspend against it, and then fails the run.
+Delete the drop-in and reload again afterwards.
 
 `borgmatic config validate` never interpolates environment variables, so it warns that `${BACKUP_REPOSITORY:-ssh://…}` is a deprecated scp-style path and shows it mangled.
 A real run resolves the variable first and says nothing; the warning is harmless.
