@@ -283,15 +283,23 @@ aardwolf is out of scope: its `STOW_PATHS` never picks up `.config/borgmatic`, a
 Both workstations have SHA hardware acceleration, so the blake2 variant buys nothing.
 The passphrase is read with `secret-tool lookup service borgmatic repository storagebox`; that attribute pair is the contract with whatever stores it, so changing it strands every machine already set up.
 
-**Setting a machine up.** `scripts/setup-backups.sh` creates the machine's sub-account, key, `storagebox` alias, keyring passphrase and repository, and is run by hand with `HCLOUD_TOKEN` in the environment.
+**Setting a machine up.** `scripts/setup-backups.sh` creates the machine's sub-account, key, `storagebox` alias, keyring passphrase and repository, sets the box's snapshot plan and locks its main account down, and is run by hand with `HCLOUD_TOKEN` in the environment.
 hcloud stays out of the package lists because nothing after setup needs it, and the token never goes through `hcloud context`, which would save it to disk.
-Each step decides it is done by observing the result rather than keeping a record: the sub-account by name, the key by whether ssh gets past authentication (any exit but 255), the passphrase by a keyring search, the repository by `repo-info`.
-Showing the passphrase and key export is the one step with no observable result, so it alone leaves a marker in `$XDG_STATE_HOME/backup/`, holding the repository ID so a recreated repository is shown again.
+Each step decides it is done by observing the result rather than keeping a record: the sub-account by name, the key by whether ssh gets past authentication (any exit but 255), the passphrase by a keyring search, the repository by `repo-info`, the snapshot plan and the main account's Samba and WebDAV by `storage-box describe`.
+Showing the passphrase and key export is the one step with no observable result that is unsafe to repeat, so it alone leaves a marker in `$XDG_STATE_HOME/backup/`, holding the repository ID so a recreated repository is shown again.
+Resetting the main account's password has no observable result either, but replacing one discarded password with another changes nothing, so it runs on every run; that also makes a rerun the way to lock the account again after its password was reset in the Console.
 
 The script uploads `authorized_keys` itself rather than using Hetzner's `install-ssh-key`, which also adds an RFC4716 copy that port 22 honours without the forced command.
 `--restrict-to-repository ./borg` is relative because where the sub-account's chroot puts its home is Hetzner's business; borg resolves both it and the client's `/./borg` against the login directory.
 That `borg-1.4 serve` exists as a forced command on Hetzner is inferred, not documented, which is why the script checks the server version through the restricted key on every run.
 Locally, a user-level `sshd` with `cd <dir> &&` in front of the forced command stands in for the chroot and exercises the restricted line with real borg; the password upload can only be tried against the real box.
+
+**Snapshots and the main account.** Every key can delete its own archives, since each run prunes, so the box's automatic snapshots are the one copy a compromised machine can't touch: only the API makes or deletes them, and the token is deleted after setup.
+The plan is box-wide — weekly, Sunday 00:00 UTC, keeping 10 — so both machines set the same one and the second finds it done.
+The night from Saturday to Sunday is chosen to fall far from the 19:00 runs, so a snapshot normally holds repositories at rest.
+`hcloud -o json` prints Sunday as `day_of_week: 0` while the API stores `7` (its output conversion casts `time.Weekday` without the mapping its input side has), so the check accepts either rather than pinning a CLI bug.
+The main account can reach both repositories, so the script turns its Samba and WebDAV off and discards its password, and nothing on a workstation can wipe the whole box; `update-access-settings` sends only the flags given, so its SSH, ZFS-folder and external-reachability settings are left as they are.
+Snapshots are only visible to the main account, under `.zfs/snapshot`, which is why the guide's browsing steps re-key it temporarily and end with a rerun of the script.
 
 **What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
 `home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.
