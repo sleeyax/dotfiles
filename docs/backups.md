@@ -198,6 +198,9 @@ Each machine is set up once, by running [`scripts/setup-backups.sh`](../scripts/
 It prepares both ends: an account for this machine on the Storage Box, and the key, passphrase and repository on the machine.
 Every step first checks whether it is already done and skips itself if so, so if the script stops halfway, fix what it complained about and run it again.
 
+This is for a machine whose backups start from nothing.
+A machine that replaces one whose disk died, and should take over its backups, is set up in restore mode instead (see [Restoring a whole machine](#restoring-a-whole-machine)); run without it, the script stops when it finds the existing repository, and leaves it untouched.
+
 ### 1. Before you start
 
 The machine needs the dotfiles applied (`./scripts/apply.sh`), which installs borg and borgmatic and puts the config in place.
@@ -318,7 +321,143 @@ If `systemctl --user status backup.service` says `inactive` and no `borgmatic` i
 
 ## Restoring
 
-Not written yet.
+Restoring only ever reads from the repository: nothing below changes or deletes an archive.
+What it does change is files on your machine, so each walkthrough says where the files land before you run it.
+
+### Finding the archive you need
+
+Each archive is named after the machine and the moment its backup started, such as `falcon-2026-10-12T19:00:04.512889`.
+To list them, oldest first:
+
+```bash
+borgmatic repo-list
+```
+
+Wherever a command below asks for an archive, `latest` stands for the newest one.
+
+Inside an archive, every path starts with `home/` and your user name, and has no leading `/`: your `~/Documents/cv.odt` is `home/quinten/Documents/cv.odt`.
+The commands below write `$USER`, which the shell fills in with your user name.
+
+To find which archives hold a file, give part of its name or path:
+
+```bash
+borgmatic list --find cv.odt
+```
+
+That reads through every archive's list of files, so it takes a while.
+
+### Restoring a single file
+
+The easiest way is to *mount* an archive: it then shows up as a read-only folder you can browse in Nautilus, and you copy out what you need.
+
+1. Mount the newest archive on an empty folder:
+   ```bash
+   mkdir -p ~/restore
+   borgmatic mount --archive latest --mount-point ~/restore
+   ```
+2. Open `~/restore` in Nautilus and go into `home`, then your user name. The first folder you open can take a minute while borg fetches the archive's list of files.
+3. Copy the file to where it belongs, like any other copy. In a terminal, `cp -a` keeps the file's original dates and permissions too:
+   ```bash
+   cp -a ~/restore/home/$USER/Documents/cv.odt ~/Documents/
+   ```
+4. Unmount it when you're done:
+   ```bash
+   borgmatic umount --mount-point ~/restore
+   ```
+
+While an archive is mounted, the repository is locked, and a backup that starts meanwhile can't get at it: it fails after its retries, with a notification.
+So unmount before 19:00, and before running a backup by hand.
+
+To find an older version of a file, leave `--archive latest` out: `~/restore` then holds a folder for every archive, named as in `borgmatic repo-list`, and you can open the same file in each.
+
+### Restoring a whole folder
+
+A folder can come back the same way as a single file: mount the archive and copy the folder out in Nautilus.
+That suits a folder you want to look through first, or of which you only need part.
+
+For a big folder, *extracting* is faster: borg writes the files out itself, instead of Nautilus copying them across one by one.
+To extract `~/Documents/thesis` from the newest archive into `~/restore`, beside the current folder rather than over it:
+
+```bash
+borgmatic extract --archive latest --path home/$USER/Documents/thesis --destination ~/restore --progress
+```
+
+The folder lands at `~/restore/home/<your user name>/Documents/thesis`, with its original dates and permissions.
+Compare it with the current one, move it into place, and delete `~/restore` afterwards.
+
+`--path` has to match the path in the archive exactly: capitals count, and there is no `/` at the end.
+`borgmatic list --archive latest --path home/$USER/Documents` shows what the archive holds under a folder.
+
+To extract straight back into place instead:
+
+```bash
+borgmatic extract --archive latest --path home/$USER/Documents/thesis --destination ~ --strip-components 2 --progress
+```
+
+`--strip-components 2` drops the `home/<your user name>` from the front of every path, so the folder lands back at `~/Documents/thesis`.
+A file that is in both the folder and the archive is replaced by the archive's copy without asking; a file only in the folder is left alone.
+
+### Restoring a whole machine
+
+When a machine's disk dies, or the machine is lost or stolen, a new machine takes over its backups and gets every file back.
+The whole home directory comes down over your internet connection, so set aside an evening.
+
+You need the passphrase, from KeePassXC, and an API token, created as in [step 2 of the setup](#2-create-an-api-token).
+
+1. **Install Arch with the lost machine's hostname and user name.** The hostname is how the setup script finds the machine's sub-account, and borgmatic only lists archives named after this machine's hostname. The user name is in every path in the archive. Use the same login password as before, too: the restore brings back your old keyring, and it unlocks at login only with the password it had.
+2. **Apply the dotfiles.** Clone them to `~/dotfiles` and run `./scripts/apply.sh`, as on any new machine, then log in to Hyprland: the next step needs the keyring unlocked.
+3. **Run the setup script in restore mode**, with `hcloud` installed as in [step 1 of the setup](#1-before-you-start):
+   ```bash
+   read -rs HCLOUD_TOKEN && export HCLOUD_TOKEN   # paste the token, press Enter
+   ./scripts/setup-backups.sh --restore
+   ```
+   It works through the same steps as the setup, with these differences:
+   - It finds the machine's sub-account rather than creating one. If there is none, it stops: the hostname is usually the reason.
+   - The key it installs on the Storage Box replaces the lost machine's key, so the old disk can't get in any more, whoever has it now.
+   - It asks for the passphrase from KeePassXC, checks it opens the repository, and only then stores it in the keyring. If it doesn't open the repository, it asks again.
+   - It never creates a repository. If the Storage Box holds none for this hostname, it says so and stops.
+   - It doesn't show the passphrase and key export, which you already have.
+   - It leaves the evening backups off. A backup now would store the near-empty home directory as the newest archive, and prune a real archive to make room for it.
+
+   Then delete the token, as in [step 5 of the setup](#5-delete-the-api-token).
+4. **Check you can read the backups**: `borgmatic repo-list` lists the archives. Note the newest one's name, at the bottom.
+5. **Extract the whole home directory** from that archive, over the new one:
+   ```bash
+   cd ~
+   borgmatic borg extract --progress --strip-components 2 \
+     --exclude "home/$USER/.ssh/storagebox*" \
+     --exclude "home/$USER/.config/systemd/user/timers.target.wants/backup.timer" \
+     ::<archive> home/$USER
+   ```
+   `borgmatic borg` hands the command to borg itself, for the one thing `borgmatic extract` can't do: leave files out.
+   The first is the SSH key from step 3; the archive's copy is the lost machine's key, which the Storage Box no longer accepts.
+   The second is what turned the evening backups on for the lost machine; restored, it would turn them on here at the next login, before the files are all back.
+   borg writes into the folder you're in, which is why `cd ~` comes first, and it needs the archive's full name, since `latest` doesn't work here.
+   A file that is in both the archive and the new home directory is replaced by the archive's copy; anything else on the new machine is left alone.
+   Leave the machine alone until it is done, since open applications have their files replaced under them.
+   If it is interrupted, run it again; it starts over.
+6. **Reboot**, and log in with your old password.
+7. **Reinstall your software.** The archive brought back the list of packages you had installed by hand:
+   ```bash
+   yay -S --needed $(< ~/.local/state/backup/packages.txt)
+   ```
+   If a package has been renamed or dropped since, yay stops; delete its line from the file and run it again.
+8. **Turn the evening backups back on**, from the dotfiles folder:
+   ```bash
+   ./scripts/apply.sh && systemctl --user enable --now backup.timer
+   ```
+   The archive brought back `~/dotfiles` as it was, and `./scripts/apply.sh` puts its configuration in place again.
+   Do this only once the extract has finished: a backup over a half-restored home directory would store it as the newest archive.
+
+The first backup reads every file again, because borg's record of the files it has already seen is in `~/.cache`, which isn't backed up.
+It uploads little, though, since the data is already in the repository.
+Until it has run, the waybar icon shows a backup running: the status file came back from the archive, which was taken while a backup was running.
+
+If borg says the repository's key is missing or damaged, type the key back in from the paper:
+
+```bash
+borgmatic key import --paper
+```
 
 ## Using a snapshot
 
@@ -409,12 +548,49 @@ The next evening's backup carries on from the rolled-back repository; the first 
 When the [waybar icon](#reading-the-waybar-icon) is amber, a backup hasn't run in a while, or each one has been skipped:
 
 1. Hover over the icon. If it says **No backup is scheduled**, turn the evening backups back on (see [When backups run](#when-backups-run)).
-2. Otherwise the machine was probably off, asleep or on battery at 19:00 for a few evenings, and each of those days was skipped. Run a backup by hand: `borgmatic --verbosity 1 --progress --stats`.
+2. Otherwise the machine was probably off, asleep or on battery at 19:00 for a few evenings, and each of those days was skipped. Backups also only run while you are logged in, so a machine left at the login screen skips them too. Run a backup by hand: `borgmatic --verbosity 1 --progress --stats`.
 
 When the icon is red, the last backup failed.
 If it was a scheduled one, click the icon and read the last lines of the log; if you ran it by hand, its error is in the terminal you ran it in.
 Most failures are the network: the Storage Box couldn't be reached through all the retries.
 Run a backup by hand once you're back online; when it succeeds, the icon turns back to a tick.
+
+### What a failed backup's error means
+
+These are the errors you are most likely to find at the end of the log, and what to do about each.
+
+**`Command 'secret-tool lookup service borgmatic repository storagebox' returned non-zero exit status 1.`**
+
+borgmatic couldn't get the passphrase out of the keyring.
+Usually the keyring was locked, which happens when you didn't log in with your password; logging in normally unlocks it.
+If `secret-tool lookup service borgmatic repository storagebox` prints nothing even then, the passphrase is gone from the keyring: put it back from KeePassXC with the command below, which asks for it.
+
+```bash
+secret-tool store --label 'borgmatic passphrase for storagebox' service borgmatic repository storagebox
+```
+
+**`Passphrase supplied in BORG_PASSPHRASE, by BORG_PASSCOMMAND, or via BORG_PASSPHRASE_FD is incorrect.`**
+
+The keyring holds a passphrase, but not the one that opens the repository.
+Replace it with the one from KeePassXC, using the same `secret-tool store` command as above, then check that `borgmatic repo-list` lists the archives.
+
+**`Failed to create/acquire the lock … (timeout).`**
+
+Something else on this machine is using the repository: an archive that is still mounted (see [Restoring a single file](#restoring-a-single-file)), or a backup you started by hand.
+No other machine can be, since each has its own repository.
+Run the backup again once that is done.
+If neither is the case, a backup was killed while it held the lock; check that `systemctl --user status backup.service` says `inactive` and no `borgmatic` is running, then remove the lock with `borgmatic borg break-lock`.
+
+**`Connection closed by remote host.`**
+
+SSH couldn't reach or log in to the Storage Box; the lines just before it say why.
+A name that doesn't resolve, or a timeout, is the network: run the backup again once you're online.
+`Permission denied (publickey)` means the Storage Box no longer accepts this machine's key, because restore mode ran on another machine with this hostname, or `~/.ssh/storagebox` was replaced.
+Running `./scripts/setup-backups.sh` again, with a token, installs this machine's key again.
+
+**`Cache, or information obtained from the security directory is newer than repository`**
+
+The repository went back in time; see [Rolling the box back](#rolling-the-box-back).
 
 ### The "No backup in N days" notification
 
@@ -454,6 +630,13 @@ It holds every archive, deduplicated and encrypted, plus the encryption key, loc
 **Archive**
 : One backup: what your home directory looked like at the moment a run started.
 You restore from an archive, either by copying files out of it or by mounting it and browsing it like a folder.
+
+**Mount**
+: Making an archive show up as a read-only folder, so you can browse it and copy files out (see [Restoring a single file](#restoring-a-single-file)).
+The repository is locked until you unmount it again.
+
+**Extract**
+: Having borg write files out of an archive onto your disk, which is faster than copying them out of a mounted archive (see [Restoring a whole folder](#restoring-a-whole-folder)).
 
 **Prune**
 : Deleting the archives the retention rules no longer keep (see [How much history is kept](#how-much-history-is-kept)).

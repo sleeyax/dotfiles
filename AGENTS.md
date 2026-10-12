@@ -286,7 +286,7 @@ The passphrase is read with `secret-tool lookup service borgmatic repository sto
 
 **Setting a machine up.** `scripts/setup-backups.sh` creates the machine's sub-account, key, `storagebox` alias, keyring passphrase and repository, sets the box's snapshot plan and locks its main account down, and is run by hand with `HCLOUD_TOKEN` in the environment.
 hcloud stays out of the package lists because nothing after setup needs it, and the token never goes through `hcloud context`, which would save it to disk.
-Each step decides it is done by observing the result rather than keeping a record: the sub-account by name, the key by whether ssh gets past authentication (any exit but 255), the passphrase by a keyring search, the repository by `repo-info`, the snapshot plan and the main account's Samba and WebDAV by `storage-box describe`.
+Each step decides it is done by observing the result rather than keeping a record: the sub-account by name, the key by whether ssh gets past authentication (any exit but 255), the passphrase by a keyring search, the repository by borg's exit code from a `repo-list`, the snapshot plan and the main account's Samba and WebDAV by `storage-box describe`.
 Showing the passphrase and key export is the one step with no observable result that is unsafe to repeat, so it alone leaves a marker in `$XDG_STATE_HOME/backup/`, holding the repository ID so a recreated repository is shown again.
 Resetting the main account's password has no observable result either, but replacing one discarded password with another changes nothing, so it runs on every run; that also makes a rerun the way to lock the account again after its password was reset in the Console.
 
@@ -294,6 +294,23 @@ The script uploads `authorized_keys` itself rather than using Hetzner's `install
 `--restrict-to-repository ./borg` is relative because where the sub-account's chroot puts its home is Hetzner's business; borg resolves both it and the client's `/./borg` against the login directory.
 That `borg-1.4 serve` exists as a forced command on Hetzner is inferred, not documented, which is why the script checks the server version through the restricted key on every run.
 Locally, a user-level `sshd` with `cd <dir> &&` in front of the forced command stands in for the chroot and exercises the restricted line with real borg; the password upload can only be tried against the real box.
+
+**Restore mode.** `--restore` runs the same script on a machine that replaces a lost one under the same hostname: it finds the sub-account rather than creating it, asks for the passphrase rather than generating it, never creates a repository, and turns `backup.timer` off rather than on.
+The timer stays off because a backup of a home that isn't restored yet would become the newest archive and prune a real one.
+Everything else is shared, and that is what re-keys the sub-account: the new machine has no `~/.ssh/storagebox`, so a fresh key is generated and its upload replaces the lost machine's line in `authorized_keys`.
+
+borgmatic exits 1 on any error, so `probe_repository` reads borg's own exit code out of its log: 13 for a missing repository, 52 for a wrong passphrase.
+borg opens the repository before the key, so a probe with a random passphrase tells whether the repository exists without knowing the real one.
+Normal mode probes that way before storing a new passphrase, and stops with a pointer to `--restore` on a machine whose hostname already has a repository, rather than storing a passphrase that can't open it.
+A candidate passphrase reaches borgmatic as `BACKUP_PASSCOMMAND='printenv SETUP_PASSPHRASE'`, the same environment-only route as the askpass, and is stored only once it has opened the repository; restore mode overwrites a stored passphrase only after borg has rejected it.
+The probe and the repository ID use `repo-list` rather than `repo-info`, which builds borg's chunk cache, and on a fresh machine that means reading every archive's index.
+
+The guide's whole-machine extract leaves out `~/.ssh/storagebox*` and the `timers.target.wants/backup.timer` link.
+The archive's key is the one restore mode just replaced, and a later run of the script would upload whatever key it finds, letting the lost disk back in.
+The archive's link would enable the timer at the next login, undoing restore mode's while the extract may still be unfinished.
+
+Both modes can run end to end without the box: a fake `$HOME` whose borgmatic config points at a local repository, with `hcloud`, `ssh`, `sftp`, `secret-tool`, `systemctl` and `getent` stubbed first on `PATH`.
+`ssh -G` has to stay real, with `-F` pointing at the fake `~/.ssh/config`, since ssh reads the passwd home rather than `$HOME`.
 
 **Snapshots and the main account.** Every key can delete its own archives, since each run prunes, so the box's automatic snapshots are the one copy a compromised machine can't touch: only the API makes or deletes them, and the token is deleted after setup.
 The plan is box-wide — weekly, Sunday 00:00 UTC, keeping 10 — so both machines set the same one and the second finds it done.
