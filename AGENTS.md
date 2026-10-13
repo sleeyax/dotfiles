@@ -314,7 +314,7 @@ Both modes can run end to end without the box: a fake `$HOME` whose borgmatic co
 
 **Snapshots and the main account.** Every key can delete its own archives, since each run prunes, so the box's automatic snapshots are the one copy a compromised machine can't touch: only the API makes or deletes them, and the token is deleted after setup.
 The plan is box-wide — weekly, Sunday 00:00 UTC, keeping 10 — so both machines set the same one and the second finds it done.
-The night from Saturday to Sunday is chosen to fall far from the 19:00 runs, so a snapshot normally holds repositories at rest.
+The night from Saturday to Sunday is chosen to fall far from falcon's 19:00 runs and panda's working day, so a snapshot normally holds repositories at rest.
 `hcloud -o json` prints Sunday as `day_of_week: 0` while the API stores `7` (its output conversion casts `time.Weekday` without the mapping its input side has), so the check accepts either rather than pinning a CLI bug.
 The main account can reach both repositories, so the script turns its Samba and WebDAV off and discards its password, and nothing on a workstation can wipe the whole box; `update-access-settings` sends only the flags given, so its SSH, ZFS-folder and external-reachability settings are left as they are.
 Snapshots are only visible to the main account, under `.zfs/snapshot`, which is why the guide's browsing steps re-key it temporarily and end with a rerun of the script.
@@ -345,13 +345,20 @@ YAML reads a bare `~` as null, which is why the source is quoted.
 The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg dependency.
 `retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
 
-**Scheduling.** A backup runs at 19:00, during dinner, and never while the machine could be in use; every choice here serves that.
+**Scheduling.** falcon backs up at 19:00, during dinner, and never while it could be in use; every choice in the next paragraph serves that.
 `backup.timer` starts `backup.service` daily at 19:00 local time and is not `Persistent`, so a day the machine was off is skipped rather than caught up at boot.
 A timer whose elapse passed during suspend fires on resume all the same, so the service's `ExecCondition=` runs `borgmatic/on-schedule.sh`, which lets a run start only until 19:10.
-It judges the `HH:MM` it is given, the current time when given none, and that argument is how it is tested: `on-schedule.sh 19:09` exits 0, `on-schedule.sh 19:11` exits 1.
+It judges the time it is given, the current time when given none, and that argument is how it is tested: `on-schedule.sh 19:09` exits 0, `on-schedule.sh 19:11` exits 1.
 `ExecCondition=` reads exit 1 as a skip and 255 as a failure, and a condition is checked once, at start, so a run that started in time is never stopped by it.
 
-`ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery.
+panda is on a day or two a week, during working hours and rarely at 19:00, so it backs up once on each day it is used instead, through laptop overrides of the same two files.
+Its `backup.timer` fires 10 minutes after the user manager starts, which is at login, and then hourly.
+Its `on-schedule.sh` skips the run when `last_run` in the status file falls on the judged day, so one attempt a day gets through, and a failure waits for tomorrow rather than notifying every hour.
+It also skips while any `borg` or `borgmatic` of the user's is running, since a backup by hand or a mounted archive holds the repository lock, and a timer run that failed on it would use up the day.
+Both scripts take the same optional argument, a time in any form `date -d` reads, so either can be asked about a time other than now.
+`backup.service` runs at `Nice=19` and `IOSchedulingClass=idle` on both machines, for panda's sake.
+
+`ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery; a skipped hour writes nothing, so the next hour on AC still gets the day's attempt.
 A skip by either condition leaves the unit inactive rather than failed, so `OnFailure=backup-failed.service`, a `notify-send`, fires only for a run that started and failed.
 
 borgmatic runs under `systemd-inhibit --what=sleep --mode=block`.
@@ -361,7 +368,7 @@ The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defa
 Shutdown is deliberately not inhibited; the run reads `failed` and the next one reuses what was uploaded.
 
 The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling a unit writes a `*.target.wants/` link beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
-`apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every evening.
+`apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every day.
 systemd lists a symlinked unit file as `linked`, and `systemctl --user disable` deletes such a link along with the enable link; the next apply puts the unit file back, still disabled.
 
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
@@ -400,7 +407,7 @@ The pill's `stale` and the staleness check below each have a threshold in days, 
 They are 3 and 7 by default, and 7 and 14 on panda, which is on a day or two a week and so goes a week without a backup as a matter of course.
 That is a sourced file rather than an `Environment=` drop-in because the pill runs under waybar, out of systemd's reach.
 
-**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than `NOTIFY_STALE_DAYS` days old, for backups that stopped without ever failing: a timer turned off, a machine never on at 19:00.
+**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than `NOTIFY_STALE_DAYS` days old, for backups that stopped without ever failing: a timer turned off, a machine never on when its timer fires.
 It judges `last_success` alone, so a `failed` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
 A status file without `last_success`, or one jq can't parse, notifies too.
 Without a status file, it notifies only while `backup.timer` is enabled, which is what tells a set-up machine from one that was never set up.

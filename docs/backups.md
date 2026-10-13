@@ -83,13 +83,23 @@ A full check, which reads back every byte, would download the whole repository, 
 
 ### When backups run
 
-A backup starts every evening at 19:00, while you're at dinner, and at no other time.
-A *timer* starts it, so you don't have to remember to.
+A *timer* starts each backup, so you don't have to remember to.
+When it goes off depends on the machine, because falcon and panda are used at different times of day.
 
-- **The machine was off at 19:00:** that day is skipped. It isn't made up for when you turn the machine on, because a backup starting just as you sit down to work is what the schedule is there to avoid.
-- **The machine was asleep at 19:00:** the timer goes off as soon as you wake it, but the backup only starts if it is still before 19:10. Later than that, the day is skipped too.
-- **panda is on battery at 19:00:** the day is skipped, so a backup never drains the battery.
+**falcon** backs up every evening at 19:00, while you're at dinner, and at no other time.
+
+- **falcon was off at 19:00:** that day is skipped. It isn't made up for when you turn the machine on, because a backup starting just as you sit down to work is what the schedule is there to avoid.
+- **falcon was asleep at 19:00:** the timer goes off as soon as you wake it, but the backup only starts if it is still before 19:10. Later than that, the day is skipped too.
 - **A backup that started in time** runs until it is done, however late that is.
+
+**panda** is on during the working day, a day or two a week, so it backs up once on each day it is used, whenever that is.
+
+- **Ten minutes after you log in, and then every hour**, the timer goes off.
+- **The first backup that runs wins the day:** once a backup has ended, whether it succeeded or failed, the rest of the day is skipped. A failed backup is tried again tomorrow rather than every hour; to try sooner, run one by hand.
+- **panda is on battery:** that hour is skipped, so a backup never drains the battery. The next hour on the charger takes it.
+- **A backup you started by hand, or a mounted archive, is still there:** that hour is skipped too, rather than failing on the locked repository.
+
+Because it runs while you work, panda's backup gives way to everything else: it gets processor time and disk access only when nothing else wants them.
 
 While a backup runs, the machine doesn't go to sleep by itself: when panda's idle suspend comes due after 30 minutes, it is refused, and panda then stays awake until you next touch it and leave it idle for another 30 minutes.
 Closing panda's lid still puts it to sleep, because closing the lid means you are leaving.
@@ -97,7 +107,7 @@ Suspending falcon by hand is refused too; in a terminal, `systemctl suspend` say
 A backup cut short by sleep or a shutdown isn't wasted: the next one reuses everything it had already uploaded.
 
 When a backup fails, after the retries described below, a desktop notification tells you so.
-When backups stop without failing, because the machine was never on at 19:00 or the timer was turned off, a notification tells you once the last good backup is more than a week old, two weeks on panda (see [When backups fail or go stale](#when-backups-fail-or-go-stale)).
+When backups stop without failing, because the machine was never on when its timer went off or the timer was turned off, a notification tells you once the last good backup is more than a week old, two weeks on panda (see [When backups fail or go stale](#when-backups-fail-or-go-stale)).
 
 To see when the next backup is due, and when the last one started:
 
@@ -111,7 +121,7 @@ To read what the scheduled backups printed, including why one failed:
 journalctl --user -u backup.service
 ```
 
-To stop the evening backups, and to start them again:
+To stop the scheduled backups, and to start them again:
 
 ```bash
 systemctl --user disable --now backup.timer
@@ -134,7 +144,7 @@ So malware on a machine could wipe that machine's backups through borg, and noth
 Every Sunday at 00:00 UTC (01:00 or 02:00 in Brussels), Hetzner takes a read-only snapshot of the whole Storage Box, and keeps the last 10: about ten weeks, enough time to notice damage that crept in slowly.
 Snapshots are made and deleted only through Hetzner's API, which needs the token you delete straight after setup, so nothing on either machine can create, change or remove one.
 
-That is six or seven hours after Saturday's 19:00 backup started, so a snapshot normally catches both repositories at rest.
+That is six or seven hours after falcon's Saturday backup started, at an hour panda is not in use, so a snapshot normally catches both repositories at rest.
 Should a long backup still be running then, the snapshot is no worse for it: borg's repository survives being frozen mid-write the way it survives a power cut.
 
 A snapshot covers the whole box, including the main account's own files.
@@ -251,7 +261,7 @@ Here is what it does, in order:
 9. **Shows you the passphrase and the key export.** See the next step.
 10. **Sets the snapshot plan**: every Sunday at 00:00 UTC, keeping 10 (see [Snapshots, in case a machine is compromised](#snapshots-in-case-a-machine-is-compromised)). The plan is the same for the whole box, so on the second machine this step finds it already set.
 11. **Locks the main account down** (see [The main account](#the-main-account)): turns off its Samba and WebDAV access, and resets its password to a random one that it throws away. There is no way to check whether anyone still knows the password, so the reset happens on every run.
-12. **Turns on the evening backups** (see [When backups run](#when-backups-run)). This is the very last step, so a machine whose setup stopped halfway doesn't fail a backup every evening.
+12. **Turns on the scheduled backups** (see [When backups run](#when-backups-run)). This is the very last step, so a machine whose setup stopped halfway doesn't fail a backup every day.
 
 ### 4. Store the passphrase and the key
 
@@ -284,8 +294,8 @@ unset HCLOUD_TOKEN
 
 ### 6. Make the first backup
 
-The first backup happens on its own at 19:00 that evening.
-To see it work end to end straight away, run it by hand instead:
+The first backup happens on its own: at 19:00 that evening on falcon, and within the hour on panda.
+To see it work end to end straight away, run it by hand instead; on panda, check the waybar icon first, since a backup already running means the timer got there before you.
 
 ```bash
 borgmatic create --progress --stats
@@ -295,7 +305,8 @@ borgmatic repo-list
 The first one uploads everything, so expect it to take hours: about 12 GB an hour on a 28 Mbps upload.
 For the first few minutes it prints nothing, while borgmatic checks which files the backup will include; the progress line appears once the upload starts.
 It can be interrupted: the next run reuses whatever was already uploaded.
-If it is still running at 19:00, that evening's backup can't get at the repository until it finishes; should it still be running after the last retry, the evening's backup fails with a notification, which is harmless.
+On falcon, if it is still running at 19:00, that evening's backup can't get at the repository until it finishes; should it still be running after the last retry, the evening's backup fails with a notification, which is harmless.
+On panda, the timer skips every hour while it runs.
 
 ## Reading the waybar icon
 
@@ -309,7 +320,7 @@ It reads the status file described in [Running a backup by hand](#running-a-back
 | Cloud with an upward arrow | A backup is running now. | Nothing. A scheduled one keeps the machine from going to sleep by itself until it is done. |
 | Amber cloud with an exclamation mark | Stale: the last backup that succeeded was 3 or more days ago (7 on panda). | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
 | Red cloud with an exclamation mark, red border | The last backup failed, after all its retries. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
-| Grey cloud, crossed out | Never backed up: no backup has succeeded on this machine yet. | If the tooltip says no backup is scheduled, set the machine up (see [One-time setup](#one-time-setup)). Otherwise the first one runs at 19:00. |
+| Grey cloud, crossed out | Never backed up: no backup has succeeded on this machine yet. | If the tooltip says no backup is scheduled, set the machine up (see [One-time setup](#one-time-setup)). Otherwise the first one runs at the next scheduled time (see [When backups run](#when-backups-run)). |
 
 Hover over the icon for the details:
 
@@ -372,7 +383,7 @@ The easiest way is to *mount* an archive: it then shows up as a read-only folder
    ```
 
 While an archive is mounted, the repository is locked, and a backup that starts meanwhile can't get at it: it fails after its retries, with a notification.
-So unmount before 19:00, and before running a backup by hand.
+So unmount before falcon's 19:00 backup, and before running a backup by hand; panda's timer skips an hour while an archive is mounted.
 
 To find an older version of a file, leave `--archive latest` out: `~/restore` then holds a folder for every archive, named as in `borgmatic repo-list`, and you can open the same file in each.
 
@@ -423,7 +434,7 @@ You need the passphrase, from KeePassXC, and an API token, created as in [step 2
    - It asks for the passphrase from KeePassXC, checks it opens the repository, and only then stores it in the keyring. If it doesn't open the repository, it asks again.
    - It never creates a repository. If the Storage Box holds none for this hostname, it says so and stops.
    - It doesn't show the passphrase and key export, which you already have.
-   - It leaves the evening backups off. A backup now would store the near-empty home directory as the newest archive, and prune a real archive to make room for it.
+   - It leaves the scheduled backups off. A backup now would store the near-empty home directory as the newest archive, and prune a real archive to make room for it.
 
    Then delete the token, as in [step 5 of the setup](#5-delete-the-api-token).
 4. **Check you can read the backups**: `borgmatic repo-list` lists the archives. Note the newest one's name, at the bottom.
@@ -437,7 +448,7 @@ You need the passphrase, from KeePassXC, and an API token, created as in [step 2
    ```
    `borgmatic borg` hands the command to borg itself, for the one thing `borgmatic extract` can't do: leave files out.
    The first is the SSH key from step 3; the archive's copy is the lost machine's key, which the Storage Box no longer accepts.
-   The second is what turned the evening backups on for the lost machine; restored, it would turn them on here at the next login, before the files are all back.
+   The second is what turned the scheduled backups on for the lost machine; restored, it would turn them on here at the next login, before the files are all back.
    borg writes into the folder you're in, which is why `cd ~` comes first, and it needs the archive's full name, since `latest` doesn't work here.
    A file that is in both the archive and the new home directory is replaced by the archive's copy; anything else on the new machine is left alone.
    Leave the machine alone until it is done, since open applications have their files replaced under them.
@@ -448,7 +459,7 @@ You need the passphrase, from KeePassXC, and an API token, created as in [step 2
    yay -S --needed $(< ~/.local/state/backup/packages.txt)
    ```
    If a package has been renamed or dropped since, yay stops; delete its line from the file and run it again.
-8. **Turn the evening backups back on**, from the dotfiles folder:
+8. **Turn the scheduled backups back on**, from the dotfiles folder:
    ```bash
    ./scripts/apply.sh && systemctl --user enable --now backup.timer
    ```
@@ -511,7 +522,7 @@ Whatever either machine backed up since the snapshot was taken is gone, and so, 
 It is the last resort, for when a repository itself is gone or broken, for instance because malware deleted its archives.
 To get back a file you lost, restore it from an archive instead (see [Restoring](#restoring)).
 
-1. Do it well away from 19:00, and check on both machines that no backup is running: `systemctl --user status backup.service` must say `inactive`.
+1. Do it well away from falcon's 19:00 backup and outside panda's working day, and check on both machines that no backup is running: `systemctl --user status backup.service` must say `inactive`.
 2. Pick the snapshot from the list above and roll back to it:
    ```bash
    hcloud storage-box rollback-snapshot <box> --snapshot <snapshot>
@@ -547,14 +558,14 @@ Leave the rest of that security folder alone: its `nonce` file is what stops bor
 Only do this after a rollback you did yourself.
 If the message appears without one, someone else replaced your repository with an older copy: delete nothing, and find out how.
 
-The next evening's backup carries on from the rolled-back repository; the first one after the rollback takes a little longer, while borg rebuilds the cache you deleted.
+The next scheduled backup carries on from the rolled-back repository; the first one after the rollback takes a little longer, while borg rebuilds the cache you deleted.
 
 ## When backups fail or go stale
 
 When the [waybar icon](#reading-the-waybar-icon) is amber, a backup hasn't run in a while, or each one has been skipped:
 
-1. Hover over the icon. If it says **No backup is scheduled**, turn the evening backups back on (see [When backups run](#when-backups-run)).
-2. Otherwise the machine was probably off, asleep or on battery at 19:00 for a few evenings, and each of those days was skipped. Backups also only run while you are logged in, so a machine left at the login screen skips them too. Run a backup by hand: `borgmatic --verbosity 1 --progress --stats`.
+1. Hover over the icon. If it says **No backup is scheduled**, turn the scheduled backups back on (see [When backups run](#when-backups-run)).
+2. Otherwise falcon was probably off or asleep at 19:00 for a few evenings, or panda was used only on battery, and each of those days was skipped. Backups also only run while you are logged in, so a machine left at the login screen skips them too. Run a backup by hand: `borgmatic --verbosity 1 --progress --stats`.
 
 When the icon is red, the last backup failed.
 If it was a scheduled one, click the icon and read the last lines of the log; if you ran it by hand, its error is in the terminal you ran it in.
@@ -607,12 +618,12 @@ Like the waybar icon, it reads the status file and asks whether the timer is on,
 Where the icon turns amber after 3 days, the notification waits a week: a long weekend away is no reason to interrupt you, but a week without a backup is.
 panda is on only a day or two a week, so a week without a backup is normal there, and both wait twice as long: 7 days for the icon, 14 for the notification.
 Both numbers are in [`~/.config/borgmatic/staleness`](../home/.config/borgmatic/staleness), and panda's in [its own copy](../devices/laptop/.config/borgmatic/staleness).
-A failed backup has a notification of its own the evening it fails; this one is for backups that stopped happening without anything failing.
+A failed backup has a notification of its own the day it fails; this one is for backups that stopped happening without anything failing.
 
 The notification comes in three kinds:
 
 - **No backup in N days**: the last backup that succeeded was N days ago. Work through the steps for an amber icon above.
-- **Never backed up**: this machine was set up, but no backup has succeeded on it yet. Right after setup, that is expected until the first one runs at 19:00; run one by hand to settle it now (see [step 6 of the setup](#6-make-the-first-backup)). Later, work through the steps for an amber icon above.
+- **Never backed up**: this machine was set up, but no backup has succeeded on it yet. Right after setup, that is expected until the first one runs; run one by hand to settle it now (see [step 6 of the setup](#6-make-the-first-backup)). Later, work through the steps for an amber icon above.
 - **Backup status unreadable**: `~/.local/state/backup/status.json` is damaged, so there is no telling when the last backup succeeded. Run a backup by hand; when it succeeds, it writes the file afresh.
 
 A machine that was never set up never gets the notification.
@@ -666,4 +677,4 @@ A snapshot holds a repository, not your files directly: to use one, you roll the
 
 **Timer**
 : systemd's way of starting something on a schedule, like cron.
-`backup.timer` starts `backup.service`, which runs borgmatic, every evening at 19:00.
+`backup.timer` starts `backup.service`, which runs borgmatic, on the machine's schedule (see [When backups run](#when-backups-run)).
