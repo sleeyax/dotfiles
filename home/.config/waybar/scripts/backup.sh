@@ -18,10 +18,13 @@ when() {
 next_run() {
     local next
     next=$(systemctl --user show backup.timer --property=NextElapseUSecRealtime --value --timestamp=unix 2>/dev/null) || true
-    if [ -n "$next" ]; then
+    if [ -z "$next" ]; then
+        echo "No backup is scheduled"
+    elif "$HOME/.config/borgmatic/on-schedule.sh" "$next" 2>/dev/null; then
         echo "Next backup: $(when "${next#@}")"
     else
-        echo "No backup is scheduled"
+        # panda's timer fires hourly, but once the day's backup has ended, every elapse left today is skipped.
+        echo "Next backup: tomorrow"
     fi
 }
 

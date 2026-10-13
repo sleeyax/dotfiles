@@ -397,6 +397,7 @@ A failure, or a kill while it runs, leaves the success recorded and the numbers 
 `added_bytes` is borg's deduplicated size of the newest archive, read after the prune: a chunk it shared only with a pruned archive counts as its own, so the figure can slightly overstate what the run uploaded.
 
 **The waybar pill.** `custom/backup` runs `waybar/scripts/backup.sh`, a reader of the status file that also asks systemd for the timer's next elapse.
+It passes that elapse to `on-schedule.sh` and shows it only if the run would go ahead, and "tomorrow" otherwise, so the schedule's rules live in one script per machine; on falcon the 19:00 elapse always passes.
 `status.sh` sends signal 5 after every write, so the pill follows a run as it starts and ends; the 60-second interval only ages the tooltip and lets `ok` turn `stale`.
 `running` and `failed` describe the newest run, so they win over the age of the last success.
 No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.

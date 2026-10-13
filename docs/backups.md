@@ -115,6 +115,8 @@ To see when the next backup is due, and when the last one started:
 systemctl --user list-timers backup.timer
 ```
 
+On panda, that shows the next hour even after the day's backup has ended, since the timer still goes off every hour and the backup is only skipped once it does; the waybar icon's tooltip says **tomorrow** instead.
+
 To read what the scheduled backups printed, including why one failed:
 
 ```bash
@@ -327,7 +329,7 @@ Hover over the icon for the details:
 - **Last backup**: when the last successful backup ended, and how long ago that was.
 - **Added**: how much new data that backup stored, after deduplication. It reads `unknown` for a minute or so after a backup ends, while it is being measured.
 - **Archives**: how many archives the repository holds.
-- **Next backup**: when the timer will next start one. **No backup is scheduled** means the timer is off.
+- **Next backup**: when the timer will next start one, or **tomorrow** on panda once today's backup has ended. **No backup is scheduled** means the timer is off.
 
 Clicking the icon opens the backup log, the same as `journalctl --user -u backup.service`, at its end, where the latest backup is.
 Press `q` to close it.
