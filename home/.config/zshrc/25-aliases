@@ -7,9 +7,13 @@
 # -----------------------------------------------------
 alias c='clear'
 alias cls='clear'
-alias ls='eza -a --icons=always'
-alias ll='eza -al --icons=always'
-alias lt='eza -a --tree --level=1 --icons=always'
+# Not in Claude Code's shells, which snapshot these aliases: given no path and a stdin that isn't a terminal, eza lists the paths it reads from stdin instead of the current directory.
+# Claude Code's stdin is a socket it never closes, so a bare ls blocks until the command times out.
+if [[ -z $CLAUDECODE ]]; then
+  alias ls='eza -a --icons=always'
+  alias ll='eza -al --icons=always'
+  alias lt='eza -a --tree --level=1 --icons=always'
+fi
 alias shutdown='systemctl poweroff'
 alias wifi='nmtui'
 alias filemanager='~/.config/ml4w/settings/filemanager'
