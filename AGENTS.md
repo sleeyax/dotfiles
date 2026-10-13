@@ -320,12 +320,17 @@ The main account can reach both repositories, so the script turns its Samba and 
 Snapshots are only visible to the main account, under `.zfs/snapshot`, which is why the guide's browsing steps re-key it temporarily and end with a rerun of the script.
 
 **What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
-`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.
+`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains dry runs over falcon's and panda's `$HOME` turned up.
 The price of `!` over `-` is that no `+` can re-include anything beneath an excluded folder, so a broad name like `**/build` or `**/Downloads` takes every folder of that name in `$HOME`.
 
 `MEGAsync` is the one entry dropped in translation: MEGA propagates a deletion or corruption to every device, so it isn't a backup by itself.
 Only its local trash, `MEGAsync/.debris`, stays out.
+panda's MEGA folder holds the same files as falcon's, and borg deduplicates only within one repository, so panda leaves `~/MEGA` out entirely rather than store a second copy.
 `exclude_caches` and `exclude_if_present: .nobackup` are the ways to leave a folder out without editing the list.
+
+That is the one exclusion that differs by machine, and it lives in `patterns.device`, a second `patterns_from` entry that a device overrides under `devices/<device>/`.
+The base copy is a header and nothing else, there so that every machine has the file `config.yaml` names.
+An entry that matches nothing costs nothing, so an exclusion belongs in the shared list unless it would drop something another machine needs.
 
 `borg_exit_codes` downgrades 105, a file borg can't read, from an error to a warning.
 falcon's `$HOME` holds Docker database volumes inside projects, owned by container UIDs; a user's run can never read them, and an error would fail every run over them.

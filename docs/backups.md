@@ -47,9 +47,13 @@ Two more rules leave folders out without editing that list:
 A file your user can't read is skipped with a warning rather than failing the backup.
 That mostly means database folders a Docker container created inside one of your projects, which only the container's own user can open.
 
-Your MEGAsync folder is backed up, apart from MEGA's own trash (`MEGAsync/.debris`).
+falcon's MEGAsync folder is backed up, apart from MEGA's own trash (`MEGAsync/.debris`).
 MEGA syncs a deletion or a corrupted file to every device, so it is not a backup by itself; a borg archive from before the accident is.
 The leave-out list applies inside it like anywhere else, so a synced folder called `build` or `Downloads` is skipped too.
+
+panda leaves its MEGA folder out altogether.
+It syncs the same files as falcon's, and each machine's backups are stored apart, so backing it up on both would store everything in it twice for nothing.
+That exclusion is in [`~/.config/borgmatic/patterns.device`](../devices/laptop/.config/borgmatic/patterns.device), the list for things only one machine leaves out.
 
 Before every backup, the list of packages you installed explicitly (`pacman -Qqe`) is written to `~/.local/state/backup/packages.txt`, so it is in the archive too.
 On a rebuilt machine, that file is what tells you what to reinstall.

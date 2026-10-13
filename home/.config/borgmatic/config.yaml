@@ -18,6 +18,7 @@ encryption_passcommand: ${BACKUP_PASSCOMMAND:-secret-tool lookup service borgmat
 
 patterns_from:
     - ~/.config/borgmatic/patterns
+    - ~/.config/borgmatic/patterns.device
 exclude_caches: true
 exclude_if_present:
     - .nobackup

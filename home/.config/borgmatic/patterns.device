@@ -1,0 +1,2 @@
+# What only one machine leaves out, in the same syntax as patterns; a device replaces this file under devices/<device>/.
+# config.yaml names this file on every machine, so this copy stays even though it excludes nothing.
