@@ -314,18 +314,23 @@ Both modes can run end to end without the box: a fake `$HOME` whose borgmatic co
 
 **Snapshots and the main account.** Every key can delete its own archives, since each run prunes, so the box's automatic snapshots are the one copy a compromised machine can't touch: only the API makes or deletes them, and the token is deleted after setup.
 The plan is box-wide — weekly, Sunday 00:00 UTC, keeping 10 — so both machines set the same one and the second finds it done.
-The night from Saturday to Sunday is chosen to fall far from the 19:00 runs, so a snapshot normally holds repositories at rest.
+The night from Saturday to Sunday is chosen to fall far from falcon's 19:00 runs and panda's working day, so a snapshot normally holds repositories at rest.
 `hcloud -o json` prints Sunday as `day_of_week: 0` while the API stores `7` (its output conversion casts `time.Weekday` without the mapping its input side has), so the check accepts either rather than pinning a CLI bug.
 The main account can reach both repositories, so the script turns its Samba and WebDAV off and discards its password, and nothing on a workstation can wipe the whole box; `update-access-settings` sends only the flags given, so its SSH, ZFS-folder and external-reachability settings are left as they are.
 Snapshots are only visible to the main account, under `.zfs/snapshot`, which is why the guide's browsing steps re-key it temporarily and end with a rerun of the script.
 
 **What goes in.** The source is `~` with `one_file_system`, so mounts inside it are skipped.
-`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains a dry run over falcon's `$HOME` turned up.
+`home/.config/borgmatic/patterns` is the rsync exclusion list from the old external-drive script (`~/Scripts/exclude.txt`, untracked), translated to borg pattern syntax by the rules in its header, then extended with the caches and downloaded toolchains dry runs over falcon's and panda's `$HOME` turned up.
 The price of `!` over `-` is that no `+` can re-include anything beneath an excluded folder, so a broad name like `**/build` or `**/Downloads` takes every folder of that name in `$HOME`.
 
 `MEGAsync` is the one entry dropped in translation: MEGA propagates a deletion or corruption to every device, so it isn't a backup by itself.
 Only its local trash, `MEGAsync/.debris`, stays out.
+panda's MEGA folder holds the same files as falcon's, and borg deduplicates only within one repository, so panda leaves `~/MEGA` out entirely rather than store a second copy.
 `exclude_caches` and `exclude_if_present: .nobackup` are the ways to leave a folder out without editing the list.
+
+That is the one exclusion that differs by machine, and it lives in `patterns.device`, a second `patterns_from` entry that a device overrides under `devices/<device>/`.
+The base copy is a header and nothing else, there so that every machine has the file `config.yaml` names.
+An entry that matches nothing costs nothing, so an exclusion belongs in the shared list unless it would drop something another machine needs.
 
 `borg_exit_codes` downgrades 105, a file borg can't read, from an error to a warning.
 falcon's `$HOME` holds Docker database volumes inside projects, owned by container UIDs; a user's run can never read them, and an error would fail every run over them.
@@ -339,24 +344,37 @@ YAML reads a bare `~` as null, which is why the source is quoted.
 `repository` and `archives` checks run every 2 weeks and `spot` monthly; `data` reads back the whole repository and so is never scheduled.
 The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg dependency.
 `retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
+A dropped connection can leave its lock on the box well after the client gave up: on panda's first backup the lock outlived a connection reset by more than 19 minutes and was gone within 28 without a `break-lock`, so the box's `borg serve` evidently lived on until the box noticed the connection was dead.
+`lock_wait: 600` lets each try wait 10 minutes for the lock rather than borg's default of 1 second, which carries the retries past that window.
+The price is that a lock held for real, such as a mounted archive on falcon, costs each try 10 minutes before it fails.
 
-**Scheduling.** A backup runs at 19:00, during dinner, and never while the machine could be in use; every choice here serves that.
+**Scheduling.** falcon backs up at 19:00, during dinner, and never while it could be in use; every choice in the next paragraph serves that.
 `backup.timer` starts `backup.service` daily at 19:00 local time and is not `Persistent`, so a day the machine was off is skipped rather than caught up at boot.
 A timer whose elapse passed during suspend fires on resume all the same, so the service's `ExecCondition=` runs `borgmatic/on-schedule.sh`, which lets a run start only until 19:10.
-It judges the `HH:MM` it is given, the current time when given none, and that argument is how it is tested: `on-schedule.sh 19:09` exits 0, `on-schedule.sh 19:11` exits 1.
+It judges the time it is given, the current time when given none, and that argument is how it is tested: `on-schedule.sh 19:09` exits 0, `on-schedule.sh 19:11` exits 1.
 `ExecCondition=` reads exit 1 as a skip and 255 as a failure, and a condition is checked once, at start, so a run that started in time is never stopped by it.
 
-`ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery.
+panda is on a day or two a week, during working hours and rarely at 19:00, so it backs up once on each day it is used instead, through laptop overrides of the same two files.
+Its `backup.timer` fires 10 minutes after the user manager starts, which is at login, and then hourly.
+Its `on-schedule.sh` skips the run when `last_run` in the status file falls on the judged day, so one attempt a day gets through, and a failure waits for tomorrow rather than notifying every hour.
+It also skips while any `borg` or `borgmatic` of the user's is running, since a backup by hand or a mounted archive holds the repository lock, and a timer run that failed on it would use up the day.
+Both scripts take the same optional argument, a time in any form `date -d` reads, so either can be asked about a time other than now.
+`backup.service` runs at `Nice=19` and `IOSchedulingClass=idle` on both machines, for panda's sake.
+An hourly elapse that comes due during a long run fires again the moment the run ends, and the condition is what turns that into a skip.
+
+`ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery; a skipped hour writes nothing, so the next hour on AC still gets the day's attempt.
 A skip by either condition leaves the unit inactive rather than failed, so `OnFailure=backup-failed.service`, a `notify-send`, fires only for a run that started and failed.
 
-borgmatic runs under `systemd-inhibit --what=sleep --mode=block`.
+borgmatic runs beside a `systemd-inhibit --what=sleep --mode=block`, which `borgmatic/inhibit-sleep.sh` starts in the background before it `exec`s borgmatic.
+borgmatic has to be the unit's main process: systemd sends a stop's SIGTERM to every process in the unit and kills whatever is left once the main process exits.
+Were `systemd-inhibit` the main process, it would die on the first SIGTERM and take borgmatic's `fail` hook down with it, leaving a stopped run reading `running` with no `last_run`; `KillMode=mixed` only turns that into a SIGKILL.
 Block mode refuses an unprivileged suspend outright: hypridle's `systemctl suspend` on panda gets "Operation denied due to active block inhibitor", and a manual one on falcon is refused until forced with `systemctl suspend -i` and an admin password.
 hypridle tries once per idle period, so panda stays awake after a backup ends until it next goes idle.
 The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defaults to yes and nothing in Hyprland takes the switch.
 Shutdown is deliberately not inhibited; the run reads `failed` and the next one reuses what was uploaded.
 
 The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling a unit writes a `*.target.wants/` link beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
-`apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every evening.
+`apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every day.
 systemd lists a symlinked unit file as `linked`, and `systemctl --user disable` deletes such a link along with the enable link; the next apply puts the unit file back, still disabled.
 
 **The status file.** `$XDG_STATE_HOME/backup/status.json` is the contract between a run and whatever reports on it.
@@ -366,16 +384,17 @@ Anything that shows backup health reads this file and at most the timer's schedu
 | Field | Value |
 | ----- | ----- |
 | `state` | `running`, `succeeded` or `failed` |
+| `last_run` | Unix time the last run ended, whether it succeeded or failed |
 | `last_success` | Unix time the last successful run ended; a failure leaves it alone |
 | `added_bytes` | what the newest archive holds that no other archive does, measured at the end of that run |
 | `archives` | how many archives the repository held at the end of that run |
 
-Only `state` is always there: the other three are missing until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured, or while it is still being measured.
+Only `state` is always there: `last_run` is missing until a first run ends, the other three until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured, or while it is still being measured.
 A reader shows either as unknown rather than failing.
 
 The hooks are `configuration`-level and filtered to `when: create`, so only a run that makes an archive writes the file, and `borgmatic repo-list` by hand never does.
 borgmatic retries inside that level, so a run reads `running` across its retries and `failed` only once the last one has failed.
-borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
+borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown or `systemctl --user stop` reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
 
 The two numbers cost the run one more borgmatic call, made by the success hook after it has recorded the success.
 That call is the only part of the status path that reaches the repository or the keyring, and it belongs to the run rather than to a reader.
@@ -384,13 +403,18 @@ A failure, or a kill while it runs, leaves the success recorded and the numbers 
 `added_bytes` is borg's deduplicated size of the newest archive, read after the prune: a chunk it shared only with a pruned archive counts as its own, so the figure can slightly overstate what the run uploaded.
 
 **The waybar pill.** `custom/backup` runs `waybar/scripts/backup.sh`, a reader of the status file that also asks systemd for the timer's next elapse.
+It passes that elapse to `on-schedule.sh` and shows it only if the run would go ahead, and "tomorrow" otherwise, so the schedule's rules live in one script per machine; on falcon the 19:00 elapse always passes.
 `status.sh` sends signal 5 after every write, so the pill follows a run as it starts and ends; the 60-second interval only ages the tooltip and lets `ok` turn `stale`.
 `running` and `failed` describe the newest run, so they win over the age of the last success.
 No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.
 A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
 The guide's **Reading the waybar icon** section is where a change to the states gets explained.
 
-**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than 7 days old, for backups that stopped without ever failing: a timer turned off, a machine never on at 19:00.
+The pill's `stale` and the staleness check below each have a threshold in days, and both live in `borgmatic/staleness`, which the two scripts source and a device overrides.
+They are 3 and 7 by default, and 7 and 14 on panda, which is on a day or two a week and so goes a week without a backup as a matter of course.
+That is a sourced file rather than an `Environment=` drop-in because the pill runs under waybar, out of systemd's reach.
+
+**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than `NOTIFY_STALE_DAYS` days old, for backups that stopped without ever failing: a timer turned off, a machine never on when its timer fires.
 It judges `last_success` alone, so a `failed` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
 A status file without `last_success`, or one jq can't parse, notifies too.
 Without a status file, it notifies only while `backup.timer` is enabled, which is what tells a set-up machine from one that was never set up.

@@ -1,0 +1,10 @@
+[Unit]
+Description=Back up the home directory once a day, at the first chance
+
+[Timer]
+# panda is on at no fixed hour, so a backup is tried soon after login and then hourly; on-schedule.sh lets the first through and skips the rest of the day.
+OnStartupSec=10min
+OnCalendar=hourly
+
+[Install]
+WantedBy=timers.target

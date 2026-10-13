@@ -35,7 +35,7 @@ start)
     ;;
 succeed)
     # The success goes in first, so nothing that goes wrong while measuring it can leave a finished backup reading "running".
-    update --argjson now "$(date +%s)" '.state = "succeeded" | .last_success = $now | .added_bytes = null | .archives = null'
+    update --argjson now "$(date +%s)" '.state = "succeeded" | .last_success = $now | .last_run = $now | .added_bytes = null | .archives = null'
     if stats=$(statistics "$2"); then
         update --argjson stats "$stats" '. + $stats'
     else
@@ -43,7 +43,7 @@ succeed)
     fi
     ;;
 fail)
-    update '.state = "failed"'
+    update --argjson now "$(date +%s)" '.state = "failed" | .last_run = $now'
     ;;
 *)
     echo "usage: ${0##*/} start | succeed CONFIG | fail" >&2

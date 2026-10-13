@@ -1,0 +1,4 @@
+# What panda leaves out on top of patterns.
+
+# MEGA syncs the same files to falcon, whose archives already hold them, and borg deduplicates only within one machine's repository.
+! ~/MEGA

@@ -73,7 +73,7 @@
 ! **/DawnGraphiteCache
 ! **/DawnWebGPUCache
 ! **/component_crx_cache
-! **/Service Worker/CacheStorage
+! **/CacheStorage
 ! **/Crashpad
 
 # The Storage Box's WebDAV mount: a cache, plus the main account's password, which can wipe the whole box
@@ -103,6 +103,9 @@
 ! **/.mozilla/firefox/*/sessionstore-backups
 ! **/.mozilla/firefox/*/minidumps
 ! **/.mozilla/firefox/*/datareporting
+! **/.mozilla/firefox/*/security_state
+! **/.mozilla/firefox/*/gmp-widevinecdm
+! **/.mozilla/firefox/*/gmp-gmpopenh264
 ! **/.mozilla/firefox/Crash Reports
 ! **/.mozilla/firefox/Pending Pings
 ! **/.thunderbird/*/ImapMail
@@ -147,6 +150,11 @@
 ! **/.templateengine
 ! **/.cklib
 ! **/.local/share/pyppeteer
+! **/.local/share/pipx/venvs
+! **/.local/share/GitKrakenCLI/versions
+! **/.codex/packages
+! **/.apklab
+! **/go/bin
 
 # VMs, containers, games
 ! **/.wine
@@ -183,6 +191,9 @@
 ! **/.lldb/module_cache
 ! **/.kube/cache
 ! **/.codex/.tmp
+! **/.codex/cache
+! **/.codex/plugins/cache
+! **/.gitlab-ci-local
 
 # Project build output
 ! **/.next
@@ -206,6 +217,11 @@
 ! **/bin/Release
 ! **/obj/Debug
 ! **/obj/Release
+! **/.build
+! **/*.pkg.tar.zst
+# makepkg's working folders; a bare **/src would take every project's source.
+! **/Programming/other/arch/*/pkg
+! **/Programming/other/arch/*/src
 
 # Crash logs and editor temp files
 ! **/hs_err_pid*.log

@@ -5,8 +5,7 @@
 set -euo pipefail
 
 STATUS="${XDG_STATE_HOME:-$HOME/.local/state}/backup/status.json"
-# Long enough that a weekend away isn't flagged, short enough that a real gap is.
-STALE_DAYS=3
+source "$HOME/.config/borgmatic/staleness"
 
 emit() {
     jq -cn --arg text "$1" --arg tooltip "$2"$'\n\n'"Click to open the log" --arg class "$3" '{text: $text, tooltip: $tooltip, class: $class}'
@@ -19,10 +18,13 @@ when() {
 next_run() {
     local next
     next=$(systemctl --user show backup.timer --property=NextElapseUSecRealtime --value --timestamp=unix 2>/dev/null) || true
-    if [ -n "$next" ]; then
+    if [ -z "$next" ]; then
+        echo "No backup is scheduled"
+    elif "$HOME/.config/borgmatic/on-schedule.sh" "$next" 2>/dev/null; then
         echo "Next backup: $(when "${next#@}")"
     else
-        echo "No backup is scheduled"
+        # panda's timer fires hourly, but once the day's backup has ended, every elapse left today is skipped.
+        echo "Next backup: tomorrow"
     fi
 }
 
@@ -58,8 +60,8 @@ elif [ "$state" = failed ]; then
     headline="The last backup failed" icon="󰧠" class=failed
 elif [ -z "$last_success" ]; then
     headline="Never backed up" icon="󰅤" class=never
-elif ((now - last_success >= STALE_DAYS * 86400)); then
-    headline="No backup in the last $STALE_DAYS days" icon="󰧠" class=stale
+elif ((now - last_success >= PILL_STALE_DAYS * 86400)); then
+    headline="No backup in the last $PILL_STALE_DAYS days" icon="󰧠" class=stale
 else
     headline="Backups are up to date" icon="󰅠" class=ok
 fi
