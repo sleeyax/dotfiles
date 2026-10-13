@@ -77,7 +77,7 @@ That is why keeping seventeen archives costs little more than keeping one.
 borgmatic checks the repository after a run, but not every time:
 
 - Every 2 weeks, it checks the repository's structure and every archive's list of files.
-- Once a month, it runs a *spot check*: it picks 1% of the files in your home directory at random and compares them with the newest archive. It fails if the archive's file count is more than 10% off, or if more than half the sampled files differ.
+- Every 3 months, it runs a *spot check*: it picks 1% of the files in your home directory at random and compares them with the newest archive. It fails if the archive's file count is more than 10% off, or if more than half the sampled files differ.
 
 A full check, which reads back every byte, would download the whole repository, so it is never run on a schedule.
 

@@ -38,7 +38,7 @@ checks:
     - name: archives
       frequency: 2 weeks
     - name: spot
-      frequency: 1 month
+      frequency: 3 months
       count_tolerance_percentage: 10
       data_sample_percentage: 1
       data_tolerance_percentage: 0.5
