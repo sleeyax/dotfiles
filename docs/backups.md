@@ -184,6 +184,7 @@ Every backup that makes an archive, whether you started it or it ran on its own,
 ```json
 {
   "state": "succeeded",
+  "last_run": 1791835000,
   "last_success": 1791835000,
   "added_bytes": 52428800,
   "archives": 12
@@ -191,6 +192,7 @@ Every backup that makes an archive, whether you started it or it ran on its own,
 ```
 
 `state` is `running` while a backup is going, then `succeeded` or `failed`.
+`last_run` is when the last backup ended, whichever way it went.
 The other three describe the last backup that succeeded: when it ended (in seconds since 1970; `date -d @1791835000` turns that into a date), how much it added, and how many archives the repository then held.
 A failed backup leaves them as they were, so the file always says when you last had a good one.
 Right after a success, `added_bytes` and `archives` read `null` for a minute or so while they are measured, and stay `null` if measuring them failed.

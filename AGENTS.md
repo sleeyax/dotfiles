@@ -371,11 +371,12 @@ Anything that shows backup health reads this file and at most the timer's schedu
 | Field | Value |
 | ----- | ----- |
 | `state` | `running`, `succeeded` or `failed` |
+| `last_run` | Unix time the last run ended, whether it succeeded or failed |
 | `last_success` | Unix time the last successful run ended; a failure leaves it alone |
 | `added_bytes` | what the newest archive holds that no other archive does, measured at the end of that run |
 | `archives` | how many archives the repository held at the end of that run |
 
-Only `state` is always there: the other three are missing until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured, or while it is still being measured.
+Only `state` is always there: `last_run` is missing until a first run ends, the other three until a first success, and `added_bytes` and `archives` are null when that success couldn't be measured, or while it is still being measured.
 A reader shows either as unknown rather than failing.
 
 The hooks are `configuration`-level and filtered to `when: create`, so only a run that makes an archive writes the file, and `borgmatic repo-list` by hand never does.
