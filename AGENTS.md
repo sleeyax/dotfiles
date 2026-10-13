@@ -357,11 +357,14 @@ Its `on-schedule.sh` skips the run when `last_run` in the status file falls on t
 It also skips while any `borg` or `borgmatic` of the user's is running, since a backup by hand or a mounted archive holds the repository lock, and a timer run that failed on it would use up the day.
 Both scripts take the same optional argument, a time in any form `date -d` reads, so either can be asked about a time other than now.
 `backup.service` runs at `Nice=19` and `IOSchedulingClass=idle` on both machines, for panda's sake.
+An hourly elapse that comes due during a long run fires again the moment the run ends, and the condition is what turns that into a skip.
 
 `ConditionACPower=true` holds on a machine with no AC connectors at all, so it only ever skips panda on battery; a skipped hour writes nothing, so the next hour on AC still gets the day's attempt.
 A skip by either condition leaves the unit inactive rather than failed, so `OnFailure=backup-failed.service`, a `notify-send`, fires only for a run that started and failed.
 
-borgmatic runs under `systemd-inhibit --what=sleep --mode=block`.
+borgmatic runs beside a `systemd-inhibit --what=sleep --mode=block`, which `borgmatic/inhibit-sleep.sh` starts in the background before it `exec`s borgmatic.
+borgmatic has to be the unit's main process: systemd sends a stop's SIGTERM to every process in the unit and kills whatever is left once the main process exits.
+Were `systemd-inhibit` the main process, it would die on the first SIGTERM and take borgmatic's `fail` hook down with it, leaving a stopped run reading `running` with no `last_run`; `KillMode=mixed` only turns that into a SIGKILL.
 Block mode refuses an unprivileged suspend outright: hypridle's `systemctl suspend` on panda gets "Operation denied due to active block inhibitor", and a manual one on falcon is refused until forced with `systemctl suspend -i` and an admin password.
 hypridle tries once per idle period, so panda stays awake after a backup ends until it next goes idle.
 The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defaults to yes and nothing in Hyprland takes the switch.
@@ -388,7 +391,7 @@ A reader shows either as unknown rather than failing.
 
 The hooks are `configuration`-level and filtered to `when: create`, so only a run that makes an archive writes the file, and `borgmatic repo-list` by hand never does.
 borgmatic retries inside that level, so a run reads `running` across its retries and `failed` only once the last one has failed.
-borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
+borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown or `systemctl --user stop` reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
 
 The two numbers cost the run one more borgmatic call, made by the success hook after it has recorded the success.
 That call is the only part of the status path that reaches the repository or the keyring, and it belongs to the run rather than to a reader.

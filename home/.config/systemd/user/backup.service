@@ -12,6 +12,6 @@ Type=oneshot
 Nice=19
 IOSchedulingClass=idle
 ExecCondition=%h/.config/borgmatic/on-schedule.sh
-# Block mode refuses an unprivileged suspend for as long as the run lasts.
+# Suspend is refused for as long as the run lasts.
 # logind ignores inhibitors for the lid switch by default, so closing the lid still suspends.
-ExecStart=systemd-inhibit --what=sleep --mode=block --who=borgmatic "--why=Backing up to the Storage Box" borgmatic --verbosity -2 --syslog-verbosity 1
+ExecStart=%h/.config/borgmatic/inhibit-sleep.sh borgmatic --verbosity -2 --syslog-verbosity 1
