@@ -45,6 +45,8 @@ checks:
 
 retries: 3
 retry_wait: 300
+# A connection that drops mid-backup can leave the repository locked on the Storage Box for about half an hour, so each try waits out a lock rather than failing on it at once.
+lock_wait: 600
 
 commands:
     # A rebuilt machine reads what to reinstall out of the archive it is restoring.

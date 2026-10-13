@@ -137,6 +137,9 @@ Turning the timer off also removes its file from `~/.config/systemd/user`, which
 A backup that fails, for instance because the router restarted, is retried three times.
 The waits grow from 5 to 10 to 15 minutes, so the last try starts about half an hour after the first failure.
 
+A connection that drops in the middle of a backup can leave the repository locked on the Storage Box for up to about half an hour, until the box notices the connection is gone.
+So each try waits up to 10 minutes for the lock before it gives up, which is enough for the retries to outlast it; the last try can then start up to 50 minutes after the first failure.
+
 ### Snapshots, in case a machine is compromised
 
 Each machine's key can delete that machine's archives: it has to, because every run prunes the old ones.
@@ -595,10 +598,11 @@ Replace it with the one from KeePassXC, using the same `secret-tool store` comma
 
 **`Failed to create/acquire the lock … (timeout).`**
 
-Something else on this machine is using the repository: an archive that is still mounted (see [Restoring a single file](#restoring-a-single-file)), or a backup you started by hand.
+Something else is using the repository: an archive that is still mounted (see [Restoring a single file](#restoring-a-single-file)), or a backup you started by hand.
 No other machine can be, since each has its own repository.
 Run the backup again once that is done.
-If neither is the case, a backup was killed while it held the lock; check that `systemctl --user status backup.service` says `inactive` and no `borgmatic` is running, then remove the lock with `borgmatic borg break-lock`.
+A backup whose connection dropped can also leave the lock behind on the Storage Box for up to about half an hour; the retries normally wait that out, and otherwise a backup by hand half an hour later gets through.
+If none of these is the case, a backup was killed while it held the lock; check that `systemctl --user status backup.service` says `inactive` and no `borgmatic` is running, then remove the lock with `borgmatic break-lock`.
 
 **`Connection closed by remote host.`**
 
