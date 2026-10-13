@@ -1,0 +1,3 @@
+# panda is on a day or two a week and backs up once on each of them, so a week without a backup is routine.
+PILL_STALE_DAYS=7
+NOTIFY_STALE_DAYS=14

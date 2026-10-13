@@ -396,7 +396,11 @@ No status file reads `never`, dimmed rather than amber: a machine that was never
 A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
 The guide's **Reading the waybar icon** section is where a change to the states gets explained.
 
-**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than 7 days old, for backups that stopped without ever failing: a timer turned off, a machine never on at 19:00.
+The pill's `stale` and the staleness check below each have a threshold in days, and both live in `borgmatic/staleness`, which the two scripts source and a device overrides.
+They are 3 and 7 by default, and 7 and 14 on panda, which is on a day or two a week and so goes a week without a backup as a matter of course.
+That is a sourced file rather than an `Environment=` drop-in because the pill runs under waybar, out of systemd's reach.
+
+**The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than `NOTIFY_STALE_DAYS` days old, for backups that stopped without ever failing: a timer turned off, a machine never on at 19:00.
 It judges `last_success` alone, so a `failed` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
 A status file without `last_success`, or one jq can't parse, notifies too.
 Without a status file, it notifies only while `backup.timer` is enabled, which is what tells a set-up machine from one that was never set up.

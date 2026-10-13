@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
-# Sends a desktop notification when the last successful backup is more than a week old; backup-stale.timer runs it at login and daily.
+# Sends a desktop notification when the last successful backup is older than NOTIFY_STALE_DAYS; backup-stale.timer runs it at login and daily.
 # Reads the status file the backup hooks write, whose fields and readers are the contract under Backups in AGENTS.md.
 set -euo pipefail
 
 STATUS="${XDG_STATE_HOME:-$HOME/.local/state}/backup/status.json"
-# The waybar icon turns amber after 3 days; a notification is for a gap that has outlasted that.
-STALE_DAYS=7
+source "$HOME/.config/borgmatic/staleness"
 
 notify() {
     notify-send --urgency=critical --app-name=Backup --icon=dialog-warning "$1" "$2"
@@ -29,6 +28,6 @@ if [ -z "$last_success" ]; then
 fi
 
 age=$(($(date +%s) - last_success))
-if ((age > STALE_DAYS * 86400)); then
+if ((age > NOTIFY_STALE_DAYS * 86400)); then
     notify "No backup in $((age / 86400)) days" "The last one that succeeded was on $(date -d "@$last_success" '+%a %-d %b')."
 fi

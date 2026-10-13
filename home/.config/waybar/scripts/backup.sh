@@ -5,8 +5,7 @@
 set -euo pipefail
 
 STATUS="${XDG_STATE_HOME:-$HOME/.local/state}/backup/status.json"
-# Long enough that a weekend away isn't flagged, short enough that a real gap is.
-STALE_DAYS=3
+source "$HOME/.config/borgmatic/staleness"
 
 emit() {
     jq -cn --arg text "$1" --arg tooltip "$2"$'\n\n'"Click to open the log" --arg class "$3" '{text: $text, tooltip: $tooltip, class: $class}'
@@ -58,8 +57,8 @@ elif [ "$state" = failed ]; then
     headline="The last backup failed" icon="󰧠" class=failed
 elif [ -z "$last_success" ]; then
     headline="Never backed up" icon="󰅤" class=never
-elif ((now - last_success >= STALE_DAYS * 86400)); then
-    headline="No backup in the last $STALE_DAYS days" icon="󰧠" class=stale
+elif ((now - last_success >= PILL_STALE_DAYS * 86400)); then
+    headline="No backup in the last $PILL_STALE_DAYS days" icon="󰧠" class=stale
 else
     headline="Backups are up to date" icon="󰅠" class=ok
 fi

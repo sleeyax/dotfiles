@@ -1,0 +1,6 @@
+# How many days without a successful backup count as stale; a device replaces this file under devices/<device>/.
+
+# The waybar icon turns amber after this long: a weekend away isn't flagged, a real gap is.
+PILL_STALE_DAYS=3
+# A notification interrupts, so it waits for a gap that has outlasted the icon's.
+NOTIFY_STALE_DAYS=7

@@ -97,7 +97,7 @@ Suspending falcon by hand is refused too; in a terminal, `systemctl suspend` say
 A backup cut short by sleep or a shutdown isn't wasted: the next one reuses everything it had already uploaded.
 
 When a backup fails, after the retries described below, a desktop notification tells you so.
-When backups stop without failing, because the machine was never on at 19:00 or the timer was turned off, a notification tells you once the last good backup is more than a week old (see [When backups fail or go stale](#when-backups-fail-or-go-stale)).
+When backups stop without failing, because the machine was never on at 19:00 or the timer was turned off, a notification tells you once the last good backup is more than a week old, two weeks on panda (see [When backups fail or go stale](#when-backups-fail-or-go-stale)).
 
 To see when the next backup is due, and when the last one started:
 
@@ -305,9 +305,9 @@ It reads the status file described in [Running a backup by hand](#running-a-back
 
 | Icon | Means | What to do |
 | ---- | ----- | ---------- |
-| Plain cloud with a tick | The last backup succeeded, less than 3 days ago. | Nothing. |
+| Plain cloud with a tick | The last backup succeeded, less than 3 days ago (7 on panda). | Nothing. |
 | Cloud with an upward arrow | A backup is running now. | Nothing. A scheduled one keeps the machine from going to sleep by itself until it is done. |
-| Amber cloud with an exclamation mark | Stale: the last backup that succeeded was 3 or more days ago. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
+| Amber cloud with an exclamation mark | Stale: the last backup that succeeded was 3 or more days ago (7 on panda). | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
 | Red cloud with an exclamation mark, red border | The last backup failed, after all its retries. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
 | Grey cloud, crossed out | Never backed up: no backup has succeeded on this machine yet. | If the tooltip says no backup is scheduled, set the machine up (see [One-time setup](#one-time-setup)). Otherwise the first one runs at 19:00. |
 
@@ -601,10 +601,12 @@ The repository went back in time; see [Rolling the box back](#rolling-the-box-ba
 ### The "No backup in N days" notification
 
 A minute after you log in, and every day at 12:00, the machine checks when a backup last succeeded.
-If that was more than 7 days ago, a notification says so, and it keeps saying so at every login and every noon until a backup succeeds.
+If that was more than 7 days ago (14 on panda), a notification says so, and it keeps saying so at every login and every noon until a backup succeeds.
 Like the waybar icon, it reads the status file and asks whether the timer is on, so the check never contacts the Storage Box.
 
 Where the icon turns amber after 3 days, the notification waits a week: a long weekend away is no reason to interrupt you, but a week without a backup is.
+panda is on only a day or two a week, so a week without a backup is normal there, and both wait twice as long: 7 days for the icon, 14 for the notification.
+Both numbers are in [`~/.config/borgmatic/staleness`](../home/.config/borgmatic/staleness), and panda's in [its own copy](../devices/laptop/.config/borgmatic/staleness).
 A failed backup has a notification of its own the evening it fails; this one is for backups that stopped happening without anything failing.
 
 The notification comes in three kinds:

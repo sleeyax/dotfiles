@@ -1,5 +1,5 @@
 [Unit]
-Description=Notify when the last successful backup is more than a week old
+Description=Notify when the last successful backup is too old
 
 [Service]
 Type=oneshot
