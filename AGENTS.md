@@ -341,7 +341,7 @@ borgmatic interpolates `${VAR}` across the whole config at load time, hooks incl
 YAML reads a bare `~` as null, which is why the source is quoted.
 
 **History and checks.** Keep 7 daily, 4 weekly and 6 monthly; every run prunes and compacts its own repository, so there is no append-only mode and no separate prune host.
-`repository` and `archives` checks run every 2 weeks and `spot` monthly; `data` reads back the whole repository and so is never scheduled.
+`repository` and `archives` checks run every 2 weeks and `spot` every 3 months; `data` reads back the whole repository and so is never scheduled.
 The spot check hashes with `xxh64sum`, which comes from `xxhash`, a borg dependency.
 `retries: 3` with `retry_wait: 300` backs off linearly, retrying about 5, 15 and 30 minutes after the first failure — enough to outlast a router reboot.
 A dropped connection can leave its lock on the box well after the client gave up: on panda's first backup the lock outlived a connection reset by more than 19 minutes and was gone within 28 without a `break-lock`, so the box's `borg serve` evidently lived on until the box noticed the connection was dead.
