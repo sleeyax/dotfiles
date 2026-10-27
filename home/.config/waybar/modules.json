@@ -122,7 +122,8 @@
     "interval": 60,
     "signal": 5,
     "tooltip": true,
-    "on-click": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e journalctl --user -u backup.service -e --boot=all"
+    "on-click": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e journalctl --user -u backup.service -e --boot=all",
+    "on-click-right": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e sh -c '~/.config/borgmatic/changes.sh 2>&1 | less'"
   },
   // Rofi Application Launcher
   "custom/appmenu": {
