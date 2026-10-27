@@ -8,7 +8,7 @@ STATUS="${XDG_STATE_HOME:-$HOME/.local/state}/backup/status.json"
 source "$HOME/.config/borgmatic/staleness"
 
 emit() {
-    jq -cn --arg text "$1" --arg tooltip "$2"$'\n\n'"Click to open the log" --arg class "$3" '{text: $text, tooltip: $tooltip, class: $class}'
+    jq -cn --arg text "$1" --arg tooltip "$2"$'\n\n'"Click to open the log"$'\n'"Right-click to see what the last backup changed" --arg class "$3" '{text: $text, tooltip: $tooltip, class: $class}'
 }
 
 when() {

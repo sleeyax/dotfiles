@@ -123,6 +123,11 @@ To read what the scheduled backups printed, including why one failed:
 journalctl --user -u backup.service
 ```
 
+Each backup's entry includes two size tables.
+The one after **Creating archive** describes the new archive: its **Deduplicated size** is what the backup actually uploaded, since everything else was already in the repository.
+The one after **Pruning archives** says, under **Deleted data**, how much the archives that were pruned took up; its **Deduplicated size** is the space that was freed.
+The log doesn't list files; to see which ones a backup added, changed or deleted, see [Running a backup by hand](#running-a-backup-by-hand).
+
 To stop the scheduled backups, and to start them again:
 
 ```bash
@@ -187,6 +192,24 @@ To see what is in the repository:
 borgmatic repo-list                     # every archive
 borgmatic list --archive latest         # every file in the newest archive
 ```
+
+To see what the newest backup changed, compared with the one before it:
+
+```bash
+~/.config/borgmatic/changes.sh | less
+```
+
+Each line is one file:
+
+- `added 1.20 MB <path>`: new since the archive before, and how big it is.
+- `removed 300.00 kB <path>`: deleted since the archive before, and how big it was.
+- `+14 B -6 B <path>`: changed; the two numbers are how much data was added to and removed from the file.
+- `added directory`, `removed directory`, `changed link` and the like: the same for a folder or a symbolic link, which have no size of their own.
+
+A file whose contents didn't change is left out, even if its timestamps did.
+It reads both archives' lists of files from the Storage Box, so it takes a minute or so on falcon.
+A backup that is running holds the repository until it ends, so during one it waits up to 10 minutes and then gives up.
+To compare any two archives, give their names from `borgmatic repo-list`: `borgmatic diff --archive <older> --second-archive <newer> --content-only`.
 
 To see what a backup *would* include, without making an archive:
 
@@ -337,6 +360,9 @@ Hover over the icon for the details:
 Clicking the icon opens the backup log, the same as `journalctl --user -u backup.service`, at its end, where the latest backup is.
 Press `q` to close it.
 A backup you run by hand prints to your terminal instead, so it isn't in that log.
+
+Right-clicking the icon lists what the newest backup changed, the same as `~/.config/borgmatic/changes.sh` described in [Running a backup by hand](#running-a-backup-by-hand).
+It takes a minute or so to appear; press `q` to close it.
 
 The icon can be stuck on the upward arrow if a backup was cut off by a power cut, or killed without a chance to clean up.
 If `systemctl --user status backup.service` says `inactive` and no `borgmatic` is running, that is what happened; the next backup puts the icon right.

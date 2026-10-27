@@ -28,6 +28,10 @@ borg_exit_codes:
     - code: 105
       treat_as: warning
 
+# Each run logs the new archive's sizes, and prune what it deleted.
+# A line per changed file would bury the rest of the log, so changes.sh lists those on demand instead.
+statistics: quick
+
 keep_daily: 7
 keep_weekly: 4
 keep_monthly: 6

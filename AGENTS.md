@@ -348,6 +348,12 @@ A dropped connection can leave its lock on the box well after the client gave up
 `lock_wait: 600` lets each try wait 10 minutes for the lock rather than borg's default of 1 second, which carries the retries past that window.
 The price is that a lock held for real, such as a mounted archive on falcon, costs each try 10 minutes before it fails.
 
+**What a run logs.** `statistics: quick` ends each run's journal entry with the new archive's sizes, and prune's with what it deleted; `quick` leaves out the repository-wide totals, which say nothing about the run.
+`list_details` stays off: a line per added or modified file would bury the rest of the log, and `borg create` couldn't name deleted files anyway, since it only walks what is on disk.
+`borgmatic/changes.sh` covers both on demand, with `borgmatic diff --content-only` between the two newest archives.
+It isn't run per backup because a diff reads both archives' file lists from the box, the same cost that keeps `info` out of the status path.
+`--content-only` drops files whose timestamps changed but whose contents didn't.
+
 **Scheduling.** falcon backs up at 19:00, during dinner, and never while it could be in use; every choice in the next paragraph serves that.
 `backup.timer` starts `backup.service` daily at 19:00 local time and is not `Persistent`, so a day the machine was off is skipped rather than caught up at boot.
 A timer whose elapse passed during suspend fires on resume all the same, so the service's `ExecCondition=` runs `borgmatic/on-schedule.sh`, which lets a run start only until 19:10.
@@ -408,6 +414,8 @@ It passes that elapse to `on-schedule.sh` and shows it only if the run would go 
 `running` and `failed` describe the newest run, so they win over the age of the last success.
 No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.
 A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
+A left click opens the journal at its end, with `--boot=all` because `journalctl -e` otherwise implies the current boot, which on falcon often holds no run.
+A right click runs `changes.sh` in a terminal; unlike the rest of the pill it reaches the box and the keyring, which is acceptable for something that only runs when asked.
 The guide's **Reading the waybar icon** section is where a change to the states gets explained.
 
 The pill's `stale` and the staleness check below each have a threshold in days, and both live in `borgmatic/staleness`, which the two scripts source and a device overrides.
