@@ -122,7 +122,7 @@
     "interval": 60,
     "signal": 5,
     "tooltip": true,
-    "on-click": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e journalctl --user -u backup.service -e"
+    "on-click": "$(cat ~/.config/ml4w/settings/terminal.sh) --class dotfiles-floating -e journalctl --user -u backup.service -e --boot=all"
   },
   // Rofi Application Launcher
   "custom/appmenu": {
