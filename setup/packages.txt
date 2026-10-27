@@ -36,4 +36,4 @@ python-pip
 cargo
 
 # --- Kubernetes ---
-kubie
+kubectx
