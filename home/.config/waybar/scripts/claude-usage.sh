@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Waybar readout of the two Claude Code rate limit windows.
+# Waybar readout of the Claude Code rate limit windows.
 #
 #   claude-usage.sh        print one line of JSON for waybar (default)
-#   claude-usage.sh fetch  ask Anthropic for the two windows, cache them, signal waybar on change
+#   claude-usage.sh fetch  ask Anthropic for the windows, cache them, signal waybar on change
 #
 # Asking is the only way to have the numbers at all. The statusline is the one place Claude Code
 # hands `rate_limits` to userspace, and it only renders in the terminal client, so a session driven
@@ -26,9 +26,15 @@ ATTEMPTED="$CACHE_DIR/last-fetch"
 # The module draws entirely with images, so its text is nothing but the spaces they are painted
 # over. A label's hit region follows its text and not its CSS padding, so holding the width open
 # with padding instead would leave the mark and the rings unhoverable and the tooltip unreachable.
-# Non-breaking, because Pango is free to drop ordinary spaces at an edge.
-# One per 9.6px at font-size 16px: margin, mark (18px), gap, ring, gap, ring, margin.
-SPACER=$'\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0'
+# Geometry of those images, in px at font-size 16px; the spacer count follows from the ring count.
+# The mark needs no term in the width, since it sits inside the first ring's lead-in.
+SPACER_ADVANCE=96 # tenths of a px, so the spacer count divides in integers
+MARK_X=12
+MARK_SIZE=18
+RING_X=38
+RING_SIZE=16
+RING_PITCH=24
+TRAIL=8 # right margin past the last ring
 
 # The rings are drawn as SVG rather than picked from the eight nf-md-circle_slice glyphs, so a
 # percentage renders at its exact angle. The stylesheet that paints them over the spacer is
@@ -75,6 +81,8 @@ epoch() { # $1 = ISO 8601 timestamp, or empty
 
 # The response names the same two windows twice: an older five_hour/seven_day pair, and a limits[]
 # array keyed by kind. Reading both means either one going away costs nothing.
+# A plan may have no five hour window at all, so any field can be empty, and the fields are split on
+# a non-whitespace separator because read collapses a run of whitespace ones, tabs included.
 fetch() {
   local token body five_pct five_at seven_pct seven_at payload
   token=$(jq -r '.claudeAiOauth.accessToken // empty' "$CREDENTIALS" 2>/dev/null)
@@ -92,7 +100,7 @@ fetch() {
     return 1
   }
 
-  IFS=$'\t' read -r five_pct five_at seven_pct seven_at <<<"$(
+  IFS=$'\x1f' read -r five_pct five_at seven_pct seven_at <<<"$(
     jq -r '
       def window($obj; $kind):
         ([.limits[]? | select(.kind == $kind and (.percent | type) == "number")] | first) as $limit
@@ -101,7 +109,7 @@ fetch() {
             then [$obj.utilization, $obj.resets_at]
           else [null, null]
           end;
-      window(.five_hour; "session") + window(.seven_day; "weekly_all") | map(. // "") | @tsv
+      window(.five_hour; "session") + window(.seven_day; "weekly_all") | map(. // "" | tostring) | join("\u001f")
     ' <<<"$body" 2>/dev/null
   )"
 
@@ -140,7 +148,7 @@ maybe_refresh() { # $1 = now
 }
 
 hide() {
-  write_style -1 -1 ok
+  write_style ok
   jq -cn '{text: "", class: "", tooltip: "", percentage: 0}'
   exit 0
 }
@@ -151,22 +159,18 @@ palette() { # $1 = matugen colour name, $2 = fallback
   printf '%s' "${hex:-$2}"
 }
 
-# A window that is absent renders as nothing at all rather than as an empty ring, which would claim
-# the quota is untouched.
-svg_ring() { # $1 = 0..100, or negative for absent; $2 = stroke colour
+svg_ring() { # $1 = 0..100; $2 = stroke colour
   awk -v pct="$1" -v col="$2" -v track="$TRACK_OPACITY" -v sw="$ARC_WIDTH" 'BEGIN {
     size = 32; c = size / 2; r = c * 0.95 - sw / 2; pi = 3.141592653589793
     printf "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\">", size, size, size, size
-    if (pct >= 0) {
-      printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-opacity=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, track, sw
-      # A 100% arc ends where it starts, which draws nothing, so the closed ring is its own case.
-      if (pct >= 100)
-        printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, sw
-      else if (pct > 0) {
-        a = 2 * pi * pct / 100 - pi / 2
-        printf "<path d=\"M %g %g A %g %g 0 %d 1 %.2f %.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>",
-          c, c - r, r, r, (pct > 50), c + r * cos(a), c + r * sin(a), col, sw
-      }
+    printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-opacity=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, track, sw
+    # A 100% arc ends where it starts, which draws nothing, so the closed ring is its own case.
+    if (pct >= 100)
+      printf "<circle cx=\"%g\" cy=\"%g\" r=\"%g\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>", c, c, r, col, sw
+    else if (pct > 0) {
+      a = 2 * pi * pct / 100 - pi / 2
+      printf "<path d=\"M %g %g A %g %g 0 %d 1 %.2f %.2f\" fill=\"none\" stroke=\"%s\" stroke-width=\"%g\"/>",
+        c, c - r, r, r, (pct > 50), c + r * cos(a), c + r * sin(a), col, sw
     }
     printf "</svg>"
   }'
@@ -175,13 +179,8 @@ svg_ring() { # $1 = 0..100, or negative for absent; $2 = stroke colour
 # A ring is named after what it draws, so redrawing one is a new url() rather than new bytes behind
 # an old one. GTK keeps the decoded image in the style provider and would go on painting the old
 # bytes; a name it has never seen has nothing to serve from.
-ring_file() { # $1 = 0..100, or negative for absent; $2 = stroke colour; prints the basename
-  local name tmp
-  if (($1 < 0)); then
-    name="ring-none.svg"
-  else
-    name="ring-$1-${2#\#}.svg"
-  fi
+ring_file() { # $1 = 0..100; $2 = stroke colour; prints the basename
+  local name="ring-$1-${2#\#}.svg" tmp
 
   if [ ! -e "$CACHE_DIR/$name" ]; then
     tmp=$(mktemp "$CACHE_DIR/.ring.XXXXXX") || return 1
@@ -265,14 +264,18 @@ render() {
   ((sd_reset > 0 && now >= sd_reset)) && { sd_pct=0; sd_reset=0; }
 
   # Everything visible is a CSS background image; the text only holds the space open.
+  # An absent window gets no ring rather than an empty one, which would claim the quota is untouched.
   local tooltip='' paces='' pace_txt age age_txt maxpct=0 class=ok
+  local -a pcts=()
   if ((fh_pct >= 0)); then
+    pcts+=("$fh_pct")
     tooltip+=$(row '5 hour' "$fh_pct" "$fh_reset" "$now")
     pace_txt=$(pace '5 hour' "$fh_pct" "$fh_reset" "$FIVE_HOUR_WINDOW" "$now")
     [ -n "$pace_txt" ] && paces+=${paces:+$'\n'}$pace_txt
     ((fh_pct > maxpct)) && maxpct=$fh_pct
   fi
   if ((sd_pct >= 0)); then
+    pcts+=("$sd_pct")
     [ -n "$tooltip" ] && tooltip+=$'\n'
     tooltip+=$(row 'Week' "$sd_pct" "$sd_reset" "$now")
     pace_txt=$(pace 'Week' "$sd_pct" "$sd_reset" "$SEVEN_DAY_WINDOW" "$now")
@@ -294,45 +297,74 @@ render() {
   ((maxpct >= 75)) && class=warn
   ((maxpct >= 90)) && class=crit
 
-  write_style "$fh_pct" "$sd_pct" "$class"
+  write_style "$class" "${pcts[@]}"
 
   # The tooltip is its own GTK window, so #custom-claude-usage never reaches it and the columns only
   # line up if the markup asks for the monospace font itself.
-  jq -cn --arg text "$SPACER" --arg tt "<span font_family=\"JetBrainsMono Nerd Font\">$tooltip</span>" \
+  jq -cn --arg text "$(spacer "${#pcts[@]}")" --arg tt "<span font_family=\"JetBrainsMono Nerd Font\">$tooltip</span>" \
     --arg cls "$class" --argjson pct "$maxpct" \
     '{text: $text, class: $cls, tooltip: $tt, percentage: $pct}'
+}
+
+# Non-breaking, because Pango is free to drop ordinary spaces at an edge.
+spacer() { # $1 = ring count
+  local width=$((10 * (RING_X + ($1 - 1) * RING_PITCH + RING_SIZE + TRAIL))) n
+  n=$(((width + SPACER_ADVANCE - 1) / SPACER_ADVANCE))
+  printf '\u00a0%.0s' $(seq "$n")
+}
+
+join() { # $@ = CSS layer values; prints them as one comma-separated list
+  local out=$1
+  shift
+  printf '%s' "$out" "${@/#/, }"
 }
 
 # The class only recolours the mascot, so the same three palette entries are resolved here for the
 # rings. A wallpaper change rewrites the palette without telling us, so the colour is re-read every
 # render and the rings catch up on the next interval.
-write_style() { # $1 = five hour percentage, $2 = seven day percentage, $3 = class
-  local fill fh sd css tmp
-  case $3 in
+write_style() { # $1 = class; $2.. = ring percentages
+  local class=$1 fill css tmp pct name x=$RING_X
+  shift
+  case $class in
     crit) fill=$(palette error '#ffb4ab') ;;
     warn) fill=$(palette tertiary '#e5bad8') ;;
     *) fill=$(palette on_surface '#e3e1e9') ;;
   esac
 
   mkdir -p "$CACHE_DIR" || return
-  fh=$(ring_file "$1" "$fill") || return
-  sd=$(ring_file "$2" "$fill") || return
+
+  local -a names=() images=() repeats=() positions=() sizes=()
+  for pct in "$@"; do
+    name=$(ring_file "$pct" "$fill") || return
+    names+=("$name")
+    images+=("url(\"$name\")")
+    repeats+=("no-repeat")
+    positions+=("${x}px center")
+    sizes+=("${RING_SIZE}px ${RING_SIZE}px")
+    x=$((x + RING_PITCH))
+  done
+
+  if ((${#images[@]})); then
+    # url()s resolve against this file, so only the mark, which lives in the stow tree, needs a path.
+    css="/* Generated by claude-usage.sh. */
+#custom-claude-usage {
+    background-image: url(\"$MARK\"), $(join "${images[@]}");
+    background-repeat: no-repeat, $(join "${repeats[@]}");
+    background-position: ${MARK_X}px center, $(join "${positions[@]}");
+    background-size: ${MARK_SIZE}px ${MARK_SIZE}px, $(join "${sizes[@]}");
+}"
+  else
+    css="/* Generated by claude-usage.sh: nothing to draw. */"
+  fi
 
   # Waybar's reload_style_on_change watches this file and reloads the style provider alone, where
   # SIGUSR2 would reset the whole bar and every module on it would blink out and shift the layout.
-  # url()s resolve against this file, so only the mark, which lives in the stow tree, needs a path.
-  css="/* Generated by claude-usage.sh. */
-#custom-claude-usage {
-    background-image: url(\"$MARK\"), url(\"$fh\"), url(\"$sd\");
-    background-repeat: no-repeat, no-repeat, no-repeat;
-    background-position: 12px center, 38px center, 62px center;
-    background-size: 18px 18px, 16px 16px, 16px 16px;
-}"
-
   [ "$css" = "$(cat "$RINGS_CSS" 2>/dev/null)" ] && return
   tmp=$(mktemp "$CACHE_DIR/.rings.XXXXXX") || return
   if printf '%s\n' "$css" >"$tmp" && mv -f "$tmp" "$RINGS_CSS"; then
-    find "$CACHE_DIR" -maxdepth 1 -name 'ring-*.svg' ! -name "$fh" ! -name "$sd" -delete
+    local -a keep=()
+    for name in "${names[@]}"; do keep+=(! -name "$name"); done
+    find "$CACHE_DIR" -maxdepth 1 -name 'ring-*.svg' "${keep[@]}" -delete
   else
     rm -f "$tmp"
   fi

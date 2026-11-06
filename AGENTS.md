@@ -174,8 +174,9 @@ Nothing else a session leaves behind carries a percentage either: the SDK's `rat
 It records them locally too — every rollout under `~/.codex/sessions/` carries a `rate_limits` object — but only for a session that ran here, so reading those would make the bar a log of this machine rather than a view of the account.
 
 How many windows a Codex plan has is the plan's business: the response carries a `primary_window` and a `secondary_window` that may be null, and their `limit_window_seconds` is what names them.
-So the module draws a ring per window present and derives each label, where `claude-usage.sh` knows its two windows by name.
-The spacer count and the `background-position` offsets follow from that count, which is why its geometry constants are named rather than written into the CSS string.
+So the module draws a ring per window present and derives each label.
+`claude-usage.sh` knows its two windows by name, `five_hour` and `seven_day`, but a plan may have only the weekly one, so it too draws a ring per window present.
+In both, the spacer count and the `background-position` offsets follow from that count, which is why the geometry constants are named rather than written into the CSS string.
 
 Both scripts share the rest.
 `render` starts a `fetch` in the background once the `last-fetch` marker is older than `REFRESH_INTERVAL`.
