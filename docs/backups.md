@@ -96,6 +96,7 @@ When it goes off depends on the machine, because falcon and panda are used at di
 
 - **Ten minutes after you log in, and then every hour**, the timer goes off.
 - **The first backup that runs wins the day:** once a backup has ended, whether it succeeded or failed, the rest of the day is skipped. A failed backup is tried again tomorrow rather than every hour; to try sooner, run one by hand.
+- **A backup you shut panda down in the middle of doesn't count:** the next hour you are logged in tries again.
 - **panda is on battery:** that hour is skipped, so a backup never drains the battery. The next hour on the charger takes it.
 - **A backup you started by hand, or a mounted archive, is still there:** that hour is skipped too, rather than failing on the locked repository.
 
@@ -229,10 +230,10 @@ Every backup that makes an archive, whether you started it or it ran on its own,
 }
 ```
 
-`state` is `running` while a backup is going, then `succeeded` or `failed`.
+`state` is `running` while a backup is going, then `succeeded` or `failed`, or `interrupted` when a shutdown, a logout or `systemctl --user stop` stopped it before it finished.
 `last_run` is when the last backup ended, whichever way it went.
 The other three describe the last backup that succeeded: when it ended (in seconds since 1970; `date -d @1791835000` turns that into a date), how much it added, and how many archives the repository then held.
-A failed backup leaves them as they were, so the file always says when you last had a good one.
+A backup that doesn't succeed leaves them as they were, so the file always says when you last had a good one.
 Right after a success, `added_bytes` and `archives` read `null` for a minute or so while they are measured, and stay `null` if measuring them failed.
 Anything that shows how your backups are doing reads this file, so it never has to contact the Storage Box.
 
@@ -348,10 +349,12 @@ It reads the status file described in [Running a backup by hand](#running-a-back
 | Cloud with an upward arrow | A backup is running now. | Nothing. A scheduled one keeps the machine from going to sleep by itself until it is done. |
 | Amber cloud with an exclamation mark | Stale: the last backup that succeeded was 3 or more days ago (7 on panda). | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
 | Red cloud with an exclamation mark, red border | The last backup failed, after all its retries. | See [When backups fail or go stale](#when-backups-fail-or-go-stale). |
+| Grey cloud with a circular arrow | Interrupted: the last backup was stopped before it finished, usually because you shut the machine down, and the last one that succeeded is less than 3 days old (7 on panda). | Nothing. The next backup reuses what this one uploaded, and on panda it comes the next hour you are logged in. To have one sooner, run it by hand. |
 | Grey cloud, crossed out | Never backed up: no backup has succeeded on this machine yet. | If the tooltip says no backup is scheduled, set the machine up (see [One-time setup](#one-time-setup)). Otherwise the first one runs at the next scheduled time (see [When backups run](#when-backups-run)). |
 
 Hover over the icon for the details:
 
+- **Interrupted**: when the last backup was stopped, if it was. It shows on an amber icon too, when the last good backup is old as well.
 - **Last backup**: when the last successful backup ended, and how long ago that was.
 - **Added**: how much new data that backup stored, after deduplication. It reads `unknown` for a minute or so after a backup ends, while it is being measured.
 - **Archives**: how many archives the repository holds.

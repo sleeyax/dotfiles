@@ -521,7 +521,8 @@ window#waybar.empty #window {
  * Backup
  * ----------------------------------------------------- */
 
-#custom-backup.never {
+#custom-backup.never,
+#custom-backup.interrupted {
     color: @outline;
 }
 

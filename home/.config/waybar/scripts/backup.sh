@@ -44,9 +44,9 @@ ago() {
     echo "$count $unit ago"
 }
 
-state="" last_success="" added_bytes="" archives=""
+state="" last_run="" last_success="" added_bytes="" archives=""
 if [ -e "$STATUS" ]; then
-    if ! fields=$(jq -r '@sh "state=\(.state | strings // "") last_success=\(.last_success | numbers // "") added_bytes=\(.added_bytes | numbers // "") archives=\(.archives | numbers // "")"' "$STATUS" 2>/dev/null); then
+    if ! fields=$(jq -r '@sh "state=\(.state | strings // "") last_run=\(.last_run | numbers // "") last_success=\(.last_success | numbers // "") added_bytes=\(.added_bytes | numbers // "") archives=\(.archives | numbers // "")"' "$STATUS" 2>/dev/null); then
         emit "󰧠" "$STATUS can't be read" failed
         exit 0
     fi
@@ -58,15 +58,21 @@ if [ "$state" = running ]; then
     headline="Backing up now" icon="󰅧" class=running
 elif [ "$state" = failed ]; then
     headline="The last backup failed" icon="󰧠" class=failed
+elif [ -n "$last_success" ] && ((now - last_success >= PILL_STALE_DAYS * 86400)); then
+    headline="No backup in the last $PILL_STALE_DAYS days" icon="󰧠" class=stale
+elif [ "$state" = interrupted ]; then
+    # A stopped run has nothing to fix, so it gives way to staleness, which does.
+    headline="The last backup was interrupted" icon="󰔪" class=interrupted
 elif [ -z "$last_success" ]; then
     headline="Never backed up" icon="󰅤" class=never
-elif ((now - last_success >= PILL_STALE_DAYS * 86400)); then
-    headline="No backup in the last $PILL_STALE_DAYS days" icon="󰧠" class=stale
 else
     headline="Backups are up to date" icon="󰅠" class=ok
 fi
 
 tooltip="$headline"
+if [ "$state" = interrupted ] && [ -n "$last_run" ]; then
+    tooltip+=$'\n'"Interrupted: $(when "$last_run")"
+fi
 if [ -n "$last_success" ]; then
     tooltip+=$'\n'"Last backup: $(when "$last_success") ($(ago $((now - last_success))))"
     added=unknown

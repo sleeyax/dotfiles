@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Lets one backup a day through: backup.timer tries every hour, and once a run has ended that day, succeeded or failed, the rest are skipped.
 # A failure therefore waits for tomorrow rather than notifying every hour; a backup by hand is the way to retry sooner.
+# A run stopped before it finished, as by a shutdown, never had its chance, so it doesn't use the day up.
 # backup.service runs it as ExecCondition=, where exit 1 skips the run and 255 fails it.
 #
 #   on-schedule.sh [TIME]   judge TIME, in any form date -d reads, rather than now
@@ -21,8 +22,8 @@ if pgrep -u "$USER" -x 'borg|borgmatic' >/dev/null; then
 fi
 
 # Without a readable status file there is no run to have ended today.
-last_run=$(jq -r '.last_run | numbers // 0' "$STATUS" 2>/dev/null) || last_run=0
-if ((last_run >= midnight)); then
+last_run=$(jq -r 'select(.state != "interrupted") | .last_run | numbers' "$STATUS" 2>/dev/null) || last_run=""
+if ((${last_run:-0} >= midnight)); then
     echo "A backup already ran on $day; skipping until tomorrow." >&2
     exit 1
 fi

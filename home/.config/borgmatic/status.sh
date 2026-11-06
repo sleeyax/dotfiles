@@ -4,7 +4,7 @@
 #
 #   status.sh start            a run is starting
 #   status.sh succeed CONFIG   the run CONFIG drove succeeded
-#   status.sh fail             the run failed, after every retry
+#   status.sh fail             the run failed after every retry, or was stopped before it finished
 set -euo pipefail
 
 STATUS="${XDG_STATE_HOME:-$HOME/.local/state}/backup/status.json"
@@ -29,6 +29,12 @@ statistics() {
             | select(.added_bytes | type == "number")'
 }
 
+# borgmatic tells its hooks nothing about why a run ended, so the unit is asked instead.
+# A stop from outside, by a shutdown, a logout or systemctl stop, puts the unit into deactivating before it sends the TERM; a run that fails by itself leaves it activating.
+stopped_from_outside() {
+    [ "$(systemctl --user show backup.service --property=ActiveState --value 2>/dev/null)" = deactivating ]
+}
+
 case ${1:-} in
 start)
     update '.state = "running"'
@@ -43,7 +49,11 @@ succeed)
     fi
     ;;
 fail)
-    update --argjson now "$(date +%s)" '.state = "failed" | .last_run = $now'
+    state=failed
+    if stopped_from_outside; then
+        state=interrupted
+    fi
+    update --arg state "$state" --argjson now "$(date +%s)" '.state = $state | .last_run = $now'
     ;;
 *)
     echo "usage: ${0##*/} start | succeed CONFIG | fail" >&2

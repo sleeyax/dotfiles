@@ -364,6 +364,7 @@ It judges the time it is given, the current time when given none, and that argum
 panda is on a day or two a week, during working hours and rarely at 19:00, so it backs up once on each day it is used instead, through laptop overrides of the same two files.
 Its `backup.timer` fires 10 minutes after the user manager starts, which is at login, and then hourly.
 Its `on-schedule.sh` skips the run when `last_run` in the status file falls on the judged day, so one attempt a day gets through, and a failure waits for tomorrow rather than notifying every hour.
+An `interrupted` run doesn't count, so a shutdown in the middle of a backup leaves the day's attempt to the next elapse.
 It also skips while any `borg` or `borgmatic` of the user's is running, since a backup by hand or a mounted archive holds the repository lock, and a timer run that failed on it would use up the day.
 Both scripts take the same optional argument, a time in any form `date -d` reads, so either can be asked about a time other than now.
 `backup.service` runs at `Nice=19` and `IOSchedulingClass=idle` on both machines, for panda's sake.
@@ -378,7 +379,7 @@ Were `systemd-inhibit` the main process, it would die on the first SIGTERM and t
 Block mode refuses an unprivileged suspend outright: hypridle's `systemctl suspend` on panda gets "Operation denied due to active block inhibitor", and a manual one on falcon is refused until forced with `systemctl suspend -i` and an admin password.
 hypridle tries once per idle period, so panda stays awake after a backup ends until it next goes idle.
 The lid switch still suspends, because logind's `LidSwitchIgnoreInhibited=` defaults to yes and nothing in Hyprland takes the switch.
-Shutdown is deliberately not inhibited; the run reads `failed` and the next one reuses what was uploaded.
+Shutdown is deliberately not inhibited; the run reads `interrupted` and the next one reuses what was uploaded.
 
 The units are stowed from `home/.config/systemd/user/`, and `apply.sh` creates `~/.config/systemd/user` before stowing, because enabling a unit writes a `*.target.wants/` link beside the unit files and a folded directory would put that link in the stow tree for `rsync --delete` to wipe.
 `apply.sh` also runs `systemctl --user daemon-reload`, and never enables `backup.timer`: `setup-backups.sh` does, as its last step, so a machine whose setup stopped partway never fails a backup every day.
@@ -390,9 +391,9 @@ Anything that shows backup health reads this file and at most the timer's schedu
 
 | Field | Value |
 | ----- | ----- |
-| `state` | `running`, `succeeded` or `failed` |
-| `last_run` | Unix time the last run ended, whether it succeeded or failed |
-| `last_success` | Unix time the last successful run ended; a failure leaves it alone |
+| `state` | `running`, `succeeded`, `failed` or `interrupted` |
+| `last_run` | Unix time the last run ended, however it ended |
+| `last_success` | Unix time the last successful run ended; a run that doesn't succeed leaves it alone |
 | `added_bytes` | what the newest archive holds that no other archive does, measured at the end of that run |
 | `archives` | how many archives the repository held at the end of that run |
 
@@ -401,7 +402,10 @@ A reader shows either as unknown rather than failing.
 
 The hooks are `configuration`-level and filtered to `when: create`, so only a run that makes an archive writes the file, and `borgmatic repo-list` by hand never does.
 borgmatic retries inside that level, so a run reads `running` across its retries and `failed` only once the last one has failed.
-borgmatic runs the `fail` hook on SIGTERM too, so a backup stopped by a shutdown or `systemctl --user stop` reads `failed`; only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
+borgmatic runs the `fail` hook on SIGTERM too, without telling it why, so the hook asks systemd: a stop from outside, by a shutdown, a logout or `systemctl --user stop`, puts `backup.service` into `deactivating` before it sends the TERM, and that reads `interrupted` rather than `failed`.
+A run from a terminal stopped with Ctrl-C has no unit to ask and reads `failed`.
+Only a run killed outright, by SIGKILL or a power cut, leaves `running` behind until the next one starts.
+`OnFailure=` still fires for an interrupted run, since borgmatic exits 143; only during a shutdown does systemd refuse to start the notification.
 
 The two numbers cost the run one more borgmatic call, made by the success hook after it has recorded the success.
 That call is the only part of the status path that reaches the repository or the keyring, and it belongs to the run rather than to a reader.
@@ -413,6 +417,7 @@ A failure, or a kill while it runs, leaves the success recorded and the numbers 
 It passes that elapse to `on-schedule.sh` and shows it only if the run would go ahead, and "tomorrow" otherwise, so the schedule's rules live in one script per machine; on falcon the 19:00 elapse always passes.
 `status.sh` sends signal 5 after every write, so the pill follows a run as it starts and ends; the 60-second interval only ages the tooltip and lets `ok` turn `stale`.
 `running` and `failed` describe the newest run, so they win over the age of the last success.
+`interrupted` describes it too, but has nothing to fix, so it gives way to `stale` and is dimmed like `never`; the tooltip names when the run was stopped either way.
 No status file reads `never`, dimmed rather than amber: a machine that was never set up has nothing to fix, and a set-up one settles it on its first run.
 A status file jq can't parse reads `failed`, since the pill has no way left to tell the run's outcome.
 A left click opens the journal at its end, with `--boot=all` because `journalctl -e` otherwise implies the current boot, which on falcon often holds no run.
@@ -424,7 +429,7 @@ They are 3 and 7 by default, and 7 and 14 on panda, which is on a day or two a w
 That is a sourced file rather than an `Environment=` drop-in because the pill runs under waybar, out of systemd's reach.
 
 **The staleness check.** `borgmatic/notify-if-stale.sh` sends a critical notification when the last success is more than `NOTIFY_STALE_DAYS` days old, for backups that stopped without ever failing: a timer turned off, a machine never on when its timer fires.
-It judges `last_success` alone, so a `failed` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
+It judges `last_success` alone, so a `failed`, `interrupted` or `running` state changes nothing; a failed run already has `backup-failed.service`, and a `running` left behind by a kill must not hide a gap.
 A status file without `last_success`, or one jq can't parse, notifies too.
 Without a status file, it notifies only while `backup.timer` is enabled, which is what tells a set-up machine from one that was never set up.
 That also means a machine notifies at its first login after setup, before the first run has written the file.
