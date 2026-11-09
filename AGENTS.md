@@ -14,6 +14,8 @@ Personal Hyprland dotfiles for Arch Linux, originally based on [ML4W](https://gi
 ./scripts/set-device.sh desktop  # Manually switch to desktop config
 ./scripts/set-device.sh laptop   # Manually switch to laptop config
 ./scripts/set-device.sh server   # Manually switch to server config
+./scripts/update.sh         # Pull and apply this repo, sync promptfiles skills, rebuild paseo plugins
+./scripts/update.sh --rebuild-plugins  # Rebuild and reload the plugins even if their checkout didn't move
 ```
 
 ## Architecture
@@ -107,6 +109,31 @@ STOW_PATHS=(.zshrc .config/zshrc .config/ohmyposh)
 `.config/btop` is deliberately not kept: the only local change to it is `color_theme = "matugen"`, naming a theme the wallpaper pipeline generates and a headless host never will.
 
 `.bashrc` is not kept either, and it is the one path where the distro's copy beats ours. `home/.bashrc` is an Arch skeleton — two colour aliases, a `PS1`, and a `PATH` line `00-init` already sets for zsh — while Ubuntu ships a fuller one that fnm, cargo, pnpm and the `paseo.env` block have all appended to. Keeping it would trade live machine-local config for a worse file, and `stow` refuses the overwrite in any case, since a real file at a stow target is a conflict rather than something to adopt. bash is only aardwolf's login shell until `chsh` points at zsh; the zsh side is stowed in full.
+
+### Updating a machine
+
+`scripts/update.sh` is the routine update, run by hand since `apply.sh` can ask for sudo.
+It has three steps: this repo, `sleeyax/promptfiles` and `sleeyax/paseo-plugins`.
+The last two are found by their `origin` URL under `~/Programming` and `~/projects`, because each machine lays those folders out differently and may hold other repos with similar names.
+A step whose checkout is absent is skipped, so no device needs a knob for it.
+
+Any uncommitted or untracked change in any of the three halts the run before anything has moved.
+Past that check every repo is switched to `main` and fast-forwarded, and stays there.
+A step that fails doesn't stop the next one; the summary names it and the exit code is non-zero.
+A repo that couldn't reach `main` skips the rest of its own step, so a failed pull can't deploy or delete anything.
+
+**Skills are synced 1:1 with promptfiles' `main`, but only skills that are ours.**
+`npx skills update` is the wrong tool, since it acts on every tracked source, so the script names promptfiles' skills to `skills add` and deletes the rest itself.
+A skill is deleted when its name appears in promptfiles' history on any branch and not on `main`, which is what spares a skill promptfiles never had, such as `find-skills`.
+History rather than the lockfile decides that, because a skill removed from promptfiles long ago may have no lock entry left.
+The lockfile vetoes in both directions: a name it attributes to another source is neither overwritten nor deleted, because other skills repos reuse names like `implement` and `git-commit`.
+It lives at `$XDG_STATE_HOME/skills/.skill-lock.json` when that variable is set, and only otherwise at `~/.agents/.skill-lock.json`.
+
+`AGENTS.md` and `CLAUDE.md` are symlinks into promptfiles, so the pull is their whole update.
+Nothing else in promptfiles is installed; `install-claude-settings.sh` and the Codex scripts stay manual.
+
+**Plugins rebuild only when their checkout moved**, including a switch to `main`, because a reload closes every session on the plugin's provider.
+The building and reloading is `scripts/rebuild-plugins.sh` in paseo-plugins, shared with that repo's `update-plugins` skill.
 
 ### Hyprland Config Structure
 

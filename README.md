@@ -101,6 +101,12 @@ Nothing yet — `home/` is still 2.14.1 throughout.
 ./scripts/set-device.sh desktop  # or laptop, server
 ```
 
+**Update this machine**: pull and apply these dotfiles, sync the skills from [promptfiles](https://github.com/sleeyax/promptfiles), and rebuild the paseo plugins. It stops before changing anything if one of those repos has uncommitted work.
+
+```bash
+./scripts/update.sh
+```
+
 ## Web apps
 
 Install a website as a Chromium app that keeps its own cookies, logins and extensions, separate from your personal browser:
